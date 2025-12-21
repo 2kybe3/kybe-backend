@@ -1,0 +1,10 @@
+when:
+  - event: push
+    branch: main
+
+steps:
+  build:
+    image: rust:latest
+    commands:
+      - cargo test --release
+      - cargo build --release
