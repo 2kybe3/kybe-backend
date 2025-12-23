@@ -13,7 +13,7 @@ async fn main() {
         NotificationsConfig {
             gotify_enabled: true,
             gotify_url: "https://gotify.kybe.xyz".into(),
-            gotify_token: "A1nS8Ly22Ou2zQ-".into(),
+            gotify_token: "".into(),
             log_enabled: true,
         }
     );
