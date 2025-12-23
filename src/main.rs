@@ -6,14 +6,14 @@ use crate::notifications::{Notification, Notifications, NotificationsConfig};
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
-
     info!("initializing backend");
 
+    // TODO: load from a config file
     let notifications = Notifications::new(
         NotificationsConfig {
             gotify_enabled: true,
             gotify_url: "https://gotify.kybe.xyz".into(),
-            gotify_token: "".into(),
+            gotify_token: "A1nS8Ly22Ou2zQ-".into(),
             log_enabled: true,
         }
     );

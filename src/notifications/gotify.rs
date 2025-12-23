@@ -1,6 +1,5 @@
 use reqwest::{Client, StatusCode};
 use serde::Serialize;
-use tracing::error;
 use crate::notifications::{Notification, Notifier};
 use crate::notifications::error::NotificationError;
 

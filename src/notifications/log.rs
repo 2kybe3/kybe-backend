@@ -2,12 +2,11 @@ use tracing::info;
 use crate::notifications::{Notification, Notifier};
 use crate::notifications::error::NotificationError;
 
-pub struct LogNotifier {
-}
+pub struct LogNotifier {}
 
 impl LogNotifier {
     pub fn new() -> Self {
-        Self {  }
+        Self { }
     }
 }
 

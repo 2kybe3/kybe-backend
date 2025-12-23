@@ -1,3 +1,4 @@
+use futures::future::join_all;
 use tracing::error;
 use crate::notifications::error::NotificationError;
 use crate::notifications::gotify::GotifyNotifier;
@@ -59,10 +60,15 @@ impl Notifications {
     }
 
     pub async fn notify(&self, notification: Notification) {
-        for notifier in &self.notifiers {
-            if let Err(err) = notifier.send(&notification).await {
-                error!("Failed to send notification via {}: {:?}", notifier.name(), err);
+        let futures = self.notifiers.iter().map(|notifier| {
+            let notification = &notification;
+            async move {
+                if let Err(err) = notifier.send(notification).await {
+                    error!("Failed to send notification via {}: {:?}", notifier.name(), err);
+                }
             }
-        }
+        });
+
+        join_all(futures).await;
     }
 }
