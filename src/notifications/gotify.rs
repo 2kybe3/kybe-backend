@@ -51,7 +51,6 @@ impl Notifier for GotifyNotifier {
             Ok(())
         } else {
             let msg = format!("({}): {}", status, res.text().await.unwrap_or_default());
-            error!("Gotify failed {}", msg);
 
             let err = match status {
                 StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => NotificationError::Auth(msg),

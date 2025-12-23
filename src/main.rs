@@ -12,7 +12,7 @@ async fn main() {
     let notifications = Notifications::new(
         NotificationsConfig {
             gotify_enabled: true,
-            gotify_url: "".into(),
+            gotify_url: "https://gotify.kybe.xyz".into(),
             gotify_token: "".into(),
             log_enabled: true,
         }
