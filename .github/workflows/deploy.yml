@@ -1,0 +1,57 @@
+name: Backend - Build & Deploy to Production
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE: reg.kybe.xyz/kybe-pub/kybe-backend
+  REGISTRY_URL: reg.kybe.xyz
+  TAG: ${{ github.sha }}
+
+jobs:
+  deploy-backend:
+    name: Build, Push & Deploy Backend
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Log in to registry
+        run: echo "${{ secrets.REGISTRY_PASS }}" | docker login ${{ env.REGISTRY_URL }} -u '${{ vars.REGISTRY_USER }}' --password-stdin
+
+      - name: Build and push image
+        run: |
+          docker build -t ${{ env.IMAGE }}:${{ env.TAG }} -t ${{ env.IMAGE }}:latest .
+          docker push ${{ env.IMAGE }}:${{ env.TAG }}
+          docker push ${{ env.IMAGE }}:latest
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.RUNNER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ vars.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+    
+
+      - name: Copy compose file to server
+        run: |
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no docker-compose.yml \
+          ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:/opt/backend/docker-compose.yml
+
+      - name: Deploy on remote server
+        run: |
+          ssh -t -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} \
+          "echo '$REGISTRY_PASS' | docker login $REGISTRY_URL -u '$REGISTRY_USER' --password-stdin && \
+          cd /opt/backend && \
+          docker pull ${{ env.IMAGE }}:latest &&
+          docker compose up -d --force-recreate"
+        env:
+          REGISTRY_PASS: ${{ secrets.REGISTRY_PASS }}
+          REGISTRY_URL: ${{ env.REGISTRY_URL }}
+          REGISTRY_USER: ${{ vars.REGISTRY_USER }}
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf ~/.ssh/deploy_key
