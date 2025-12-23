@@ -12,6 +12,6 @@ async fn main() {
     let notifications = Notifications::new();
     let notification = Notification::new("Started".to_string(), "Backend started successfully".to_string(), 0);
 
-    notifications.notify(notification);
+    notifications.notify(notification).await;
 }
 

@@ -1,12 +1,17 @@
 use tracing::error;
 use crate::notifications::error::NotificationError;
 use crate::notifications::gotify::GotifyNotifier;
+use crate::notifications::log::LogNotifier;
 
 pub mod gotify;
 pub mod error;
+mod log;
 
+#[async_trait::async_trait]
 pub trait Notifier {
-    fn send(&self, notification: &Notification) -> Result<(), NotificationError>;
+    async fn send(&self, notification: &Notification) -> Result<(), NotificationError>;
+
+    fn name(&self) -> &'static str;
 }
 
 #[derive(Debug)]
@@ -34,6 +39,8 @@ impl Notifications {
     pub fn new() -> Self {
         let mut notifiers: Vec<Box<dyn Notifier>> = Vec::new();
 
+        notifiers.push(Box::new(LogNotifier::new()));
+
         let gotify_enabled = true;
         let gotify_url = "https://example.com".to_string();
         let gotify_token = "test".to_string();
@@ -46,10 +53,10 @@ impl Notifications {
         Self { notifiers }
     }
 
-    pub fn notify(&self, notification: Notification) {
+    pub async fn notify(&self, notification: Notification) {
         for notifier in &self.notifiers {
-            if let Err(err) = notifier.send(&notification) {
-                error!("Failed to send notification: {:?}", err);
+            if let Err(err) = notifier.send(&notification).await {
+                error!("Failed to send notification via {}: {:?}", notifier.name(), err);
             }
         }
     }
