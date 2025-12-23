@@ -1,11 +1,23 @@
 use reqwest::{Client, StatusCode};
 use serde::Serialize;
+use tracing::error;
 use crate::notifications::{Notification, Notifier};
 use crate::notifications::error::NotificationError;
 
 pub struct GotifyNotifier {
     url: String,
     token: String,
+    client: Client,
+}
+
+impl GotifyNotifier {
+    pub fn new<S: Into<String>>(url: S, token: S) -> Self {
+        Self {
+            url: url.into(),
+            token: token.into(),
+            client: Client::new(),
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -13,12 +25,6 @@ struct GotifyPayload<'a> {
     title: &'a str,
     message: &'a str,
     priority: u8,
-}
-
-impl GotifyNotifier {
-    pub fn new(url: String, token: String) -> Self {
-        Self { url, token }
-    }
 }
 
 #[async_trait::async_trait]
@@ -32,19 +38,27 @@ impl Notifier for GotifyNotifier {
 
         let url = format!("{}/message?token={}", self.url, self.token);
 
-        let client = Client::new();
-        let res = client
+        let res = self.client
             .post(&url)
             .json(&payload)
             .send()
             .await
-            .map_err(|_| NotificationError::Transport)?;
+            .map_err(|e| NotificationError::Transport(e.to_string()))?;
 
-        match res.status() {
-            StatusCode::OK => Ok(()),
-            StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => Err(NotificationError::Auth),
-            StatusCode::BAD_REQUEST => Err(NotificationError::InvalidConfig),
-            _ => Err(NotificationError::Transport),
+        let status = res.status();
+
+        if status.is_success() {
+            Ok(())
+        } else {
+            let msg = format!("({}): {}", status, res.text().await.unwrap_or_default());
+            error!("Gotify failed {}", msg);
+
+            let err = match status {
+                StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => NotificationError::Auth(msg),
+                StatusCode::BAD_REQUEST => NotificationError::InvalidConfig(msg),
+                _ => NotificationError::Transport(msg),
+            };
+            Err(err)
         }
     }
 

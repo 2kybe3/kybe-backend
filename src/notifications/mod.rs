@@ -35,18 +35,23 @@ pub struct Notifications {
     notifiers: Vec<Box<dyn Notifier>>
 }
 
+pub struct NotificationsConfig {
+    pub gotify_enabled: bool,
+    pub gotify_url: String,
+    pub gotify_token: String,
+    pub log_enabled: bool,
+}
+
 impl Notifications {
-    pub fn new() -> Self {
+    pub fn new(config: NotificationsConfig) -> Self {
         let mut notifiers: Vec<Box<dyn Notifier>> = Vec::new();
 
-        notifiers.push(Box::new(LogNotifier::new()));
+        if config.log_enabled {
+            notifiers.push(Box::new(LogNotifier::new()));
+        }
 
-        let gotify_enabled = true;
-        let gotify_url = "https://example.com".to_string();
-        let gotify_token = "test".to_string();
-
-        if gotify_enabled {
-            let gotify = GotifyNotifier::new(gotify_url, gotify_token);
+        if config.gotify_enabled {
+            let gotify = GotifyNotifier::new(config.gotify_url, config.gotify_token);
             notifiers.push(Box::new(gotify));
         }
 
