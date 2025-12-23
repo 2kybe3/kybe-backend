@@ -32,7 +32,6 @@ jobs:
           echo "${{ secrets.RUNNER_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ vars.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-    
 
       - name: Copy compose file to server
         run: |
