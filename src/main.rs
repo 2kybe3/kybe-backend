@@ -6,9 +6,16 @@ use crate::config::types::Config;
 use crate::notifications::{Notification, Notifications, NotificationConfig};
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = std::env::args().collect();
     tracing_subscriber::fmt::init();
-    info!("initializing backend");
+    info!("initializing...");
+
+    if args.iter().any(|arg| arg == "--generate-example") {
+        Config::create_local_default().await?;
+        println!("Generated config.toml.example");
+        return Ok(());
+    }
 
     let config = match Config::init().await {
         Ok(cfg) => cfg,
@@ -30,5 +37,6 @@ async fn main() {
     let notification = Notification::new("Started".to_string(), "Backend started successfully".to_string(), 0);
 
     notifications.notify(notification).await;
+    Ok(())
 }
 

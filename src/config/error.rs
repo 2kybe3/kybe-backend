@@ -16,4 +16,7 @@ pub enum ConfigError {
 
     #[error("failed to download default config")]
     Download(#[from] reqwest::Error),
+
+    #[error("failed to serialize config")]
+    Serialize(#[from] toml::ser::Error),
 }
