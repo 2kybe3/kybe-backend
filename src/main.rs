@@ -3,7 +3,8 @@ mod config;
 
 use tracing::{error, info};
 use crate::config::types::Config;
-use crate::notifications::{Notification, Notifications};
+use crate::notifications::Notifications;
+use crate::notifications::notifications::startup::StartupNotification;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,8 +27,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let notifications = Notifications::new(&config.notification);
-    let notification = Notification::new("Started".to_string(), "Backend started successfully".to_string(), 0);
+    let notification = StartupNotification::new(false);
+    notifications.notify(notification).await;
 
+    // TODO: startup logic
+
+
+    let notification = StartupNotification::new(true);
     notifications.notify(notification).await;
     Ok(())
 }

@@ -7,6 +7,7 @@ use crate::notifications::log::LogNotifier;
 use crate::notifications::providers::discord::DiscordNotifier;
 
 pub mod error;
+pub mod notifications;
 mod log;
 mod providers;
 
@@ -21,15 +22,13 @@ pub trait Notifier {
 pub struct Notification {
     pub title: String,
     pub message: String,
-    pub priority: u8,
 }
 
 impl Notification {
-    pub fn new(title: String, message: String, priority: u8) -> Self {
+    pub fn new<S: Into<String>>(title: S, message: S) -> Self {
         Notification {
-            title,
-            message,
-            priority
+            title: title.into(),
+            message: message.into(),
         }
     }
 }
@@ -65,7 +64,8 @@ impl Notifications {
         Self { notifiers }
     }
 
-    pub async fn notify(&self, notification: Notification) {
+    pub async fn notify<S: Into<Notification>>(&self, notification: S) {
+        let notification = notification.into();
         let futures = self.notifiers.iter().map(|notifier| {
             let notification = notification.clone();
             async move {

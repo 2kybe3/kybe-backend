@@ -30,7 +30,7 @@ impl Notifier for GotifyNotifier {
         let payload = GotifyPayload {
             title: &notification.title,
             message: &notification.message,
-            priority: notification.priority,
+            priority: 0,
         };
 
         let res = self.client

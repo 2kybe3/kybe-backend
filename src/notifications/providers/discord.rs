@@ -1,5 +1,6 @@
 use reqwest::{Client, StatusCode};
 use serde::Serialize;
+use webhook::models::{ActionRow, AllowedMentions, Embed, Message};
 use crate::notifications::{Notification, Notifier};
 use crate::notifications::error::NotificationError;
 
@@ -26,10 +27,8 @@ impl DiscordNotifier {
 #[async_trait::async_trait]
 impl Notifier for DiscordNotifier {
     async fn send(&self, notification: &Notification) -> Result<(), NotificationError> {
-        let payload = DiscordPayload {
-            username: &notification.title,
-            content: &notification.message,
-        };
+        let mut payload = Message::new();
+        payload.embed(|embed| embed.title(&notification.title).description(&notification.message));
 
         let res = self.client
             .post(&self.url)
