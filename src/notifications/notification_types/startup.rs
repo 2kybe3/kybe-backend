@@ -12,8 +12,8 @@ impl StartupNotification {
     }
 }
 
-impl Into<Notification> for StartupNotification {
-    fn into(self) -> Notification {
-        Notification::new("Backend", if self.started { "Started" } else { "Starting" })
+impl From<StartupNotification> for Notification {
+    fn from(value: StartupNotification) -> Self {
+        Notification::new("Backend", if value.started { "Started" } else { "Starting" })
     }
 }

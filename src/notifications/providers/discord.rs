@@ -1,18 +1,11 @@
 use reqwest::{Client, StatusCode};
-use serde::Serialize;
-use webhook::models::{ActionRow, AllowedMentions, Embed, Message};
+use webhook::models::Message;
 use crate::notifications::{Notification, Notifier};
 use crate::notifications::error::NotificationError;
 
 pub struct DiscordNotifier {
     url: String,
     client: Client,
-}
-
-#[derive(Serialize)]
-struct DiscordPayload<'a> {
-    content: &'a str,
-    username: &'a str,
 }
 
 impl DiscordNotifier {

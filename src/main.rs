@@ -4,7 +4,7 @@ mod config;
 use tracing::{error, info};
 use crate::config::types::Config;
 use crate::notifications::Notifications;
-use crate::notifications::notifications::startup::StartupNotification;
+use crate::notifications::notification_types::startup::StartupNotification;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

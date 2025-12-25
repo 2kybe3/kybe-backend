@@ -7,7 +7,7 @@ use crate::notifications::log::LogNotifier;
 use crate::notifications::providers::discord::DiscordNotifier;
 
 pub mod error;
-pub mod notifications;
+pub mod notification_types;
 mod log;
 mod providers;
 
