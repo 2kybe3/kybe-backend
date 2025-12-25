@@ -11,9 +11,11 @@ async fn main() {
     // TODO: load from a config file
     let notifications = Notifications::new(
         NotificationsConfig {
-            gotify_enabled: true,
+            gotify_enabled: false,
             gotify_url: "https://gotify.kybe.xyz".into(),
             gotify_token: "".into(),
+            discord_enabled: false,
+            discord_url: "".into(),
             log_enabled: true,
         }
     );

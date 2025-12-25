@@ -1,12 +1,13 @@
 use futures::future::join_all;
 use tracing::error;
 use crate::notifications::error::NotificationError;
-use crate::notifications::gotify::GotifyNotifier;
+use providers::gotify::GotifyNotifier;
 use crate::notifications::log::LogNotifier;
+use crate::notifications::providers::discord::DiscordNotifier;
 
-pub mod gotify;
 pub mod error;
 mod log;
+mod providers;
 
 #[async_trait::async_trait]
 pub trait Notifier {
@@ -37,10 +38,12 @@ pub struct Notifications {
 }
 
 pub struct NotificationsConfig {
+    pub log_enabled: bool,
     pub gotify_enabled: bool,
     pub gotify_url: String,
     pub gotify_token: String,
-    pub log_enabled: bool,
+    pub discord_enabled: bool,
+    pub discord_url: String,
 }
 
 impl Notifications {
@@ -54,6 +57,11 @@ impl Notifications {
         if config.gotify_enabled {
             let gotify = GotifyNotifier::new(config.gotify_url, config.gotify_token);
             notifiers.push(Box::new(gotify));
+        }
+
+        if config.discord_enabled {
+            let discord = DiscordNotifier::new(config.discord_url);
+            notifiers.push(Box::new(discord))
         }
 
         Self { notifiers }
