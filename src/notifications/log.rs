@@ -2,6 +2,7 @@ use crate::notifications::error::NotificationError;
 use crate::notifications::{Notification, Notifier};
 use tracing::info;
 
+#[derive(Debug)]
 pub struct LogNotifier {}
 
 impl LogNotifier {

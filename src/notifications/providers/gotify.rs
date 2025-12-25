@@ -3,6 +3,7 @@ use crate::notifications::{Notification, Notifier};
 use reqwest::{Client, StatusCode};
 use serde::Serialize;
 
+#[derive(Debug)]
 pub struct GotifyNotifier {
     url: String,
     client: Client,

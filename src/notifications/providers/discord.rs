@@ -3,6 +3,7 @@ use crate::notifications::{Notification, Notifier};
 use reqwest::{Client, StatusCode};
 use webhook::models::Message;
 
+#[derive(Debug)]
 pub struct DiscordNotifier {
     url: String,
     client: Client,

@@ -1,10 +1,13 @@
 mod config;
 mod notifications;
+mod discord_bot;
 
+use std::sync::Arc;
 use crate::config::types::Config;
 use crate::notifications::Notifications;
 use crate::notifications::notification_types::startup::StartupNotification;
 use tracing::{error, info};
+use crate::discord_bot::init_bot;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,11 +29,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let notifications = Notifications::new(&config.notification);
+    let notifications = Arc::new(Notifications::new(&config.notification));
+
     let notification = StartupNotification::new(false);
     notifications.notify(notification).await;
 
-    // TODO: startup logic
+    init_bot(notifications.clone()).await;
 
     let notification = StartupNotification::new(true);
     notifications.notify(notification).await;

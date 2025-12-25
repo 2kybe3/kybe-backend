@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use crate::config::types::NotificationConfig;
 use crate::notifications::error::NotificationError;
 use crate::notifications::log::LogNotifier;
@@ -12,7 +13,7 @@ pub mod notification_types;
 mod providers;
 
 #[async_trait::async_trait]
-pub trait Notifier {
+pub trait Notifier: Send + Sync + Debug {
     async fn send(&self, notification: &Notification) -> Result<(), NotificationError>;
 
     fn name(&self) -> &'static str;
@@ -33,13 +34,14 @@ impl Notification {
     }
 }
 
+#[derive(Debug)]
 pub struct Notifications {
-    notifiers: Vec<Box<dyn Notifier>>,
+    notifiers: Vec<Box<dyn Notifier + Send + Sync>>,
 }
 
 impl Notifications {
     pub fn new(config: &NotificationConfig) -> Self {
-        let mut notifiers: Vec<Box<dyn Notifier>> = Vec::new();
+        let mut notifiers: Vec<Box<dyn Notifier + Send + Sync>> = Vec::new();
 
         if config.log.enabled {
             notifiers.push(Box::new(LogNotifier::new()));
