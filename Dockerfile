@@ -20,4 +20,5 @@ COPY --from=builder /usr/src/kybe-backend/target/release/kybe-backend .
 
 EXPOSE 3000
 
+WORKDIR /opt/backend
 CMD ["./kybe-backend"]

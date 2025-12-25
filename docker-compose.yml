@@ -2,3 +2,5 @@ services:
   kybe-backend:
     image: reg.kybe.xyz/kybe-pub/kybe-backend:latest
     container_name: kybe-backend
+    volumes:
+      - ./backend:/opt/backend
