@@ -1,5 +1,6 @@
 use std::env;
 use tokio::fs;
+use tracing::info;
 use crate::config::error::ConfigError;
 use crate::config::types::{Config, DiscordConfig, GotifyConfig, LogConfig, NotificationConfig};
 
@@ -16,8 +17,11 @@ impl Config {
 
             Err(ConfigError::ReadFile(e))
                 if e.kind() == std::io::ErrorKind::NotFound => {
+                info!("Creating default config.toml");
                 Self::create_default().await?;
-                Self::load().await
+                let res = Self::load().await;
+                info!("Default config.toml created and loaded! Please edit");
+                res
             }
 
             Err(e) => Err(e)
