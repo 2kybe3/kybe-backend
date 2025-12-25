@@ -1,8 +1,8 @@
 use futures::future::join_all;
-use serde::Deserialize;
 use tracing::error;
 use crate::notifications::error::NotificationError;
 use providers::gotify::GotifyNotifier;
+use crate::config::types::NotificationConfig;
 use crate::notifications::log::LogNotifier;
 use crate::notifications::providers::discord::DiscordNotifier;
 
@@ -38,32 +38,24 @@ pub struct Notifications {
     notifiers: Vec<Box<dyn Notifier>>
 }
 
-pub struct NotificationConfig {
-    pub log_enabled: bool,
-    pub gotify_enabled: bool,
-    pub gotify_url: Option<String>,
-    pub discord_enabled: bool,
-    pub discord_url: Option<String>,
-}
-
 impl Notifications {
-    pub fn new(config: NotificationConfig) -> Self {
+    pub fn new(config: &NotificationConfig) -> Self {
         let mut notifiers: Vec<Box<dyn Notifier>> = Vec::new();
 
-        if config.log_enabled {
+        if config.log.enabled {
             notifiers.push(Box::new(LogNotifier::new()));
         }
 
-        if config.gotify_enabled {
-            if let Some(url) = config.gotify_url.clone() {
+        if config.gotify.enabled {
+            if let Some(url) = config.gotify.url.clone() {
                 notifiers.push(Box::new(GotifyNotifier::new(url)));
             } else {
                 error!("Gotify enabled but missing URL, skipping GotifyNotifier");
             }
         }
 
-        if config.discord_enabled {
-            if let Some(url) = config.discord_url.clone() {
+        if config.discord.enabled {
+            if let Some(url) = config.discord.url.clone() {
                 notifiers.push(Box::new(DiscordNotifier::new(url)));
             } else {
                 error!("Discord enabled but missing URL, skipping DiscordNotifier");
