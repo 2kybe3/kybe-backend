@@ -1,40 +1,79 @@
-use std::sync::Arc;
-use poise::FrameworkError;
-use tracing::error;
-use crate::notifications::{Notification, Notifications};
+mod calculator;
+mod translator;
 
-#[derive(Clone)]
-#[derive(Debug)]
+use crate::config::types::Config;
+use crate::notifications::{Notification, Notifications};
+use poise::FrameworkError;
+use std::sync::Arc;
+use tracing::error;
+
+use crate::translator::Translator;
+use poise::serenity_prelude as serenity;
+
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
+
+#[derive(Clone, Debug)]
 pub struct Data {
     pub notifications: Arc<Notifications>,
+    pub config: Arc<Config>,
+    pub translator: Option<Arc<Translator>>,
 }
 
-pub async fn init_bot(notifications: Arc<Notifications>) {
+pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>) -> Result<(), Error> {
+    let token = config.discord_bot.token.clone();
+
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![],
-            prefix_options: poise::PrefixFrameworkOptions {
-                prefix: None,
-                ..Default::default()
-            },
-            on_error: |error: FrameworkError<'_, Data, anyhow::Error>| Box::pin(async move {
-                if let Some(ctx) = error.ctx() {
-                    let notifications = &ctx.data().notifications;
+            commands: vec![
+                calculator::calculate(),
+                translator::detect(),
+                translator::languages(),
+                translator::translate(),
+            ],
+            on_error: |error: FrameworkError<'_, Data, Error>| {
+                Box::pin(async move {
+                    if let Some(ctx) = error.ctx() {
+                        let notifications = &ctx.data().notifications;
 
-                    notifications
-                        .notify(Notification::new("Serenity", &format!("Error: {}", error.to_string())))
-                        .await
-                } else {
-                    error!("Error without context: {:?}", error);
-                }
-            }),
+                        notifications
+                            .notify(Notification::new(
+                                "Discord Bot Error",
+                                &format!("Error: {}", error),
+                            ))
+                            .await
+                    } else {
+                        error!("Error without context: {:?}", error);
+                    }
+                })
+            },
             ..Default::default()
         })
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data { notifications: Arc::clone(&notifications) })
+                Ok(Data {
+                    notifications: Arc::clone(&notifications),
+                    config: Arc::clone(&config),
+                    translator: config
+                        .discord_bot
+                        .translator
+                        .clone()
+                        .try_into()
+                        .ok()
+                        .map(Arc::new),
+                })
             })
         })
         .build();
+
+    let intents = serenity::GatewayIntents::non_privileged();
+
+    let client = serenity::ClientBuilder::new(&token, intents)
+        .framework(framework)
+        .await;
+
+    let mut client = client?;
+    client.start().await?;
+    Ok(())
 }

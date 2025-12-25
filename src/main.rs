@@ -1,13 +1,14 @@
 mod config;
-mod notifications;
 mod discord_bot;
+mod notifications;
+pub mod translator;
 
-use std::sync::Arc;
 use crate::config::types::Config;
-use crate::notifications::Notifications;
-use crate::notifications::notification_types::startup::StartupNotification;
-use tracing::{error, info};
 use crate::discord_bot::init_bot;
+use crate::notifications::notification_types::startup::StartupNotification;
+use crate::notifications::{Notification, Notifications};
+use std::sync::Arc;
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let config = match Config::init().await {
-        Ok(cfg) => cfg,
+        Ok(cfg) => Arc::new(cfg),
         Err(e) => {
             error!("Failed to load config: {e}");
             std::process::exit(1);
@@ -34,7 +35,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let notification = StartupNotification::new(false);
     notifications.notify(notification).await;
 
-    init_bot(notifications.clone()).await;
+    if let Err(e) = init_bot(notifications.clone(), Arc::clone(&config)).await {
+        notifications
+            .notify(Notification::new("Discord Bot Failure", &e.to_string()))
+            .await;
+    }
 
     let notification = StartupNotification::new(true);
     notifications.notify(notification).await;

@@ -1,10 +1,10 @@
-use std::fmt::Debug;
 use crate::config::types::NotificationConfig;
 use crate::notifications::error::NotificationError;
 use crate::notifications::log::LogNotifier;
 use crate::notifications::providers::discord::DiscordNotifier;
 use futures::future::join_all;
 use providers::gotify::GotifyNotifier;
+use std::fmt::Debug;
 use tracing::error;
 
 pub mod error;

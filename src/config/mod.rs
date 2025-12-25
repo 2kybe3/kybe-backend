@@ -1,5 +1,8 @@
 use crate::config::error::ConfigError;
-use crate::config::types::{Config, DiscordConfig, GotifyConfig, LogConfig, NotificationConfig};
+use crate::config::types::{
+    Config, DiscordBotConfig, DiscordConfig, GotifyConfig, LogConfig, NotificationConfig,
+    TranslatorConfig,
+};
 use std::env;
 use tokio::fs;
 use tracing::info;
@@ -82,6 +85,14 @@ impl Default for Config {
                 gotify: GotifyConfig {
                     enabled: false,
                     url: Some("https://gotify.kybe.xyz/message?token=<token>".into()),
+                },
+            },
+            discord_bot: DiscordBotConfig {
+                token: "DISCORD_TOKEN".into(),
+                translator: TranslatorConfig {
+                    enabled: false,
+                    url: Some("https://translate.kybe.xyz".into()),
+                    token: Some("".into()),
                 },
             },
         }
