@@ -45,7 +45,6 @@ pub struct TranslateResponse {
     translated_text: String,
 }
 
-
 #[derive(Debug, Deserialize)]
 pub struct ApiError {
     error: String,
@@ -114,7 +113,12 @@ impl Translator {
         }
     }
 
-    pub async fn translate<S: Into<String>>(&self, source: S, target: S, query: S) -> Result<TranslateResponse, ApiError> {
+    pub async fn translate<S: Into<String>>(
+        &self,
+        source: S,
+        target: S,
+        query: S,
+    ) -> Result<TranslateResponse, ApiError> {
         let mut source = source.into();
         let mut target = target.into();
         if source.trim().is_empty() {

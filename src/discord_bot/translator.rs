@@ -76,10 +76,11 @@ pub async fn translate(
             ctx.send(reply).await.unwrap();
         }
         Err(e) => {
-            ctx.reply(format!("Error translating: {:?}", e)).await.unwrap();
+            ctx.reply(format!("Error translating: {:?}", e))
+                .await
+                .unwrap();
         }
     }
 
     Ok(())
 }
-
