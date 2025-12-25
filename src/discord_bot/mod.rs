@@ -52,16 +52,22 @@ pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>) ->
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                let translator = config
+                    .discord_bot
+                    .translator
+                    .clone()
+                    .try_into()
+                    .ok()
+                    .map(Arc::new);
+                if translator.is_none() && config.discord_bot.translator.enabled {
+                    tracing::warn!(
+                        "Failed to initialize translator – translation commands will be unavailable"
+                    );
+                }
                 Ok(Data {
                     notifications: Arc::clone(&notifications),
                     config: Arc::clone(&config),
-                    translator: config
-                        .discord_bot
-                        .translator
-                        .clone()
-                        .try_into()
-                        .ok()
-                        .map(Arc::new),
+                    translator,
                 })
             })
         })

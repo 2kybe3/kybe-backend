@@ -10,7 +10,7 @@ use crate::notifications::{Notification, Notifications};
 use std::sync::Arc;
 use tracing::{error, info};
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     tracing_subscriber::fmt::init();
@@ -35,13 +35,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let notification = StartupNotification::new(false);
     notifications.notify(notification).await;
 
-    if let Err(e) = init_bot(notifications.clone(), Arc::clone(&config)).await {
-        notifications
-            .notify(Notification::new("Discord Bot Failure", &e.to_string()))
-            .await;
-    }
+    let notifications_clone = notifications.clone();
+    let bot_handle = tokio::spawn(async move {
+        if let Err(e) = init_bot(notifications_clone.clone(), Arc::clone(&config)).await {
+            notifications_clone
+                .notify(Notification::new("Discord Bot Failure", &e.to_string()))
+                .await;
+        }
+    });
 
     let notification = StartupNotification::new(true);
     notifications.notify(notification).await;
+
+    bot_handle.await?;
     Ok(())
 }
