@@ -1,7 +1,7 @@
+use crate::notifications::error::NotificationError;
+use crate::notifications::{Notification, Notifier};
 use reqwest::{Client, StatusCode};
 use webhook::models::Message;
-use crate::notifications::{Notification, Notifier};
-use crate::notifications::error::NotificationError;
 
 pub struct DiscordNotifier {
     url: String,
@@ -21,9 +21,14 @@ impl DiscordNotifier {
 impl Notifier for DiscordNotifier {
     async fn send(&self, notification: &Notification) -> Result<(), NotificationError> {
         let mut payload = Message::new();
-        payload.embed(|embed| embed.title(&notification.title).description(&notification.message));
+        payload.embed(|embed| {
+            embed
+                .title(&notification.title)
+                .description(&notification.message)
+        });
 
-        let res = self.client
+        let res = self
+            .client
             .post(&self.url)
             .json(&payload)
             .send()
@@ -33,7 +38,7 @@ impl Notifier for DiscordNotifier {
         let status = res.status();
 
         if status.is_success() {
-            return Ok(())
+            return Ok(());
         } else {
             let msg = format!("({}) {}", status, res.text().await.unwrap());
 

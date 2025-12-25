@@ -6,14 +6,15 @@ pub struct StartupNotification {
 
 impl StartupNotification {
     pub fn new(started: bool) -> StartupNotification {
-        Self {
-            started,
-        }
+        Self { started }
     }
 }
 
 impl From<StartupNotification> for Notification {
     fn from(value: StartupNotification) -> Self {
-        Notification::new("Backend", if value.started { "Started" } else { "Starting" })
+        Notification::new(
+            "Backend",
+            if value.started { "Started" } else { "Starting" },
+        )
     }
 }

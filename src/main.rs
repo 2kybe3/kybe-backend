@@ -1,10 +1,10 @@
-mod notifications;
 mod config;
+mod notifications;
 
-use tracing::{error, info};
 use crate::config::types::Config;
 use crate::notifications::Notifications;
 use crate::notifications::notification_types::startup::StartupNotification;
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -32,9 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // TODO: startup logic
 
-
     let notification = StartupNotification::new(true);
     notifications.notify(notification).await;
     Ok(())
 }
-

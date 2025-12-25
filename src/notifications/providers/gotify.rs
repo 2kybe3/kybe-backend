@@ -1,7 +1,7 @@
+use crate::notifications::error::NotificationError;
+use crate::notifications::{Notification, Notifier};
 use reqwest::{Client, StatusCode};
 use serde::Serialize;
-use crate::notifications::{Notification, Notifier};
-use crate::notifications::error::NotificationError;
 
 pub struct GotifyNotifier {
     url: String,
@@ -33,7 +33,8 @@ impl Notifier for GotifyNotifier {
             priority: 0,
         };
 
-        let res = self.client
+        let res = self
+            .client
             .post(&self.url)
             .json(&payload)
             .send()

@@ -1,2 +1,2 @@
-pub mod gotify;
 pub mod discord;
+pub mod gotify;

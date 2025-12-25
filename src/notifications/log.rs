@@ -1,12 +1,12 @@
-use tracing::info;
-use crate::notifications::{Notification, Notifier};
 use crate::notifications::error::NotificationError;
+use crate::notifications::{Notification, Notifier};
+use tracing::info;
 
 pub struct LogNotifier {}
 
 impl LogNotifier {
     pub fn new() -> Self {
-        Self { }
+        Self {}
     }
 }
 

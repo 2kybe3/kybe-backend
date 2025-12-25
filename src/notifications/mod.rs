@@ -1,14 +1,14 @@
-use futures::future::join_all;
-use tracing::error;
-use crate::notifications::error::NotificationError;
-use providers::gotify::GotifyNotifier;
 use crate::config::types::NotificationConfig;
+use crate::notifications::error::NotificationError;
 use crate::notifications::log::LogNotifier;
 use crate::notifications::providers::discord::DiscordNotifier;
+use futures::future::join_all;
+use providers::gotify::GotifyNotifier;
+use tracing::error;
 
 pub mod error;
-pub mod notification_types;
 mod log;
+pub mod notification_types;
 mod providers;
 
 #[async_trait::async_trait]
@@ -34,7 +34,7 @@ impl Notification {
 }
 
 pub struct Notifications {
-    notifiers: Vec<Box<dyn Notifier>>
+    notifiers: Vec<Box<dyn Notifier>>,
 }
 
 impl Notifications {
@@ -70,7 +70,11 @@ impl Notifications {
             let notification = notification.clone();
             async move {
                 if let Err(err) = notifier.send(&notification).await {
-                    error!("Failed to send notification via {}: {:?}", notifier.name(), err);
+                    error!(
+                        "Failed to send notification via {}: {:?}",
+                        notifier.name(),
+                        err
+                    );
                 }
             }
         });

@@ -1,5 +1,4 @@
 FROM rust:latest AS builder
-
 WORKDIR /usr/src/kybe-backend
 
 COPY Cargo.toml Cargo.lock* ./
