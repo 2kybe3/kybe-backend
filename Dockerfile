@@ -19,4 +19,4 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 COPY --from=builder /usr/src/kybe-backend/target/release/kybe-backend .
 
 EXPOSE 3000
-CMD ["./kybe-backend"]
+CMD ["/opt/backend/kybe-backend"]
