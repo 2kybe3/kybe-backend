@@ -5,15 +5,13 @@ use crate::notifications::error::NotificationError;
 
 pub struct GotifyNotifier {
     url: String,
-    token: String,
     client: Client,
 }
 
 impl GotifyNotifier {
-    pub fn new<S: Into<String>>(url: S, token: S) -> Self {
+    pub fn new<S: Into<String>>(url: S) -> Self {
         Self {
             url: url.into(),
-            token: token.into(),
             client: Client::new(),
         }
     }
@@ -35,10 +33,8 @@ impl Notifier for GotifyNotifier {
             priority: notification.priority,
         };
 
-        let url = format!("{}/message?token={}", self.url, self.token);
-
         let res = self.client
-            .post(&url)
+            .post(&self.url)
             .json(&payload)
             .send()
             .await

@@ -1,22 +1,30 @@
 mod notifications;
+mod config;
 
-use tracing::info;
-use crate::notifications::{Notification, Notifications, NotificationsConfig};
+use tracing::{error, info};
+use crate::config::types::Config;
+use crate::notifications::{Notification, Notifications, NotificationConfig};
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
     info!("initializing backend");
 
-    // TODO: load from a config file
+    let config = match Config::init().await {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            error!("Failed to load config: {e}");
+            std::process::exit(1);
+        }
+    };
+
     let notifications = Notifications::new(
-        NotificationsConfig {
-            gotify_enabled: false,
-            gotify_url: "https://gotify.kybe.xyz".into(),
-            gotify_token: "".into(),
-            discord_enabled: false,
-            discord_url: "".into(),
-            log_enabled: true,
+        NotificationConfig {
+            gotify_enabled: config.notification.gotify.enabled,
+            gotify_url: config.notification.gotify.url,
+            discord_enabled: config.notification.discord.enabled,
+            discord_url: config.notification.discord.url,
+            log_enabled: config.notification.log.enabled,
         }
     );
     let notification = Notification::new("Started".to_string(), "Backend started successfully".to_string(), 0);

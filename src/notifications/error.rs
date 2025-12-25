@@ -1,7 +1,8 @@
 use std::fmt;
 use std::fmt::Formatter;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum NotificationError {
     InvalidConfig(String),
     Transport(String),
@@ -19,5 +20,3 @@ impl fmt::Display for NotificationError {
         }
     }
 }
-
-impl std::error::Error for NotificationError {}
