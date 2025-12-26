@@ -2,8 +2,10 @@ use crate::config::types::Config;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
+use std::time::Duration;
 use thiserror::Error;
 use tracing::info;
+use crate::notifications::{Notification, Notifications};
 
 #[derive(Error, Debug)]
 pub enum DbError {
@@ -28,14 +30,32 @@ impl Database {
         &self.pool
     }
 
-    pub async fn init(config: Arc<Config>) -> Result<Self, DbError> {
+    pub async fn init(config: Arc<Config>, notifications: Arc<Notifications>) -> Result<Self, DbError> {
         info!("initializing db using: {:?}", config.database);
 
-        let pool =
-            PgPoolOptions::new().max_connections(5).connect(&config.database.postgres_url).await?;
+        for attempt in 1..=5 {
+            match PgPoolOptions::new()
+                .max_connections(5)
+                .connect(&config.database.postgres_url)
+                .await
+            {
+                Ok(pool) => {
+                    info!("DB connected");
+                    return Ok(Self::new(pool, Arc::clone(&config)));
+                }
+                Err(e) => {
+                    let wait = 5 * attempt;
+                    let text = format!("DB connection failed, retrying in {}s (attempt {})", wait, attempt);
+                    info!(text);
+                    notifications.notify(Notification::new("Database", &text)).await;
+                    if attempt == 5 {
+                        return Err(DbError::Connection(e));
+                    }
+                    tokio::time::sleep(Duration::from_secs(wait)).await;
+                }
+            }
+        }
 
-        info!("DB connected");
-
-        Ok(Self::new(pool, config))
+        unreachable!();
     }
 }

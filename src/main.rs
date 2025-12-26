@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let notifications = Arc::new(Notifications::new(&config.notification));
 
-    let database = match Database::init(Arc::clone(&config)).await {
+    let database = match Database::init(Arc::clone(&config), Arc::clone(&notifications)).await {
         Ok(db) => db,
         Err(e) => {
             error!("Database init failed: {e}");
