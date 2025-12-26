@@ -31,44 +31,32 @@ impl Config {
     }
 
     pub async fn load() -> Result<Self, ConfigError> {
-        let path = env::current_dir()
-            .map_err(ConfigError::CurrentDir)?
-            .join("config.toml");
-        let contents = fs::read_to_string(&path)
-            .await
-            .map_err(ConfigError::ReadFile)?;
+        let path = env::current_dir().map_err(ConfigError::CurrentDir)?.join("config.toml");
+        let contents = fs::read_to_string(&path).await.map_err(ConfigError::ReadFile)?;
         Ok(toml::from_str(&contents)?)
     }
 
     pub async fn create_default() -> Result<(), ConfigError> {
-        let path = env::current_dir()
-            .map_err(ConfigError::CurrentDir)?
-            .join("config.toml");
+        let path = env::current_dir().map_err(ConfigError::CurrentDir)?.join("config.toml");
 
         let resp = reqwest::get(DEFAULT_CONFIG_URL).await?;
         let content = resp.text().await?;
 
         toml::from_str::<Config>(&content)?;
 
-        fs::write(path, content)
-            .await
-            .map_err(ConfigError::WriteFile)?;
+        fs::write(path, content).await.map_err(ConfigError::WriteFile)?;
         Ok(())
     }
 
     pub async fn create_local_default() -> Result<(), ConfigError> {
-        let path = env::current_dir()
-            .map_err(ConfigError::CurrentDir)?
-            .join("config.toml.example");
+        let path = env::current_dir().map_err(ConfigError::CurrentDir)?.join("config.toml.example");
 
         let default_config = Config::default();
         let content = toml::to_string_pretty(&default_config).map_err(ConfigError::Serialize)?;
 
         toml::from_str::<Config>(&content)?;
 
-        fs::write(path, content)
-            .await
-            .map_err(ConfigError::WriteFile)?;
+        fs::write(path, content).await.map_err(ConfigError::WriteFile)?;
         Ok(())
     }
 }

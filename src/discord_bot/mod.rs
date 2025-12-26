@@ -55,13 +55,8 @@ pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>) ->
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                let translator = config
-                    .discord_bot
-                    .translator
-                    .clone()
-                    .try_into()
-                    .ok()
-                    .map(Arc::new);
+                let translator =
+                    config.discord_bot.translator.clone().try_into().ok().map(Arc::new);
                 if translator.is_none() && config.discord_bot.translator.enabled {
                     tracing::warn!(
                         "Failed to initialize translator – translation commands will be unavailable"
@@ -78,9 +73,7 @@ pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>) ->
 
     let intents = serenity::GatewayIntents::non_privileged();
 
-    let client = serenity::ClientBuilder::new(&token, intents)
-        .framework(framework)
-        .await;
+    let client = serenity::ClientBuilder::new(&token, intents).framework(framework).await;
 
     let mut client = client?;
     client.start().await?;

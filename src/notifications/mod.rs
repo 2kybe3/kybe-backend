@@ -27,10 +27,7 @@ pub struct Notification {
 
 impl Notification {
     pub fn new<S: Into<String>>(title: S, message: S) -> Self {
-        Notification {
-            title: title.into(),
-            message: message.into(),
-        }
+        Notification { title: title.into(), message: message.into() }
     }
 }
 
@@ -72,11 +69,7 @@ impl Notifications {
             let notification = notification.clone();
             async move {
                 if let Err(err) = notifier.send(&notification).await {
-                    error!(
-                        "Failed to send notification via {}: {:?}",
-                        notifier.name(),
-                        err
-                    );
+                    error!("Failed to send notification via {}: {:?}", notifier.name(), err);
                 }
             }
         });

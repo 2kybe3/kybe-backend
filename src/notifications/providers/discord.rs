@@ -11,10 +11,7 @@ pub struct DiscordNotifier {
 
 impl DiscordNotifier {
     pub fn new<S: Into<String>>(url: S) -> Self {
-        Self {
-            url: url.into(),
-            client: Client::new(),
-        }
+        Self { url: url.into(), client: Client::new() }
     }
 }
 
@@ -22,11 +19,7 @@ impl DiscordNotifier {
 impl Notifier for DiscordNotifier {
     async fn send(&self, notification: &Notification) -> Result<(), NotificationError> {
         let mut payload = Message::new();
-        payload.embed(|embed| {
-            embed
-                .title(&notification.title)
-                .description(&notification.message)
-        });
+        payload.embed(|embed| embed.title(&notification.title).description(&notification.message));
 
         let res = self
             .client

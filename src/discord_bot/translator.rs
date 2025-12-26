@@ -57,11 +57,7 @@ pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     if let Ok(res) = translator.unwrap().languages().await {
-        roa!(
-            ctx,
-            serde_json::to_string_pretty(&res).unwrap(),
-            "languages_supported.json"
-        );
+        roa!(ctx, serde_json::to_string_pretty(&res).unwrap(), "languages_supported.json");
     } else {
         ctx.reply("Error getting languages").await.unwrap();
     }
@@ -94,11 +90,7 @@ pub async fn translate(
         Ok(res) => {
             let verbose = verbose.unwrap_or(false);
             if verbose {
-                roa!(
-                    ctx,
-                    serde_json::to_string_pretty(&res).unwrap(),
-                    "languages_supported.json"
-                )
+                roa!(ctx, serde_json::to_string_pretty(&res).unwrap(), "languages_supported.json")
             } else {
                 if res.detected_language.is_some() {
                     source = res.detected_language.unwrap().language.clone();

@@ -12,9 +12,6 @@ impl StartupNotification {
 
 impl From<StartupNotification> for Notification {
     fn from(value: StartupNotification) -> Self {
-        Notification::new(
-            "Backend",
-            if value.started { "Started" } else { "Starting" },
-        )
+        Notification::new("Backend", if value.started { "Started" } else { "Starting" })
     }
 }

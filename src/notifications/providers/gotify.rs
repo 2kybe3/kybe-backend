@@ -11,10 +11,7 @@ pub struct GotifyNotifier {
 
 impl GotifyNotifier {
     pub fn new<S: Into<String>>(url: S) -> Self {
-        Self {
-            url: url.into(),
-            client: Client::new(),
-        }
+        Self { url: url.into(), client: Client::new() }
     }
 }
 

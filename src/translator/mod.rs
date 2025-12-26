@@ -74,21 +74,19 @@ impl Translator {
             .get(self.url.join("/languages").unwrap())
             .send()
             .await
-            .map_err(|e| ApiError {
-                error: format!("request failed: {e}"),
-            })?;
+            .map_err(|e| ApiError { error: format!("request failed: {e}") })?;
 
         if self.debug {
             info!("response: {:?}", resp);
         }
 
-        let text = resp.text().await.map_err(|e| ApiError {
-            error: format!("failed to read response: {e}"),
-        })?;
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| ApiError { error: format!("failed to read response: {e}") })?;
 
-        let body: Vec<LanguagesResponse> = serde_json::from_str(&text).map_err(|e| ApiError {
-            error: format!("invalid json: {e} | body: {text}"),
-        })?;
+        let body: Vec<LanguagesResponse> = serde_json::from_str(&text)
+            .map_err(|e| ApiError { error: format!("invalid json: {e} | body: {text}") })?;
 
         if self.debug {
             info!("response parsed: {:?}", body);
@@ -116,21 +114,19 @@ impl Translator {
             .json(&payload)
             .send()
             .await
-            .map_err(|e| ApiError {
-                error: format!("request failed: {e}"),
-            })?;
+            .map_err(|e| ApiError { error: format!("request failed: {e}") })?;
 
         if self.debug {
             info!("response: {:?}", resp);
         }
 
-        let text = resp.text().await.map_err(|e| ApiError {
-            error: format!("failed to read response: {e}"),
-        })?;
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| ApiError { error: format!("failed to read response: {e}") })?;
 
-        let body: DetectApiResponse = serde_json::from_str(&text).map_err(|e| ApiError {
-            error: format!("invalid json: {e} | body: {text}"),
-        })?;
+        let body: DetectApiResponse = serde_json::from_str(&text)
+            .map_err(|e| ApiError { error: format!("invalid json: {e} | body: {text}") })?;
 
         if self.debug {
             info!("parsed response: {:?}", body);
@@ -179,28 +175,20 @@ impl Translator {
             .json(&payload)
             .send()
             .await
-            .map_err(|e| ApiError {
-                error: e.to_string(),
-            })?;
+            .map_err(|e| ApiError { error: e.to_string() })?;
 
         if !resp.status().is_success() {
             let status = resp.status();
-            let err_text = resp
-                .text()
-                .await
-                .unwrap_or_else(|_| "<failed to read body>".into());
-            return Err(ApiError {
-                error: format!("HTTP {}: {}", status, err_text.trim()),
-            });
+            let err_text = resp.text().await.unwrap_or_else(|_| "<failed to read body>".into());
+            return Err(ApiError { error: format!("HTTP {}: {}", status, err_text.trim()) });
         }
 
         if self.debug {
             info!("response: {:?}", resp);
         }
 
-        let body: TranslateApiResponse = resp.json().await.map_err(|e| ApiError {
-            error: format!("invalid json: {}", e),
-        })?;
+        let body: TranslateApiResponse =
+            resp.json().await.map_err(|e| ApiError { error: format!("invalid json: {}", e) })?;
 
         if self.debug {
             info!("parsed response: {:?}", body);
