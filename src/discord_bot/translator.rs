@@ -1,7 +1,5 @@
 use crate::discord_bot::{Context, Error};
 use crate::roa;
-use poise::CreateReply;
-use poise::serenity_prelude::CreateAttachment;
 
 #[poise::command(
     slash_command,

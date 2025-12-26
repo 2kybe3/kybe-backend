@@ -88,8 +88,8 @@ macro_rules! roa {
         if $s.chars().count() <= $crate::discord_bot::MAX_MSG_LENGTH {
             $ctx.reply(&text).await.unwrap();
         } else {
-            let attachment = CreateAttachment::bytes(text, $filename);
-            let reply = CreateReply::default().attachment(attachment);
+            let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, $filename);
+            let reply = poise::CreateReply::default().attachment(attachment);
             $ctx.send(reply).await.unwrap();
         }
     }};
