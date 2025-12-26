@@ -4,13 +4,16 @@ WORKDIR /usr/src/kybe-backend
 COPY Cargo.toml Cargo.lock* ./
 
 RUN mkdir -p src && echo 'fn main() { println!("hello"); }' > src/main.rs
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    cargo fetch
+RUN --mount=type=cache,target=/usr/local/cargo/registry cargo build --release
 
 COPY src ./src
 
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    cargo build --release
+RUN --mount=type=cache,target=/usr/local/cargo/registry <<EOF
+  set -e
+
+  touch /usr/src/kybe-backend/src/main.rs
+  cargo build --release
+EOF
 
 FROM debian:trixie-slim
 WORKDIR /opt/backend
