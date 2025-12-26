@@ -18,6 +18,7 @@ pub const MAX_MSG_LENGTH: usize = 2000;
 #[derive(Clone, Debug)]
 pub struct Data {
     pub notifications: Arc<Notifications>,
+    #[allow(dead_code)]
     pub config: Arc<Config>,
     pub translator: Option<Arc<Translator>>,
 }

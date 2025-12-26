@@ -49,6 +49,7 @@ pub struct TranslateResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct ApiError {
+    #[allow(dead_code)]
     error: String,
 }
 
