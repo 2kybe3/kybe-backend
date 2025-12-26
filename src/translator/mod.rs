@@ -155,7 +155,7 @@ impl Translator {
         let target = if target.is_empty() { "de" } else { target };
 
         if self.debug {
-            info!("translating: {} -> {} \"{}\"", source, target, query);
+            info!("translating: \"{}\" {} -> {}", query, source, target);
         }
 
         let mut payload = serde_json::json!({

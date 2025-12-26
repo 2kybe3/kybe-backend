@@ -103,7 +103,7 @@ pub async fn translate(
                 }
                 reply_or_attach!(
                     ctx,
-                    format!("{} -> {}: {}", source, target, res.translated_text),
+                    format!("{} -> {} \"{}\"", source, target, res.translated_text),
                     "detected_languages.txt"
                 );
             }
