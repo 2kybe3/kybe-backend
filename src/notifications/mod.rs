@@ -9,7 +9,6 @@ use tracing::error;
 
 pub mod error;
 mod log;
-pub mod notification_types;
 mod providers;
 
 #[async_trait::async_trait]

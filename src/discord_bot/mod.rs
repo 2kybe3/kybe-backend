@@ -7,6 +7,7 @@ use poise::FrameworkError;
 use std::sync::Arc;
 use tracing::error;
 
+use crate::db::Database;
 use crate::translator::Translator;
 use poise::serenity_prelude as serenity;
 
@@ -21,9 +22,15 @@ pub struct Data {
     #[allow(dead_code)]
     pub config: Arc<Config>,
     pub translator: Option<Arc<Translator>>,
+    #[allow(dead_code)]
+    pub database: Database,
 }
 
-pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>) -> Result<(), Error> {
+pub async fn init_bot(
+    notifications: Arc<Notifications>,
+    config: Arc<Config>,
+    database: Database,
+) -> Result<(), Error> {
     let token = config.discord_bot.token.clone();
 
     let framework = poise::Framework::builder()
@@ -82,6 +89,7 @@ pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>) ->
                     notifications,
                     config,
                     translator,
+                    database,
                 })
             })
         })

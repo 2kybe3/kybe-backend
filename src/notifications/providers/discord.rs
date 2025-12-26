@@ -15,6 +15,7 @@ impl DiscordNotifier {
     }
 }
 
+// TODO: use serenitys webhook system later to remove webhook dep
 #[async_trait::async_trait]
 impl Notifier for DiscordNotifier {
     async fn send(&self, notification: &Notification) -> Result<(), NotificationError> {

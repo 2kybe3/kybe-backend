@@ -47,6 +47,5 @@ pub struct TranslatorConfig {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DatabaseConfig {
-    pub force_disable: bool,
     pub postgres_url: String,
 }

@@ -4,3 +4,21 @@ services:
     container_name: kybe-backend
     volumes:
       - ./backend:/opt/backend
+    environment:
+      - KYBE_DATABASE_POSTGRES_URL=postgres://kybe:kybe@postgres:5432/kybe_db
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:18
+    container_name: kybe-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kybe
+      POSTGRES_PASSWORD: kybe
+      POSTGRES_DB: kybe_DB
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

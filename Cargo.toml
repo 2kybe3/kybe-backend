@@ -4,10 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-anyhow = "1.0.100"
 async-trait = "0.1.89"
 futures = "0.3.31"
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "2.0.17"
 tokio = { version = "1.48", features = ["full"] }
@@ -17,7 +16,6 @@ tracing-subscriber = "0.3"
 webhook = { version = "2.1.2" }
 serde_json = "1.0.147"
 meval = "0.2.0"
-url = "2.5.7"
 sqlx = { version="0.8.6", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono"] }
 
 poise = { git = "https://github.com/serenity-rs/poise", branch = "current"}

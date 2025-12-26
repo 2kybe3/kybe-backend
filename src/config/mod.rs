@@ -30,12 +30,27 @@ impl Config {
         }
     }
 
+    pub async fn load_env_overrides(mut cfg: Config) -> Config {
+        macro_rules! env_override_str {
+            ($field:expr, $env_name:literal) => {
+                if let Ok(val) = env::var($env_name) {
+                    tracing::info!("Overriding {} from environment", $env_name);
+                    $field = val;
+                }
+            };
+        }
+
+        env_override_str!(cfg.database.postgres_url, "KYBE_DATABASE_POSTGRES_URL");
+
+        cfg
+    }
+
     pub async fn load() -> Result<Self, ConfigError> {
         let path = env::current_dir().map_err(ConfigError::CurrentDir)?.join("config.toml");
         let contents = fs::read_to_string(&path).await.map_err(ConfigError::ReadFile)?;
-        Ok(toml::from_str(&contents)?)
+        let res = toml::from_str(&contents)?;
+        Ok(Self::load_env_overrides(res).await)
     }
-
     pub async fn create_default() -> Result<(), ConfigError> {
         let path = env::current_dir().map_err(ConfigError::CurrentDir)?.join("config.toml");
 
@@ -85,7 +100,6 @@ impl Default for Config {
                 },
             },
             database: DatabaseConfig {
-                force_disable: false,
                 postgres_url: "postgres://postgres:password@localhost/test".into(),
             },
         }
