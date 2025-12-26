@@ -59,15 +59,22 @@ jobs:
           cache-from: type=local,src=/home/github-runner/.docker-build-cache
           cache-to: type=local,dest=/home/github-runner/.docker-build-cache,mode=max
 
+      - name: Copy docker-compose.yml to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ vars.SERVER_HOST }}
+          username: ${{ vars.SERVER_USER }}
+          key: ${{ secrets.RUNNER_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "/opt/backend/docker-compose.yml"
+
       - name: Deploy to production server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ vars.SERVER_HOST }}
           username: ${{ vars.SERVER_USER }}
           key: ${{ secrets.RUNNER_SSH_KEY }}
-          script: |
-            scp -i /tmp/ssh_key docker-compose.yml ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:/opt/backend/docker-compose.yml
-            
+          script: |            
             echo "${{ secrets.REGISTRY_PASS }}" | docker login ${{ env.REGISTRY_URL }} -u "${{ vars.REGISTRY_USER }}" --password-stdin
             
             cd /opt/backend
