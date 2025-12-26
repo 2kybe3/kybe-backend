@@ -1,11 +1,13 @@
 use crate::config::types::TranslatorConfig;
-use reqwest::Client;
+use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use tracing::info;
 
 #[derive(Debug)]
 pub struct Translator {
-    url: String,
+    debug: bool,
+    url: Url,
     token: Option<String>,
     client: Client,
 }
@@ -19,15 +21,15 @@ pub enum DetectApiResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DetectResponse {
-    confidence: f32,
-    language: String,
+    pub confidence: f32,
+    pub language: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LanguagesResponse {
-    code: String,
-    name: String,
-    targets: Vec<String>,
+    pub code: String,
+    pub name: String,
+    pub targets: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,9 +42,9 @@ pub enum TranslateApiResponse {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TranslateResponse {
-    alternatives: Option<Vec<String>>,
-    detected_language: Option<DetectResponse>,
-    translated_text: String,
+    pub alternatives: Option<Vec<String>>,
+    pub detected_language: Option<DetectResponse>,
+    pub translated_text: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,25 +53,33 @@ pub struct ApiError {
 }
 
 impl Translator {
-    pub fn new<S: Into<String>>(url: S, token: Option<S>) -> Self {
-        let token = token.map(Into::into).filter(|t| !t.trim().is_empty());
-
+    pub fn new<S: Into<String>>(url: S, token: Option<S>, debug: bool) -> Self {
+        let url = Url::parse(&url.into()).expect("Invalid base URL");
         Self {
-            url: url.into(),
-            token,
+            debug,
+            url,
+            token: token.map(Into::into).filter(|t| !t.trim().is_empty()),
             client: Client::new(),
         }
     }
 
     pub async fn languages(&self) -> Result<Vec<LanguagesResponse>, ApiError> {
+        if self.debug {
+            info!("requesting languages");
+        }
+
         let resp = self
             .client
-            .get(&(self.url.clone() + "/languages"))
+            .get(self.url.join("/languages").unwrap())
             .send()
             .await
             .map_err(|e| ApiError {
                 error: format!("request failed: {e}"),
             })?;
+
+        if self.debug {
+            info!("response: {:?}", resp);
+        }
 
         let text = resp.text().await.map_err(|e| ApiError {
             error: format!("failed to read response: {e}"),
@@ -79,11 +89,21 @@ impl Translator {
             error: format!("invalid json: {e} | body: {text}"),
         })?;
 
+        if self.debug {
+            info!("response parsed: {:?}", body);
+        }
+
         Ok(body)
     }
 
     pub async fn detect<S: Into<String>>(&self, query: S) -> Result<Vec<DetectResponse>, ApiError> {
-        let mut payload = serde_json::json!({ "q": query.into() });
+        let query = query.into();
+        let query = query.trim();
+        if self.debug {
+            info!("detecting language: {}", query);
+        }
+
+        let mut payload = serde_json::json!({ "q": query });
 
         if let Some(token) = &self.token {
             payload["api_key"] = token.clone().into();
@@ -91,13 +111,17 @@ impl Translator {
 
         let resp = self
             .client
-            .post(&(self.url.clone() + "/detect"))
+            .post(self.url.join("/detect").unwrap())
             .json(&payload)
             .send()
             .await
             .map_err(|e| ApiError {
                 error: format!("request failed: {e}"),
             })?;
+
+        if self.debug {
+            info!("response: {:?}", resp);
+        }
 
         let text = resp.text().await.map_err(|e| ApiError {
             error: format!("failed to read response: {e}"),
@@ -106,6 +130,10 @@ impl Translator {
         let body: DetectApiResponse = serde_json::from_str(&text).map_err(|e| ApiError {
             error: format!("invalid json: {e} | body: {text}"),
         })?;
+
+        if self.debug {
+            info!("parsed response: {:?}", body);
+        }
 
         match body {
             DetectApiResponse::Ok(data) => Ok(data),
@@ -119,16 +147,26 @@ impl Translator {
         target: S,
         query: S,
     ) -> Result<TranslateResponse, ApiError> {
-        let mut source = source.into();
-        let mut target = target.into();
-        if source.trim().is_empty() {
-            source = "auto".into();
-        }
-        if target.trim().is_empty() {
-            target = "de".into();
+        let query = query.into();
+
+        let source = source.into();
+        let target = target.into();
+
+        let source = source.trim();
+        let target = target.trim();
+
+        let source = if source.is_empty() { "auto" } else { source };
+        let target = if target.is_empty() { "de" } else { target };
+
+        if self.debug {
+            info!("translating: {} -> {} \"{}\"", source, target, query);
         }
 
-        let mut payload = serde_json::json!({ "source": source.trim(), "target": target.trim(), "q": query.into() });
+        let mut payload = serde_json::json!({
+            "source": source,
+            "target": target,
+            "q": query,
+        });
 
         if let Some(token) = &self.token {
             payload["api_key"] = token.clone().into();
@@ -136,23 +174,36 @@ impl Translator {
 
         let resp = self
             .client
-            .post(&(self.url.clone() + "/translate"))
+            .post(self.url.join("/translate").unwrap())
             .json(&payload)
             .send()
             .await
             .map_err(|e| ApiError {
-                error: format!("request failed: {e}"),
+                error: e.to_string(),
             })?;
 
-        let text = resp.text().await.map_err(|e| ApiError {
-            error: format!("failed to read response: {e}"),
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let err_text = resp
+                .text()
+                .await
+                .unwrap_or_else(|_| "<failed to read body>".into());
+            return Err(ApiError {
+                error: format!("HTTP {}: {}", status, err_text.trim()),
+            });
+        }
+
+        if self.debug {
+            info!("response: {:?}", resp);
+        }
+
+        let body: TranslateApiResponse = resp.json().await.map_err(|e| ApiError {
+            error: format!("invalid json: {}", e),
         })?;
 
-        dbg!(&text);
-
-        let body: TranslateApiResponse = serde_json::from_str(&text).map_err(|e| ApiError {
-            error: format!("invalid json: {e} | body: {text}"),
-        })?;
+        if self.debug {
+            info!("parsed response: {:?}", body);
+        }
 
         match body {
             TranslateApiResponse::Ok(data) => Ok(data),
@@ -179,6 +230,6 @@ impl TryFrom<TranslatorConfig> for Translator {
         }
 
         let url = value.url.ok_or(TranslatorInitError::MissingUrl)?;
-        Ok(Self::new(url, value.token))
+        Ok(Self::new(url, value.token, value.debug))
     }
 }

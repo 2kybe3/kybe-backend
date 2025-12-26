@@ -91,6 +91,7 @@ impl Default for Config {
                 token: "DISCORD_TOKEN".into(),
                 translator: TranslatorConfig {
                     enabled: false,
+                    debug: false,
                     url: Some("https://translate.kybe.xyz".into()),
                     token: Some("".into()),
                 },

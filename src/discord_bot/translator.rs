@@ -10,6 +10,7 @@ use poise::serenity_prelude::CreateAttachment;
 pub async fn detect(
     ctx: Context<'_>,
     #[description = "The text"] text: String,
+    #[description = "verbose"] verbose: Option<bool>,
 ) -> Result<(), Error> {
     let translator = ctx.data().translator.as_ref();
     if translator.is_none() {
@@ -19,7 +20,26 @@ pub async fn detect(
 
     let response = translator.unwrap().detect(text).await;
 
-    ctx.say(format!("{:?}", response)).await.unwrap();
+    match response {
+        Ok(res) => {
+            let verbose = verbose.unwrap_or(false);
+            if verbose {
+                ctx.reply(format!("{:?}", res)).await.unwrap();
+            } else {
+                ctx.reply(
+                    res.iter()
+                        .map(|d| format!("{} ({:.0}%)", d.language, d.confidence))
+                        .collect::<Vec<_>>()
+                        .join(" -> "),
+                )
+                .await
+                .unwrap();
+            }
+        }
+        Err(_) => {
+            ctx.reply("Error detecting language").await.unwrap();
+        }
+    }
     Ok(())
 }
 
@@ -56,9 +76,10 @@ pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
 )]
 pub async fn translate(
     ctx: Context<'_>,
-    #[description = "Source languages (can be auto)"] source: String,
-    #[description = "Target language"] target: String,
+    #[description = "Source languages (can be auto)"] source: Option<String>,
+    #[description = "Target language"] target: Option<String>,
     #[description = "The text"] text: String,
+    #[description = "verbose"] verbose: Option<bool>,
 ) -> Result<(), Error> {
     let translator = ctx.data().translator.as_ref();
     if translator.is_none() {
@@ -66,14 +87,27 @@ pub async fn translate(
         return Ok(());
     }
 
-    match translator.unwrap().translate(source, target, text).await {
+    let mut source = source.unwrap_or("auto".to_string());
+    let target = target.unwrap_or("de".to_string());
+
+    match translator.unwrap().translate(&source, &target, &text).await {
         Ok(res) => {
-            let attachment = CreateAttachment::bytes(
-                serde_json::to_string_pretty(&res).unwrap(),
-                "languages_supported.json",
-            );
-            let reply = CreateReply::default().attachment(attachment);
-            ctx.send(reply).await.unwrap();
+            let verbose = verbose.unwrap_or(false);
+            if verbose {
+                let attachment = CreateAttachment::bytes(
+                    serde_json::to_string_pretty(&res).unwrap(),
+                    "languages_supported.json",
+                );
+                let reply = CreateReply::default().attachment(attachment);
+                ctx.send(reply).await.unwrap();
+            } else {
+                if res.detected_language.is_some() {
+                    source = res.detected_language.unwrap().language.clone();
+                }
+                ctx.reply(format!("{} -> {}: {}", source, target, res.translated_text))
+                    .await
+                    .unwrap();
+            }
         }
         Err(e) => {
             ctx.reply(format!("Error translating: {:?}", e))
