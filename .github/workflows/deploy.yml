@@ -66,7 +66,10 @@ jobs:
           username: ${{ vars.SERVER_USER }}
           key: ${{ secrets.RUNNER_SSH_KEY }}
           script: |
+            scp -i /tmp/ssh_key docker-compose.yml ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:/opt/backend/docker-compose.yml
+            
             echo "${{ secrets.REGISTRY_PASS }}" | docker login ${{ env.REGISTRY_URL }} -u "${{ vars.REGISTRY_USER }}" --password-stdin
+            
             cd /opt/backend
             docker compose pull
             docker compose up -d --force-recreate --remove-orphans
