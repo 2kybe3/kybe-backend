@@ -34,37 +34,53 @@ pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>) ->
                 translator::languages(),
                 translator::translate(),
             ],
-            on_error: |error: FrameworkError<'_, Data, Error>| {
-                Box::pin(async move {
-                    if let Some(ctx) = error.ctx() {
-                        let notifications = &ctx.data().notifications;
+            on_error: |error: FrameworkError<'_, Data, Error>| Box::pin(async move {
+                if let Some(ctx) = error.ctx() {
+                    let notifications = &ctx.data().notifications;
 
-                        notifications
-                            .notify(Notification::new(
-                                "Discord Bot Error",
-                                &format!("Error: {}", error),
-                            ))
-                            .await
-                    } else {
-                        error!("Error without context: {:?}", error);
-                    }
-                })
-            },
+                    notifications.notify(Notification::new(
+                        "Discord Bot Error",
+                             &format!("Error: {}", error),
+                    )).await
+                } else {
+                    error!("Error without context: {:?}", error);
+                }
+            }),
             ..Default::default()
         })
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                let translator =
-                    config.discord_bot.translator.clone().try_into().ok().map(Arc::new);
-                if translator.is_none() && config.discord_bot.translator.enabled {
-                    tracing::warn!(
-                        "Failed to initialize translator – translation commands will be unavailable"
-                    );
-                }
+                let translator_result = config.discord_bot.translator.clone().try_into();
+
+                let translator = match translator_result {
+                    Ok(trans) => {
+                        Some(Arc::new(trans))
+                    }
+                    Err(e) => {
+                        if config.discord_bot.translator.enabled {
+                            tracing::warn!(
+                                "Failed to initialize translator: {:#?}\nTranslation commands will be unavailable.",
+                                e
+                            );
+
+                            notifications
+                                .notify(Notification::new(
+                                    "Discord Bot - Translator Initialization Failed",
+                                    &format!(
+                                        "Failed to initialize translator.\n\nError details:\n{:#?}\n\nTranslation commands will be unavailable.",
+                                        e
+                                    ),
+                                ))
+                                .await;
+                        }
+                        None
+                    }
+                };
+
                 Ok(Data {
-                    notifications: Arc::clone(&notifications),
-                    config: Arc::clone(&config),
+                    notifications,
+                    config,
                     translator,
                 })
             })
@@ -81,16 +97,20 @@ pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>) ->
 }
 
 #[macro_export]
-macro_rules! roa {
+macro_rules! reply_or_attach {
     ($ctx:expr, $s:expr, $filename:expr) => {{
         let text = $s.to_string();
-
-        if $s.chars().count() <= $crate::discord_bot::MAX_MSG_LENGTH {
-            $ctx.reply(&text).await.unwrap();
+        let result = if text.chars().count() <= $crate::discord_bot::MAX_MSG_LENGTH {
+            $ctx.reply(&text).await
         } else {
             let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, $filename);
             let reply = poise::CreateReply::default().attachment(attachment);
-            $ctx.send(reply).await.unwrap();
+            $ctx.send(reply).await
+        };
+
+        if let Err(e) = result {
+            tracing::error!("Failed to send response: {:?}", e);
+            let _ = $ctx.say("Failed to send the full response due to an error.").await;
         }
     }};
 }

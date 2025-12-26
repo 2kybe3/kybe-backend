@@ -54,8 +54,7 @@ pub struct ApiError {
 }
 
 impl Translator {
-    pub fn new<S: Into<String>>(url: S, token: Option<S>, debug: bool) -> Self {
-        let url = Url::parse(&url.into()).expect("Invalid base URL");
+    pub fn new<S: Into<String>>(url: Url, token: Option<S>, debug: bool) -> Self {
         Self {
             debug,
             url,
@@ -208,6 +207,9 @@ pub enum TranslatorInitError {
 
     #[error("translator url is missing")]
     MissingUrl,
+
+    #[error("translator url is malformed")]
+    InvalidUrl,
 }
 
 impl TryFrom<TranslatorConfig> for Translator {
@@ -219,6 +221,10 @@ impl TryFrom<TranslatorConfig> for Translator {
         }
 
         let url = value.url.ok_or(TranslatorInitError::MissingUrl)?;
+        let url = Url::parse(&url).map_err(|_| TranslatorInitError::InvalidUrl)?;
+        if url.scheme() != "http" && url.scheme() != "https" {
+            return Err(TranslatorInitError::InvalidUrl);
+        }
         Ok(Self::new(url, value.token, value.debug))
     }
 }

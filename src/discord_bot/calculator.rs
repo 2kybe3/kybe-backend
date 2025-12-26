@@ -1,5 +1,5 @@
 use crate::discord_bot::{Context, Error};
-use crate::roa;
+use crate::reply_or_attach;
 
 #[poise::command(
     slash_command,
@@ -16,11 +16,11 @@ pub async fn calculate(
     match meval::eval_str(&expression) {
         Ok(result) => {
             let response = format!("**{}** = **{}**", expression, result);
-            roa!(ctx, response, "result.txt");
+            reply_or_attach!(ctx, response, "result.txt");
         }
         Err(e) => {
             let error_msg = format!("Error evaluating expression: {}", e);
-            roa!(ctx, error_msg, "error.txt");
+            reply_or_attach!(ctx, error_msg, "error.txt");
         }
     }
 
