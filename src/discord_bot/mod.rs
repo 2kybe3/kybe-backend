@@ -13,6 +13,8 @@ use poise::serenity_prelude as serenity;
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
+pub const MAX_MSG_LENGTH: usize = 2000;
+
 #[derive(Clone, Debug)]
 pub struct Data {
     pub notifications: Arc<Notifications>,
@@ -82,4 +84,19 @@ pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>) ->
     let mut client = client?;
     client.start().await?;
     Ok(())
+}
+
+#[macro_export]
+macro_rules! roa {
+    ($ctx:expr, $s:expr, $filename:expr) => {{
+        let text = $s.to_string();
+
+        if $s.chars().count() <= $crate::discord_bot::MAX_MSG_LENGTH {
+            $ctx.reply(&text).await.unwrap();
+        } else {
+            let attachment = CreateAttachment::bytes(text, $filename);
+            let reply = CreateReply::default().attachment(attachment);
+            $ctx.send(reply).await.unwrap();
+        }
+    }};
 }

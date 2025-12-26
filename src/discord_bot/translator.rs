@@ -1,4 +1,5 @@
 use crate::discord_bot::{Context, Error};
+use crate::roa;
 use poise::CreateReply;
 use poise::serenity_prelude::CreateAttachment;
 
@@ -26,14 +27,14 @@ pub async fn detect(
             if verbose {
                 ctx.reply(format!("{:?}", res)).await.unwrap();
             } else {
-                ctx.reply(
+                roa!(
+                    ctx,
                     res.iter()
                         .map(|d| format!("{} ({:.0}%)", d.language, d.confidence))
                         .collect::<Vec<_>>()
                         .join(" -> "),
-                )
-                .await
-                .unwrap();
+                    "detected_languages.txt"
+                );
             }
         }
         Err(_) => {
@@ -56,12 +57,11 @@ pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     if let Ok(res) = translator.unwrap().languages().await {
-        let attachment = CreateAttachment::bytes(
+        roa!(
+            ctx,
             serde_json::to_string_pretty(&res).unwrap(),
-            "languages_supported.json",
+            "languages_supported.json"
         );
-        let reply = CreateReply::default().attachment(attachment);
-        ctx.send(reply).await.unwrap();
     } else {
         ctx.reply("Error getting languages").await.unwrap();
     }
@@ -94,25 +94,24 @@ pub async fn translate(
         Ok(res) => {
             let verbose = verbose.unwrap_or(false);
             if verbose {
-                let attachment = CreateAttachment::bytes(
+                roa!(
+                    ctx,
                     serde_json::to_string_pretty(&res).unwrap(),
-                    "languages_supported.json",
-                );
-                let reply = CreateReply::default().attachment(attachment);
-                ctx.send(reply).await.unwrap();
+                    "languages_supported.json"
+                )
             } else {
                 if res.detected_language.is_some() {
                     source = res.detected_language.unwrap().language.clone();
                 }
-                ctx.reply(format!("{} -> {}: {}", source, target, res.translated_text))
-                    .await
-                    .unwrap();
+                roa!(
+                    ctx,
+                    format!("{} -> {}: {}", source, target, res.translated_text),
+                    "detected_languages.txt"
+                );
             }
         }
         Err(e) => {
-            ctx.reply(format!("Error translating: {:?}", e))
-                .await
-                .unwrap();
+            roa!(ctx, format!("Error translating: {:?}", e), "error.txt");
         }
     }
 
