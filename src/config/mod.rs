@@ -1,7 +1,7 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
-    Config, DiscordBotConfig, DiscordConfig, GotifyConfig, LogConfig, NotificationConfig,
-    TranslatorConfig,
+    Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, GotifyConfig, LogConfig,
+    NotificationConfig, TranslatorConfig,
 };
 use std::env;
 use tokio::fs;
@@ -83,6 +83,10 @@ impl Default for Config {
                     url: Some("https://translate.kybe.xyz".into()),
                     token: Some("".into()),
                 },
+            },
+            database: DatabaseConfig {
+                force_disable: false,
+                postgres_url: "postgres://postgres:password@localhost/test".into(),
             },
         }
     }

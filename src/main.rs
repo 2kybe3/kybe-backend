@@ -1,9 +1,11 @@
 mod config;
+mod db;
 mod discord_bot;
 mod notifications;
 pub mod translator;
 
 use crate::config::types::Config;
+use crate::db::init_db;
 use crate::discord_bot::init_bot;
 use crate::notifications::notification_types::startup::StartupNotification;
 use crate::notifications::{Notification, Notifications};
@@ -34,6 +36,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let notification = StartupNotification::new(false);
     notifications.notify(notification).await;
+
+    if !config.database.force_disable {
+        init_db(Arc::clone(&config)).await.unwrap();
+    }
 
     let notifications_clone = notifications.clone();
     let bot_handle = tokio::spawn(async move {

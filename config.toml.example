@@ -17,3 +17,7 @@ enabled = false
 debug = false
 url = "https://translate.kybe.xyz"
 token = ""
+
+[database]
+force_disable = false
+postgres_url = "postgres://postgres:password@localhost/test"

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub notification: NotificationConfig,
     pub discord_bot: DiscordBotConfig,
+    pub database: DatabaseConfig,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -42,4 +43,10 @@ pub struct TranslatorConfig {
     pub debug: bool,
     pub url: Option<String>,
     pub token: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct DatabaseConfig {
+    pub force_disable: bool,
+    pub postgres_url: String,
 }
