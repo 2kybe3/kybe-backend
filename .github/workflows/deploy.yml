@@ -17,12 +17,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-registry-
+
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           components: clippy, rustfmt
-
 
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
