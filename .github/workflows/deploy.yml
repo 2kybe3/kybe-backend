@@ -65,6 +65,7 @@ jobs:
           host: ${{ vars.SERVER_HOST }}
           username: ${{ vars.SERVER_USER }}
           key: ${{ secrets.RUNNER_SSH_KEY }}
+          overwrite: true
           source: "docker-compose.yml"
           target: "/opt/backend/docker-compose.yml"
 
