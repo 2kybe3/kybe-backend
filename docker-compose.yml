@@ -10,13 +10,13 @@ services:
       - postgres
 
   postgres:
-    image: postgres:18
+    image: postgres:18-alpine
     container_name: kybe-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: kybe
       POSTGRES_PASSWORD: kybe
-      POSTGRES_DB: kybe_DB
+      POSTGRES_DB: kybe_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
