@@ -1,11 +1,11 @@
 use crate::config::types::Config;
+use crate::notifications::{Notification, Notifications};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
 use tracing::info;
-use crate::notifications::{Notification, Notifications};
 
 #[derive(Error, Debug)]
 pub enum DbError {
@@ -30,7 +30,10 @@ impl Database {
         &self.pool
     }
 
-    pub async fn init(config: Arc<Config>, notifications: Arc<Notifications>) -> Result<Self, DbError> {
+    pub async fn init(
+        config: Arc<Config>,
+        notifications: Arc<Notifications>,
+    ) -> Result<Self, DbError> {
         info!("initializing db using: {:?}", config.database);
 
         for attempt in 1..=5 {
@@ -45,7 +48,10 @@ impl Database {
                 }
                 Err(e) => {
                     let wait = 5 * attempt;
-                    let text = format!("DB connection failed, retrying in {}s (attempt {})", wait, attempt);
+                    let text = format!(
+                        "DB connection failed, retrying in {}s (attempt {})",
+                        wait, attempt
+                    );
                     info!(text);
                     notifications.notify(Notification::new("Database", &text)).await;
                     if attempt == 5 {
