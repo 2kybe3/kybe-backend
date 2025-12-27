@@ -2,18 +2,13 @@ FROM rust:latest AS builder
 WORKDIR /usr/src/kybe-backend
 
 COPY Cargo.toml Cargo.lock* ./
-
 RUN mkdir -p src && echo 'fn main() { println!("hello"); }' > src/main.rs
 RUN --mount=type=cache,target=/usr/local/cargo/registry cargo build --release
 
 COPY src ./src
+COPY migrations ./migrations
 
-RUN --mount=type=cache,target=/usr/local/cargo/registry <<EOF
-  set -e
-
-  touch /usr/src/kybe-backend/src/main.rs
-  cargo build --release
-EOF
+RUN --mount=type=cache,target=/usr/local/cargo/registry cargo build --release
 
 FROM debian:trixie-slim
 WORKDIR /opt/backend

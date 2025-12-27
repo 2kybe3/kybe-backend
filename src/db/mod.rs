@@ -4,6 +4,7 @@ use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use std::time::Duration;
+use sqlx::migrate::{MigrateError, Migrator};
 use thiserror::Error;
 use tracing::info;
 
@@ -11,14 +12,18 @@ use tracing::info;
 pub enum DbError {
     #[error("SQLx error: {0}")]
     Connection(#[from] sqlx::Error),
+
+    #[error("Migration error: {0}")]
+    Migration(#[from] MigrateError),
 }
 
 #[derive(Clone, Debug)]
 pub struct Database {
     pool: PgPool,
-    #[allow(unused)]
     config: Arc<Config>,
 }
+
+static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
 
 impl Database {
     pub fn new(pool: PgPool, config: Arc<Config>) -> Self {
@@ -30,6 +35,15 @@ impl Database {
         &self.pool
     }
 
+    pub async fn inner_init(config: Arc<Config>) -> Result<Self, DbError> {
+        let pool =
+            PgPoolOptions::new().max_connections(5).connect(&config.database.postgres_url).await?;
+
+        MIGRATOR.run(&pool).await.map(|_| info!("Migrations applied successfully"))?;
+
+        Ok(Self::new(pool, config))
+    }
+
     pub async fn init(
         config: Arc<Config>,
         notifications: Arc<Notifications>,
@@ -37,14 +51,9 @@ impl Database {
         info!("initializing db using: {:?}", config.database);
 
         for attempt in 1..=5 {
-            match PgPoolOptions::new()
-                .max_connections(5)
-                .connect(&config.database.postgres_url)
-                .await
-            {
-                Ok(pool) => {
-                    info!("DB connected");
-                    return Ok(Self::new(pool, Arc::clone(&config)));
+            match Self::inner_init(Arc::clone(&config)).await {
+                Ok(db) => {
+                    return Ok(db);
                 }
                 Err(e) => {
                     let wait = 5 * attempt;
@@ -55,7 +64,7 @@ impl Database {
                     info!(text);
                     notifications.notify(Notification::new("Database", &text)).await;
                     if attempt == 5 {
-                        return Err(DbError::Connection(e));
+                        return Err(e);
                     }
                     tokio::time::sleep(Duration::from_secs(wait)).await;
                 }
