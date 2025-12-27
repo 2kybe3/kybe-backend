@@ -20,6 +20,7 @@ pub enum DbError {
 #[derive(Clone, Debug)]
 pub struct Database {
     pool: PgPool,
+    #[allow(unused)]
     config: Arc<Config>,
 }
 
