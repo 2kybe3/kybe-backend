@@ -40,7 +40,6 @@ pub struct DiscordBotConfig {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct TranslatorConfig {
     pub enabled: bool,
-    pub debug: bool,
     pub url: Option<String>,
     pub token: Option<String>,
 }

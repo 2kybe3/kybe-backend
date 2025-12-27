@@ -2,11 +2,9 @@ use crate::config::types::TranslatorConfig;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use tracing::info;
 
 #[derive(Debug)]
 pub struct Translator {
-    debug: bool,
     url: Url,
     token: Option<String>,
     client: Client,
@@ -54,9 +52,8 @@ pub struct ApiError {
 }
 
 impl Translator {
-    pub fn new<S: Into<String>>(url: Url, token: Option<S>, debug: bool) -> Self {
+    pub fn new<S: Into<String>>(url: Url, token: Option<S>) -> Self {
         Self {
-            debug,
             url,
             token: token.map(Into::into).filter(|t| !t.trim().is_empty()),
             client: Client::new(),
@@ -64,20 +61,12 @@ impl Translator {
     }
 
     pub async fn languages(&self) -> Result<Vec<LanguagesResponse>, ApiError> {
-        if self.debug {
-            info!("requesting languages");
-        }
-
         let resp = self
             .client
             .get(self.url.join("/languages").unwrap())
             .send()
             .await
             .map_err(|e| ApiError { error: format!("request failed: {e}") })?;
-
-        if self.debug {
-            info!("response: {:?}", resp);
-        }
 
         let text = resp
             .text()
@@ -87,19 +76,12 @@ impl Translator {
         let body: Vec<LanguagesResponse> = serde_json::from_str(&text)
             .map_err(|e| ApiError { error: format!("invalid json: {e} | body: {text}") })?;
 
-        if self.debug {
-            info!("response parsed: {:?}", body);
-        }
-
         Ok(body)
     }
 
     pub async fn detect<S: Into<String>>(&self, query: S) -> Result<Vec<DetectResponse>, ApiError> {
         let query = query.into();
         let query = query.trim();
-        if self.debug {
-            info!("detecting language: {}", query);
-        }
 
         let mut payload = serde_json::json!({ "q": query });
 
@@ -115,10 +97,6 @@ impl Translator {
             .await
             .map_err(|e| ApiError { error: format!("request failed: {e}") })?;
 
-        if self.debug {
-            info!("response: {:?}", resp);
-        }
-
         let text = resp
             .text()
             .await
@@ -126,10 +104,6 @@ impl Translator {
 
         let body: DetectApiResponse = serde_json::from_str(&text)
             .map_err(|e| ApiError { error: format!("invalid json: {e} | body: {text}") })?;
-
-        if self.debug {
-            info!("parsed response: {:?}", body);
-        }
 
         match body {
             DetectApiResponse::Ok(data) => Ok(data),
@@ -153,10 +127,6 @@ impl Translator {
 
         let source = if source.is_empty() { "auto" } else { source };
         let target = if target.is_empty() { "de" } else { target };
-
-        if self.debug {
-            info!("translating: \"{}\" {} -> {}", query, source, target);
-        }
 
         let mut payload = serde_json::json!({
             "source": source,
@@ -182,16 +152,8 @@ impl Translator {
             return Err(ApiError { error: format!("HTTP {}: {}", status, err_text.trim()) });
         }
 
-        if self.debug {
-            info!("response: {:?}", resp);
-        }
-
         let body: TranslateApiResponse =
             resp.json().await.map_err(|e| ApiError { error: format!("invalid json: {}", e) })?;
-
-        if self.debug {
-            info!("parsed response: {:?}", body);
-        }
 
         match body {
             TranslateApiResponse::Ok(data) => Ok(data),
@@ -225,6 +187,6 @@ impl TryFrom<TranslatorConfig> for Translator {
         if url.scheme() != "http" && url.scheme() != "https" {
             return Err(TranslatorInitError::InvalidUrl);
         }
-        Ok(Self::new(url, value.token, value.debug))
+        Ok(Self::new(url, value.token))
     }
 }

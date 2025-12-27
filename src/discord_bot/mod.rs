@@ -104,6 +104,45 @@ pub async fn init_bot(
     Ok(())
 }
 
+#[derive(Debug)]
+pub struct CommandLog {
+    #[allow(unused)]
+    command: &'static str,
+    #[allow(unused)]
+    user_id: serenity::UserId,
+    #[allow(unused)]
+    username: String,
+    #[allow(unused)]
+    guild_id: Option<serenity::GuildId>,
+    #[allow(unused)]
+    channel_id: serenity::ChannelId,
+    #[allow(unused)]
+    started_at: sqlx::types::chrono::DateTime<sqlx::types::chrono::Utc>,
+    duration_ms: u128,
+    status: &'static str, // "success", "error", "disabled"
+    input: serde_json::Value,
+    output: Option<String>,
+    error: Option<String>,
+}
+
+impl CommandLog {
+    pub fn start(ctx: &Context<'_>, command_name: &'static str) -> Self {
+        Self {
+            command: command_name,
+            user_id: ctx.author().id,
+            username: ctx.author().name.clone(),
+            guild_id: ctx.guild_id(),
+            channel_id: ctx.channel_id(),
+            started_at: sqlx::types::chrono::Utc::now(),
+            duration_ms: 0,
+            status: "success",
+            input: serde_json::json!({}),
+            output: None,
+            error: None,
+        }
+    }
+}
+
 #[macro_export]
 macro_rules! reply_or_attach {
     ($ctx:expr, $s:expr, $filename:expr) => {{
