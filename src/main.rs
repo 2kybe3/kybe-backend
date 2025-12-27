@@ -70,7 +70,7 @@ async fn init_config() -> Result<Arc<Config>, Box<dyn std::error::Error>> {
         let time = Instant::now();
         info!("Generating config.toml.example");
         Config::create_local_default().await?;
-        info!("Generated config.toml.example in {} MS", time.elapsed().as_millis());
+        info!("Generated config.toml.example in {} NS", time.elapsed().as_nanos());
         std::process::exit(0)
     }
 

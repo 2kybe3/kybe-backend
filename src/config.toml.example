@@ -1,0 +1,25 @@
+[notification.log]
+enabled = true
+
+[notification.gotify]
+enabled = false
+url = "https://gotify.kybe.xyz/message?token=<token>"
+
+[notification.discord]
+enabled = false
+url = "https://discord.com/api/webhooks/.../..."
+
+[discord_bot]
+token = "DISCORD_TOKEN"
+
+[discord_bot.translator]
+enabled = false
+url = "https://translate.kybe.xyz"
+token = ""
+
+[database]
+postgres_url = "postgres://postgres:password@localhost/test"
+
+[logger]
+file_logger_enabled = true
+file_logger_path = "./log"
