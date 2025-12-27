@@ -1,10 +1,10 @@
 use crate::config::types::Config;
 use crate::notifications::{Notification, Notifications};
 use sqlx::PgPool;
+use sqlx::migrate::{MigrateError, Migrator};
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use std::time::Duration;
-use sqlx::migrate::{MigrateError, Migrator};
 use thiserror::Error;
 use tracing::info;
 
