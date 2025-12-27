@@ -19,3 +19,7 @@ token = ""
 
 [database]
 postgres_url = "postgres://postgres:password@localhost/test"
+
+[logger]
+file_logger_enabled = true
+file_logger_path = "./log"

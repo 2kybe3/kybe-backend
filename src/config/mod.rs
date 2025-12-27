@@ -1,6 +1,6 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
-    Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, GotifyConfig, LogConfig,
+    Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, GotifyConfig, LogConfig, LoggerConfig,
     NotificationConfig, TranslatorConfig,
 };
 use std::env;
@@ -21,9 +21,9 @@ impl Config {
             Err(ConfigError::ReadFile(e)) if e.kind() == std::io::ErrorKind::NotFound => {
                 info!("Creating default config.toml");
                 Self::create_default().await?;
-                let res = Self::load().await;
-                info!("Default config.toml created and loaded! Please edit");
-                res
+                Self::load().await?;
+                info!("Default config.toml created! Please edit");
+                std::process::exit(0);
             }
 
             Err(e) => Err(e),
@@ -100,6 +100,10 @@ impl Default for Config {
             },
             database: DatabaseConfig {
                 postgres_url: "postgres://postgres:password@localhost/test".into(),
+            },
+            logger: LoggerConfig {
+                file_logger_enabled: true,
+                file_logger_path: Some("./log".into()),
             },
         }
     }

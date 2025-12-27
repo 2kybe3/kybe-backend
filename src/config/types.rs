@@ -5,6 +5,7 @@ pub struct Config {
     pub notification: NotificationConfig,
     pub discord_bot: DiscordBotConfig,
     pub database: DatabaseConfig,
+    pub logger: LoggerConfig,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -47,4 +48,10 @@ pub struct TranslatorConfig {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DatabaseConfig {
     pub postgres_url: String,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct LoggerConfig {
+    pub file_logger_enabled: bool,
+    pub file_logger_path: Option<String>,
 }
