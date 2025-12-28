@@ -16,6 +16,67 @@ use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 
+#[tokio::main(flavor = "multi_thread")]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let bootstrap_guard = init_logger_bootstrap()?;
+    info!("initializing...");
+
+    let config = init_config().await?;
+    init_logger(&config.logger, bootstrap_guard)?;
+
+    let notifications = Arc::new(Notifications::new(&config.notification));
+    let database = match Database::init(Arc::clone(&config), Arc::clone(&notifications)).await {
+        Ok(db) => db,
+        Err(e) => {
+            error!("Database init failed: {e}");
+            notifications
+                .notify(Notification::new("Database", &format!("Database init failed: {e}")))
+                .await;
+            std::process::exit(1);
+        }
+    };
+
+    let notifications_clone = Arc::clone(&notifications);
+    let bot_handle = tokio::spawn(async move {
+        let mut retries = 0;
+        let mut last_failure: Option<Instant> = None;
+
+        loop {
+            match init_bot(notifications_clone.clone(), config.clone(), database.clone()).await {
+                Ok(_) => break,
+                Err(e) => {
+                    let now = Instant::now();
+
+                    if let Some(last) = last_failure
+                        && now.duration_since(last) > Duration::from_mins(5)
+                    {
+                        retries = 0;
+                    }
+
+                    last_failure = Some(now);
+                    retries += 1;
+
+                    notifications_clone
+                        .notify(Notification::new(
+                            "Discord Bot Critical Failure",
+                            &format!("attempt {retries}: {e}"),
+                        ))
+                        .await;
+
+                    if retries >= 5 {
+                        break;
+                    }
+
+                    tokio::time::sleep(Duration::from_secs(5 * retries)).await;
+                }
+            }
+        }
+    });
+
+    bot_handle.await?;
+    Ok(())
+}
+
 fn init_logger_bootstrap() -> Result<DefaultGuard, Box<dyn std::error::Error>> {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
         EnvFilter::new("info").add_directive("kybe_backend=debug".parse().unwrap())
@@ -81,65 +142,4 @@ async fn init_config() -> Result<Arc<Config>, Box<dyn std::error::Error>> {
             std::process::exit(1);
         }
     }
-}
-
-#[tokio::main(flavor = "multi_thread")]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let bootstrap_guard = init_logger_bootstrap()?;
-    info!("initializing...");
-
-    let config = init_config().await?;
-    init_logger(&config.logger, bootstrap_guard)?;
-
-    let notifications = Arc::new(Notifications::new(&config.notification));
-    let database = match Database::init(Arc::clone(&config), Arc::clone(&notifications)).await {
-        Ok(db) => db,
-        Err(e) => {
-            error!("Database init failed: {e}");
-            notifications
-                .notify(Notification::new("Database", &format!("Database init failed: {e}")))
-                .await;
-            std::process::exit(1);
-        }
-    };
-
-    let notifications_clone = Arc::clone(&notifications);
-    let bot_handle = tokio::spawn(async move {
-        let mut retries = 0;
-        let mut last_failure: Option<Instant> = None;
-
-        loop {
-            match init_bot(notifications_clone.clone(), config.clone(), database.clone()).await {
-                Ok(_) => break,
-                Err(e) => {
-                    let now = Instant::now();
-
-                    if let Some(last) = last_failure
-                        && now.duration_since(last) > Duration::from_mins(5)
-                    {
-                        retries = 0;
-                    }
-
-                    last_failure = Some(now);
-                    retries += 1;
-
-                    notifications_clone
-                        .notify(Notification::new(
-                            "Discord Bot Critical Failure",
-                            &format!("attempt {retries}: {e}"),
-                        ))
-                        .await;
-
-                    if retries >= 5 {
-                        break;
-                    }
-
-                    tokio::time::sleep(Duration::from_secs(5 * retries)).await;
-                }
-            }
-        }
-    });
-
-    bot_handle.await?;
-    Ok(())
 }
