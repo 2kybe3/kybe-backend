@@ -6,6 +6,7 @@ use crate::config::types::Config;
 use crate::notifications::{Notification, Notifications};
 use poise::FrameworkError;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use tracing::error;
 
 use crate::db::Database;
@@ -27,7 +28,49 @@ pub struct Data {
     pub database: Database,
 }
 
-pub async fn init_bot(
+pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>, database: Database) {
+    let mut retries = 0;
+    let mut last_failure: Option<Instant> = None;
+
+    loop {
+        match init_bot_inner(notifications.clone(), config.clone(), database.clone()).await {
+            Ok(_) => break,
+            Err(e) => {
+                let now = Instant::now();
+
+                if let Some(last) = last_failure
+                    && now.duration_since(last) > Duration::from_mins(5)
+                {
+                    retries = 0;
+                }
+
+                last_failure = Some(now);
+                retries += 1;
+
+                notifications
+                    .notify(Notification::new(
+                        "Discord Bot Critical Failure",
+                        &format!("attempt {retries}: {e}"),
+                    ))
+                    .await;
+
+                if retries >= 5 {
+                    notifications
+                        .notify(Notification::new(
+                            "Disabling discord bot",
+                            &format!("due to error: {e} on retry {retries}"),
+                        ))
+                        .await;
+                    break;
+                }
+
+                tokio::time::sleep(Duration::from_secs(5 * retries)).await;
+            }
+        }
+    }
+}
+
+async fn init_bot_inner(
     notifications: Arc<Notifications>,
     config: Arc<Config>,
     database: Database,

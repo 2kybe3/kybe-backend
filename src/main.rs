@@ -3,14 +3,14 @@ mod db;
 mod discord_bot;
 mod notifications;
 pub mod translator;
+mod webserver;
 
 use crate::config::types::{Config, LoggerConfig};
 use crate::db::Database;
-use crate::discord_bot::init_bot;
 use crate::notifications::{Notification, Notifications};
 use std::io::stdout;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use tracing::dispatcher::DefaultGuard;
 use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
@@ -37,43 +37,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let notifications_clone = Arc::clone(&notifications);
-    let bot_handle = tokio::spawn(async move {
-        let mut retries = 0;
-        let mut last_failure: Option<Instant> = None;
+    let bot_handle = tokio::spawn(discord_bot::init_bot(notifications_clone, config, database));
 
-        loop {
-            match init_bot(notifications_clone.clone(), config.clone(), database.clone()).await {
-                Ok(_) => break,
-                Err(e) => {
-                    let now = Instant::now();
+    let notifications_clone = Arc::clone(&notifications);
+    let webserver_handle = tokio::spawn(webserver::init_webserver(notifications_clone));
 
-                    if let Some(last) = last_failure
-                        && now.duration_since(last) > Duration::from_mins(5)
-                    {
-                        retries = 0;
-                    }
-
-                    last_failure = Some(now);
-                    retries += 1;
-
-                    notifications_clone
-                        .notify(Notification::new(
-                            "Discord Bot Critical Failure",
-                            &format!("attempt {retries}: {e}"),
-                        ))
-                        .await;
-
-                    if retries >= 5 {
-                        break;
-                    }
-
-                    tokio::time::sleep(Duration::from_secs(5 * retries)).await;
-                }
-            }
-        }
-    });
-
-    bot_handle.await?;
+    tokio::try_join!(webserver_handle, bot_handle)?;
     Ok(())
 }
 

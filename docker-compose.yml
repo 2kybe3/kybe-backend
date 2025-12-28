@@ -2,6 +2,8 @@ services:
   kybe-backend:
     image: reg.kybe.xyz/kybe-pub/kybe-backend:latest
     container_name: kybe-backend
+    ports:
+      - "3000:3000"
     volumes:
       - ./backend:/opt/backend
     environment:
