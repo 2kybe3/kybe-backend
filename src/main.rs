@@ -17,7 +17,7 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 
 #[tokio::main(flavor = "multi_thread")]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), anyhow::Error> {
     let bootstrap_guard = init_logger_bootstrap()?;
     info!("initializing...");
 
@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn init_logger_bootstrap() -> Result<DefaultGuard, Box<dyn std::error::Error>> {
+fn init_logger_bootstrap() -> Result<DefaultGuard, anyhow::Error> {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
         EnvFilter::new("info").add_directive("kybe_backend=debug".parse().unwrap())
     });
@@ -60,10 +60,7 @@ fn init_logger_bootstrap() -> Result<DefaultGuard, Box<dyn std::error::Error>> {
     Ok(tracing::subscriber::set_default(subscriber))
 }
 
-fn init_logger(
-    config: &LoggerConfig,
-    old_logger: DefaultGuard,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn init_logger(config: &LoggerConfig, old_logger: DefaultGuard) -> Result<(), anyhow::Error> {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
         EnvFilter::new("info").add_directive("kybe_backend=debug".parse().unwrap())
     });
@@ -94,7 +91,7 @@ fn init_logger(
     Ok(())
 }
 
-async fn init_config() -> Result<Arc<Config>, Box<dyn std::error::Error>> {
+async fn init_config() -> Result<Arc<Config>, anyhow::Error> {
     let args: Vec<String> = std::env::args().collect();
     if args.iter().any(|arg| arg == "--generate-example") {
         let time = Instant::now();

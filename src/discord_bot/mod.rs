@@ -13,7 +13,7 @@ use crate::db::Database;
 use crate::translator::Translator;
 use poise::serenity_prelude as serenity;
 
-type Error = Box<dyn std::error::Error + Send + Sync>;
+type Error = anyhow::Error;
 pub(crate) type Context<'a> = poise::Context<'a, Data, Error>;
 
 pub const MAX_MSG_LENGTH: usize = 2000;
