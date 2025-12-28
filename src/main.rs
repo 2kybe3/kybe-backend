@@ -4,6 +4,7 @@ mod discord_bot;
 mod notifications;
 pub mod translator;
 mod webserver;
+mod auth;
 
 use crate::config::types::{Config, LoggerConfig};
 use crate::db::Database;
@@ -15,6 +16,7 @@ use tracing::dispatcher::DefaultGuard;
 use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
+use crate::auth::Auth;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), anyhow::Error> {
@@ -36,11 +38,10 @@ async fn main() -> Result<(), anyhow::Error> {
         }
     };
 
-    let notifications_clone = Arc::clone(&notifications);
-    let bot_handle = tokio::spawn(discord_bot::init_bot(notifications_clone, config, database));
+    let auth = Arc::new(Auth::new(database.clone()));
 
-    let notifications_clone = Arc::clone(&notifications);
-    let webserver_handle = tokio::spawn(webserver::init_webserver(notifications_clone));
+    let bot_handle = tokio::spawn(discord_bot::init_bot(Arc::clone(&notifications), Arc::clone(&config), database.clone()));
+    let webserver_handle = tokio::spawn(webserver::init_webserver(notifications, config, auth, database));
 
     tokio::try_join!(webserver_handle, bot_handle)?;
     Ok(())
