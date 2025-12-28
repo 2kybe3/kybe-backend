@@ -7,6 +7,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry cargo build --release
 
 COPY src ./src
 COPY migrations ./migrations
+COPY .sqlx ./.sqlx
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry <<EOF
   set -e
