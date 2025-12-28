@@ -1,19 +1,21 @@
-use crate::notifications::{Notification, Notifications};
-use axum::{Json, Router};
-use axum::routing::{get, post};
-use std::net::SocketAddr;
-use std::sync::Arc;
-use axum::extract::State;
-use serde::Deserialize;
-use tokio::net::TcpListener;
 use crate::auth::Auth;
 use crate::config::types::Config;
 use crate::db::Database;
+use crate::notifications::{Notification, Notifications};
+use axum::extract::State;
+use axum::routing::{get, post};
+use axum::{Json, Router};
+use serde::Deserialize;
+use std::net::SocketAddr;
+use std::sync::Arc;
+use tokio::net::TcpListener;
 
 #[derive(Clone)]
 struct WebServerState {
+    #[allow(unused)]
     config: Arc<Config>,
     auth: Arc<Auth>,
+    #[allow(unused)]
     database: Database,
 }
 
@@ -31,7 +33,7 @@ async fn root() -> &'static str {
 #[axum::debug_handler]
 async fn register(
     State(state): State<WebServerState>,
-    Json(payload): Json<RegisterPayload>
+    Json(payload): Json<RegisterPayload>,
 ) -> Result<String, String> {
     state.auth.register(payload.username, payload.email, payload.password).await.unwrap();
 
@@ -56,11 +58,7 @@ async fn init_webserver_inner(
     auth: Arc<Auth>,
     database: Database,
 ) -> Result<(), anyhow::Error> {
-    let webserver_state = WebServerState {
-        config,
-        auth,
-        database,
-    };
+    let webserver_state = WebServerState { config, auth, database };
 
     let app = Router::new()
         .route("/", get(root))

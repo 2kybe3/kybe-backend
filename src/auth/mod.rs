@@ -1,20 +1,25 @@
-use argon2::{Argon2, PasswordHasher};
-use argon2::password_hash::rand_core::OsRng;
-use argon2::password_hash::SaltString;
 use crate::db::Database;
+use argon2::password_hash::SaltString;
+use argon2::password_hash::rand_core::OsRng;
+use argon2::{Argon2, PasswordHasher};
 
 pub struct Auth {
+    #[allow(unused)]
     database: Database,
 }
 
 impl Auth {
     pub fn new(database: Database) -> Self {
-        Self {
-            database,
-        }
+        Self { database }
     }
 
-    pub async fn register(&self, username: String, email: String, password: String) -> Result<(), anyhow::Error> {
+    #[allow(unused)]
+    pub async fn register(
+        &self,
+        username: String,
+        email: String,
+        password: String,
+    ) -> Result<(), anyhow::Error> {
         let salt = SaltString::generate(&mut OsRng);
 
         let argon2 = Argon2::default();
