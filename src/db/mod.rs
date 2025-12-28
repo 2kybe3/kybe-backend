@@ -44,8 +44,6 @@ impl Database {
         let pool =
             PgPoolOptions::new().max_connections(5).connect(&config.database.postgres_url).await?;
 
-        MIGRATOR.run(&pool).await.map(|_| info!("Migrations applied successfully"))?;
-
         Ok(Self::new(pool, config))
     }
 
@@ -58,6 +56,7 @@ impl Database {
         for attempt in 1..=5 {
             match Self::inner_init(Arc::clone(&config)).await {
                 Ok(db) => {
+                    MIGRATOR.run(&db.pool).await.map(|_| info!("Migrations applied successfully"))?;
                     return Ok(db);
                 }
                 Err(e) => {
@@ -108,7 +107,7 @@ impl Database {
                 trace_id, command, user_id, username, guild_id, channel_id,
                 started_at, duration_ms, status, input, data, output, error
             FROM command_traces
-            ORDER BY started_at
+            ORDER BY started_at DESC 
             LIMIT 1
             "#
         )
