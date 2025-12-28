@@ -1,4 +1,5 @@
 mod calculator;
+mod traces;
 mod translator;
 
 use crate::config::types::Config;
@@ -12,7 +13,7 @@ use crate::translator::Translator;
 use poise::serenity_prelude as serenity;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, Data, Error>;
+pub(crate) type Context<'a> = poise::Context<'a, Data, Error>;
 
 pub const MAX_MSG_LENGTH: usize = 2000;
 
@@ -40,6 +41,8 @@ pub async fn init_bot(
                 translator::detect(),
                 translator::languages(),
                 translator::translate(),
+                traces::get_trace(),
+                traces::get_latest_trace(),
             ],
             on_error: |error: FrameworkError<'_, Data, Error>| Box::pin(async move {
                 if let Some(ctx) = error.ctx() {
@@ -104,45 +107,6 @@ pub async fn init_bot(
     Ok(())
 }
 
-#[derive(Debug)]
-pub struct CommandLog {
-    #[allow(unused)]
-    command: &'static str,
-    #[allow(unused)]
-    user_id: serenity::UserId,
-    #[allow(unused)]
-    username: String,
-    #[allow(unused)]
-    guild_id: Option<serenity::GuildId>,
-    #[allow(unused)]
-    channel_id: serenity::ChannelId,
-    #[allow(unused)]
-    started_at: sqlx::types::chrono::DateTime<sqlx::types::chrono::Utc>,
-    duration_ms: u128,
-    status: &'static str, // "success", "error", "disabled"
-    input: serde_json::Value,
-    output: Option<String>,
-    error: Option<String>,
-}
-
-impl CommandLog {
-    pub fn start(ctx: &Context<'_>, command_name: &'static str) -> Self {
-        Self {
-            command: command_name,
-            user_id: ctx.author().id,
-            username: ctx.author().name.clone(),
-            guild_id: ctx.guild_id(),
-            channel_id: ctx.channel_id(),
-            started_at: sqlx::types::chrono::Utc::now(),
-            duration_ms: 0,
-            status: "success",
-            input: serde_json::json!({}),
-            output: None,
-            error: None,
-        }
-    }
-}
-
 #[macro_export]
 macro_rules! reply_or_attach {
     ($ctx:expr, $s:expr, $filename:expr) => {{
@@ -160,4 +124,18 @@ macro_rules! reply_or_attach {
             let _ = $ctx.say("Failed to send the full response due to an error.").await;
         }
     }};
+}
+
+#[macro_export]
+macro_rules! finalize_command_trace {
+    ($ctx:expr, $log:expr, $start:expr) => {
+        $log.duration_ms = $start.elapsed().as_millis().try_into().unwrap_or(0);
+        $ctx.data().database.save_command_trace(&$log).await?;
+
+        if $log.status == CommandStatus::Error {
+            tracing::error!(log = ?$log, "command finished with error");
+        } else {
+            tracing::debug!(log = ?$log, "command finished");
+        }
+    };
 }

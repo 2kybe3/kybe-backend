@@ -11,6 +11,7 @@ url = "https://discord.com/api/webhooks/.../..."
 
 [discord_bot]
 token = "DISCORD_TOKEN"
+admin_id = "921066050009833572"
 
 [discord_bot.translator]
 enabled = false

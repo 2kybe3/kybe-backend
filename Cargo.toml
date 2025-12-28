@@ -20,3 +20,4 @@ poise = { git = "https://github.com/serenity-rs/poise", branch = "current"}
 chrono = "0.4.42"
 log = "0.4.29"
 tracing-appender = "0.2.4"
+uuid = { version = "1.19.0", features = ["v7"] }

@@ -1,0 +1,94 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                trace_id, command, user_id, username, guild_id, channel_id,\n                started_at, duration_ms, status, input, data, output, error\n            FROM command_traces\n            WHERE trace_id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "trace_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "command",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "guild_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "channel_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "started_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "duration_ms",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 8,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "input",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 10,
+        "name": "data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "output",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "error",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "dbbf795ee2efe109dcfffe4aff096ca7d0ef53a11e0ecffbe3f868b43d84ec62"
+}

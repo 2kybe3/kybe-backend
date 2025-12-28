@@ -1,7 +1,7 @@
-use crate::discord_bot::{CommandLog, Context, Error};
-use crate::reply_or_attach;
+use crate::db::traces::{CommandStatus, CommandTrace};
+use crate::discord_bot::{Context, Error};
+use crate::{finalize_command_trace, reply_or_attach};
 use std::time::Instant;
-use tracing::{debug, error};
 
 #[poise::command(
     slash_command,
@@ -14,13 +14,19 @@ pub async fn calculate(
     expression: String,
 ) -> Result<(), Error> {
     let start = Instant::now();
-    let mut log = CommandLog::start(&ctx, "calculate");
+    let mut log = CommandTrace::start(&ctx, "calculate");
 
     log.input = serde_json::json!({
         "expression": expression,
     });
 
-    ctx.defer().await?;
+    if let Err(e) = ctx.defer().await {
+        log.status = CommandStatus::Error;
+        log.error = Some(format!("Defer failed: {:?}", e));
+
+        finalize_command_trace!(ctx, log, start);
+        return Err(e.into());
+    }
 
     match meval::eval_str(&expression) {
         Ok(result) => {
@@ -29,20 +35,14 @@ pub async fn calculate(
             reply_or_attach!(ctx, response, "result.txt");
         }
         Err(e) => {
-            log.status = "error";
+            log.status = CommandStatus::Error;
             log.error = Some(format!("{:?}", e));
             log.output = Some("Error evaluating expression".into());
             ctx.reply("Error evaluating expression").await?;
         }
     }
 
-    log.duration_ms = start.elapsed().as_millis();
-
-    if log.status == "error" {
-        error!(log = ?log, "command finished");
-    } else {
-        debug!(log = ?log, "command finished");
-    }
+    finalize_command_trace!(ctx, log, start);
 
     Ok(())
 }

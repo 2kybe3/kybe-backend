@@ -36,6 +36,7 @@ pub struct DiscordConfig {
 pub struct DiscordBotConfig {
     pub token: String,
     pub translator: TranslatorConfig,
+    pub admin_id: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

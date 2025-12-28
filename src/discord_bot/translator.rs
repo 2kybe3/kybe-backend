@@ -1,7 +1,7 @@
-use crate::discord_bot::{CommandLog, Context, Error};
-use crate::reply_or_attach;
+use crate::db::traces::{CommandStatus, CommandTrace};
+use crate::discord_bot::{Context, Error};
+use crate::{finalize_command_trace, reply_or_attach};
 use std::time::Instant;
-use tracing::{debug, error};
 
 #[poise::command(
     slash_command,
@@ -14,12 +14,20 @@ pub async fn detect(
     #[description = "verbose"] verbose: Option<bool>,
 ) -> Result<(), Error> {
     let start = Instant::now();
-    let mut log = CommandLog::start(&ctx, "detect");
+    let mut log = CommandTrace::start(&ctx, "detect");
 
     log.input = serde_json::json!({
         "text": text,
         "verbose": verbose.unwrap_or(false),
     });
+
+    if let Err(e) = ctx.defer().await {
+        log.status = CommandStatus::Error;
+        log.error = Some(format!("Defer failed: {:?}", e));
+
+        finalize_command_trace!(ctx, log, start);
+        return Err(e.into());
+    }
 
     if let Some(translator) = ctx.data().translator.as_ref() {
         match translator.detect(text).await {
@@ -41,26 +49,19 @@ pub async fn detect(
                 }
             }
             Err(e) => {
-                log.status = "error";
+                log.status = CommandStatus::Error;
                 log.error = Some(format!("{:?}", e));
-                log.output = Some("Error detecting language".to_string());
-                ctx.reply("Error detecting language").await?;
+                log.output = Some(format!("Error detecting language: (trace id {})", log.trace_id));
+                ctx.reply(format!("Error detecting language: (trace id {})", log.trace_id)).await?;
             }
         }
     } else {
-        log.status = "disabled";
+        log.status = CommandStatus::Disabled;
         log.output = Some("Translation is not enabled!".to_string());
-
         ctx.reply("Translation is not enabled!").await?;
     }
 
-    log.duration_ms = start.elapsed().as_millis();
-
-    if log.status == "error" {
-        error!(log = ?log, "command finished");
-    } else {
-        debug!(log = ?log, "command finished");
-    }
+    finalize_command_trace!(ctx, log, start);
 
     Ok(())
 }
@@ -72,7 +73,15 @@ pub async fn detect(
 )]
 pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
     let start = Instant::now();
-    let mut log = CommandLog::start(&ctx, "languages");
+    let mut log = CommandTrace::start(&ctx, "languages");
+
+    if let Err(e) = ctx.defer().await {
+        log.status = CommandStatus::Error;
+        log.error = Some(format!("Defer failed: {:?}", e));
+
+        finalize_command_trace!(ctx, log, start);
+        return Err(e.into());
+    }
 
     if let Some(translator) = ctx.data().translator.as_ref() {
         match translator.languages().await {
@@ -82,25 +91,19 @@ pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
                 reply_or_attach!(ctx, output, "languages_supported.json");
             }
             Err(e) => {
-                log.status = "error";
+                log.status = CommandStatus::Error;
                 log.error = Some(format!("{:?}", e));
-                log.output = Some("Error getting languages".to_string());
-                ctx.reply("Error getting languages").await?;
+                log.output = Some(format!("Error getting languages (trace id: {})", log.trace_id));
+                ctx.reply(format!("Error getting languages (trace id: {})", log.trace_id)).await?;
             }
         }
     } else {
-        log.status = "disabled";
+        log.status = CommandStatus::Disabled;
         log.output = Some("Translation is not enabled!".into());
         ctx.reply("Translation is not enabled!").await?;
     }
 
-    log.duration_ms = start.elapsed().as_millis();
-
-    if log.status == "error" {
-        error!(log = ?log, "command finished");
-    } else {
-        debug!(log = ?log, "command finished");
-    }
+    finalize_command_trace!(ctx, log, start);
 
     Ok(())
 }
@@ -118,7 +121,7 @@ pub async fn translate(
     #[description = "verbose"] verbose: Option<bool>,
 ) -> Result<(), Error> {
     let start = Instant::now();
-    let mut log = CommandLog::start(&ctx, "translate");
+    let mut log = CommandTrace::start(&ctx, "translate");
 
     let source_str = source.as_deref().unwrap_or("auto");
     let target_str = target.as_deref().unwrap_or("de");
@@ -129,6 +132,14 @@ pub async fn translate(
         "text": text,
         "verbose": verbose.unwrap_or(false),
     });
+
+    if let Err(e) = ctx.defer().await {
+        log.status = CommandStatus::Error;
+        log.error = Some(format!("Defer failed: {:?}", e));
+
+        finalize_command_trace!(ctx, log, start);
+        return Err(e.into());
+    }
 
     if let Some(translator) = ctx.data().translator.as_ref() {
         let mut source = source.unwrap_or("auto".to_string());
@@ -151,25 +162,19 @@ pub async fn translate(
                 }
             }
             Err(e) => {
-                log.status = "error";
+                log.status = CommandStatus::Error;
                 log.error = Some(format!("{:?}", e));
-                log.output = Some("Error translating".into());
-                ctx.reply("Error translating").await?;
+                log.output = Some(format!("Error translating (trace id: {})", log.trace_id));
+                ctx.reply(format!("Error translating (trace id: {})", log.trace_id)).await?;
             }
         }
     } else {
-        log.status = "disabled";
+        log.status = CommandStatus::Disabled;
         log.output = Some("Translation is not enabled!".to_string());
         ctx.reply("Translation is not enabled!").await?;
     }
 
-    log.duration_ms = start.elapsed().as_millis();
-
-    if log.status == "error" {
-        error!(log = ?log, "command finished");
-    } else {
-        debug!(log = ?log, "command finished");
-    }
+    finalize_command_trace!(ctx, log, start);
 
     Ok(())
 }

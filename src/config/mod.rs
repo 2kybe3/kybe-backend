@@ -92,6 +92,7 @@ impl Default for Config {
             },
             discord_bot: DiscordBotConfig {
                 token: "DISCORD_TOKEN".into(),
+                admin_id: "921066050009833572".into(),
                 translator: TranslatorConfig {
                     enabled: false,
                     url: Some("https://translate.kybe.xyz".into()),
