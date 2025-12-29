@@ -1,5 +1,5 @@
 CREATE TABLE command_traces (
-    trace_id UUID PRIMARY KEY NOT NULL,
+    trace_id UUID PRIMARY KEY NOT NULL DEFAULT uuidv7(),
     command TEXT NOT NULL,
     user_id BIGINT NOT NULL,
     username TEXT NOT NULL,

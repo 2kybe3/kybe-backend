@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                trace_id, command, user_id, username, guild_id, channel_id,\n                started_at, duration_ms, status, input, data, output, error\n            FROM command_traces\n            ORDER BY started_at DESC \n            LIMIT 1\n            ",
+  "query": "\n            SELECT\n                trace_id, command, user_id, username, guild_id, channel_id,\n                started_at, duration_ms, status, input, data, output, error\n            FROM command_traces\n            ORDER BY started_at DESC\n            LIMIT 1\n            ",
   "describe": {
     "columns": [
       {
@@ -88,5 +88,5 @@
       true
     ]
   },
-  "hash": "b8815a2a68572c053149c866b5efb1d927046b524f19a46d20aa996cdb6705ab"
+  "hash": "2e8fd48120444a0742c67eff1f3b1ea010c1adcb4ab69aa31ce0c82d9d8d9faa"
 }
