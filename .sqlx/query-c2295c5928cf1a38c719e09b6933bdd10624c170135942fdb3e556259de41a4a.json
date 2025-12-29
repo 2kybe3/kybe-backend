@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                trace_id, command, user_id, username, guild_id, channel_id,\n                started_at, duration_ms, status, input, data, output, error\n            FROM command_traces\n            WHERE trace_id = $1\n            ",
+  "query": "\n            SELECT\n                trace_id, command, user_id, username, guild_id, channel_id,\n                started_at, duration_ms, status AS \"status: CommandStatus\", input, data, output, error, created_at\n            FROM command_traces\n            WHERE trace_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -45,8 +45,20 @@
       },
       {
         "ordinal": 8,
-        "name": "status",
-        "type_info": "Text"
+        "name": "status: CommandStatus",
+        "type_info": {
+          "Custom": {
+            "name": "command_status",
+            "kind": {
+              "Enum": [
+                "success",
+                "error",
+                "disabled",
+                "unauthorized"
+              ]
+            }
+          }
+        }
       },
       {
         "ordinal": 9,
@@ -67,6 +79,11 @@
         "ordinal": 12,
         "name": "error",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -85,10 +102,11 @@
       false,
       false,
       false,
+      false,
       true,
       true,
-      true
+      false
     ]
   },
-  "hash": "dbbf795ee2efe109dcfffe4aff096ca7d0ef53a11e0ecffbe3f868b43d84ec62"
+  "hash": "c2295c5928cf1a38c719e09b6933bdd10624c170135942fdb3e556259de41a4a"
 }

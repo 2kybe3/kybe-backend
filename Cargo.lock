@@ -1177,7 +1177,6 @@ dependencies = [
  "axum",
  "chrono",
  "futures",
- "log",
  "meval",
  "poise",
  "reqwest",

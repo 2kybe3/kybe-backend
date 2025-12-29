@@ -19,7 +19,19 @@
         "Int8",
         "Timestamptz",
         "Int8",
-        "Text",
+        {
+          "Custom": {
+            "name": "command_status",
+            "kind": {
+              "Enum": [
+                "success",
+                "error",
+                "disabled",
+                "unauthorized"
+              ]
+            }
+          }
+        },
         "Jsonb",
         "Jsonb",
         "Text",

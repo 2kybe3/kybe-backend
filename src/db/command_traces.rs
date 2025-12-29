@@ -35,7 +35,7 @@ impl TryFrom<&str> for CommandStatus {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, sqlx::FromRow)]
 pub struct CommandTrace {
     pub trace_id: Uuid,
     pub command: String,
@@ -50,6 +50,9 @@ pub struct CommandTrace {
     pub data: serde_json::Value,
     pub output: Option<String>,
     pub error: Option<String>,
+
+    #[allow(unused)]
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 impl CommandTrace {
@@ -68,43 +71,7 @@ impl CommandTrace {
             data: serde_json::json!({}),
             output: None,
             error: None,
-        }
-    }
-}
-
-#[derive(sqlx::FromRow)]
-pub struct CommandTraceRow {
-    trace_id: Uuid,
-    command: String,
-    user_id: i64,
-    username: String,
-    guild_id: Option<i64>,
-    channel_id: i64,
-    started_at: chrono::DateTime<chrono::Utc>,
-    duration_ms: i64,
-    status: String,
-    input: serde_json::Value,
-    data: serde_json::Value,
-    output: Option<String>,
-    error: Option<String>,
-}
-
-impl From<CommandTraceRow> for CommandTrace {
-    fn from(row: CommandTraceRow) -> Self {
-        Self {
-            trace_id: row.trace_id,
-            command: row.command,
-            user_id: row.user_id,
-            username: row.username,
-            guild_id: row.guild_id,
-            channel_id: row.channel_id,
-            started_at: row.started_at,
-            duration_ms: row.duration_ms,
-            status: CommandStatus::try_from(row.status.as_str()).unwrap_or(CommandStatus::Error),
-            input: row.input,
-            data: row.data,
-            output: row.output,
-            error: row.error,
+            created_at: None,
         }
     }
 }
@@ -128,7 +95,7 @@ impl Database {
             log.channel_id,
             log.started_at,
             log.duration_ms,
-            log.status.as_str(),
+            log.status.as_str() as &str,
             &log.input,
             &log.data,
             log.output.as_deref(),
@@ -144,38 +111,34 @@ impl Database {
         &self,
         trace_id: Uuid,
     ) -> Result<Option<CommandTrace>, sqlx::Error> {
-        let row = sqlx::query_as!(
-            CommandTraceRow,
+        sqlx::query_as!(
+            CommandTrace,
             r#"
             SELECT
                 trace_id, command, user_id, username, guild_id, channel_id,
-                started_at, duration_ms, status, input, data, output, error
+                started_at, duration_ms, status AS "status: CommandStatus", input, data, output, error, created_at
             FROM command_traces
             WHERE trace_id = $1
             "#,
             trace_id
         )
         .fetch_optional(&self.pool)
-        .await?;
-
-        Ok(row.map(|r| r.into()))
+        .await
     }
 
     pub async fn get_latest_command_trace(&self) -> Result<Option<CommandTrace>, sqlx::Error> {
-        let row = sqlx::query_as!(
-            CommandTraceRow,
+        sqlx::query_as!(
+            CommandTrace,
             r#"
             SELECT
                 trace_id, command, user_id, username, guild_id, channel_id,
-                started_at, duration_ms, status, input, data, output, error
+                started_at, duration_ms, status AS "status: CommandStatus", input, data, output, error, created_at
             FROM command_traces
             ORDER BY started_at DESC
             LIMIT 1
             "#
         )
         .fetch_optional(&self.pool)
-        .await?;
-
-        Ok(row.map(|r| r.into()))
+        .await
     }
 }

@@ -80,7 +80,7 @@ impl Database {
             r#"
             INSERT INTO users (
                 id, username, email, email_verified, password_hash, discord_id,
-                discord_linked, last_password_change, created, last_login, role
+                discord_linked, last_password_change, created_at, last_login, role
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             "#,
@@ -94,7 +94,7 @@ impl Database {
             user.last_password_change,
             user.created,
             user.last_login,
-            user.role.as_str(),
+            user.role.as_str() as &str,
         )
         .execute(self.pool())
         .await?;

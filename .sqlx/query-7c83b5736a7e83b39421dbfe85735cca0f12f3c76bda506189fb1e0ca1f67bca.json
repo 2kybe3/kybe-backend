@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO website_traces (\n                trace_id, method, path, query, ip_address, user_agent, user_id, started_at,\n                duration_ms, status_code, data, request_headers, request_status, request_body,\n                response_body, error\n            )\n            VALUES (\n                $1, $2, $3, $4, $5, $6, $7, $8,\n                $9, $10, $11, $12, $13, $14,\n                $15, $16\n            )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Int8",
+        "Int4",
+        "Jsonb",
+        "Jsonb",
+        {
+          "Custom": {
+            "name": "request_status",
+            "kind": {
+              "Enum": [
+                "success",
+                "redirect",
+                "client_error",
+                "server_error",
+                "unauthorized"
+              ]
+            }
+          }
+        },
+        "Jsonb",
+        "Jsonb",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7c83b5736a7e83b39421dbfe85735cca0f12f3c76bda506189fb1e0ca1f67bca"
+}

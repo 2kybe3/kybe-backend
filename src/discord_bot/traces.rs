@@ -1,4 +1,4 @@
-use crate::db::traces::{CommandStatus, CommandTrace};
+use crate::db::command_traces::{CommandStatus, CommandTrace};
 use crate::discord_bot::{Context, Error};
 use crate::{finalize_command_trace, reply_or_attach};
 use std::time::Instant;
