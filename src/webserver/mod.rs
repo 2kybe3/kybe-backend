@@ -33,7 +33,6 @@ async fn register(
     State(state): State<WebServerState>,
     Json(payload): Json<RegisterPayload>,
 ) -> Result<String, String> {
-    // TODO: validation
     state.auth.register(payload.username, payload.email, payload.password).await.unwrap();
 
     Ok("some".into())

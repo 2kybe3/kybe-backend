@@ -1,6 +1,6 @@
 pub mod command_traces;
 pub mod users;
-mod website_traces;
+pub mod website_traces;
 
 use crate::config::types::Config;
 use crate::notifications::{Notification, Notifications};

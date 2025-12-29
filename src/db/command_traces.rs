@@ -10,17 +10,6 @@ pub enum CommandStatus {
     Unauthorized,
 }
 
-impl CommandStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Success => "success",
-            Self::Error => "error",
-            Self::Disabled => "disabled",
-            Self::Unauthorized => "unauthorized",
-        }
-    }
-}
-
 impl TryFrom<&str> for CommandStatus {
     type Error = String;
 
@@ -95,7 +84,7 @@ impl Database {
             log.channel_id,
             log.started_at,
             log.duration_ms,
-            log.status,
+            log.status.clone() as CommandStatus,
             &log.input,
             &log.data,
             log.output.as_deref(),
