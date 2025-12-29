@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub notification: NotificationConfig,
     pub discord_bot: DiscordBotConfig,
+    pub webserver: WebserverConfig,
     pub database: DatabaseConfig,
     pub logger: LoggerConfig,
 }
@@ -55,4 +56,10 @@ pub struct DatabaseConfig {
 pub struct LoggerConfig {
     pub file_logger_enabled: bool,
     pub file_logger_path: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct WebserverConfig {
+    pub behind_proxy: bool,
+    pub trust_proxy_header: String,
 }

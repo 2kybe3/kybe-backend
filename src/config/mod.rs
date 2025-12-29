@@ -1,7 +1,7 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
     Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, GotifyConfig, LogConfig, LoggerConfig,
-    NotificationConfig, TranslatorConfig,
+    NotificationConfig, TranslatorConfig, WebserverConfig,
 };
 use std::env;
 use tokio::fs;
@@ -105,6 +105,10 @@ impl Default for Config {
             logger: LoggerConfig {
                 file_logger_enabled: true,
                 file_logger_path: Some("./log".into()),
+            },
+            webserver: WebserverConfig {
+                behind_proxy: false,
+                trust_proxy_header: "X-Forwarded-For".into(),
             },
         }
     }

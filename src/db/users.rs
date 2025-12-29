@@ -1,3 +1,4 @@
+use crate::auth::AuthError;
 use crate::db::Database;
 use chrono::Utc;
 use uuid::Uuid;
@@ -8,15 +9,6 @@ pub enum UserRole {
     #[default]
     User,
     Admin,
-}
-
-impl UserRole {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Admin => "admin",
-            Self::User => "user",
-        }
-    }
 }
 
 impl TryFrom<&str> for UserRole {
@@ -44,7 +36,7 @@ pub struct User {
     pub discord_linked: Option<chrono::DateTime<Utc>>,
 
     pub last_password_change: chrono::DateTime<Utc>,
-    pub created: chrono::DateTime<Utc>,
+    pub created_at: chrono::DateTime<Utc>,
     pub last_login: Option<chrono::DateTime<Utc>>,
 
     pub role: UserRole,
@@ -64,7 +56,7 @@ impl Default for User {
             discord_linked: None,
 
             last_password_change: Utc::now(),
-            created: Utc::now(),
+            created_at: Utc::now(),
             last_login: None,
 
             role: UserRole::default(),
@@ -73,6 +65,60 @@ impl Default for User {
 }
 
 impl Database {
+    #[allow(unused)]
+    pub async fn get_user_by_id(&self, id: Uuid) -> Result<Option<User>, sqlx::Error> {
+        sqlx::query_as!(
+            User,
+            r#"
+            SELECT
+                id, username, email, email_verified, password_hash, discord_id,
+                discord_linked, last_password_change, created_at, last_login,
+                role AS "role: UserRole"
+            FROM users
+            WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_optional(self.pool())
+        .await
+    }
+
+    pub async fn get_user_by_username(&self, username: &str) -> Result<Option<User>, AuthError> {
+        sqlx::query_as!(
+            User,
+            r#"
+            SELECT
+                id, username, email, email_verified, password_hash, discord_id,
+                discord_linked, last_password_change, created_at, last_login,
+                role AS "role: UserRole"
+            FROM users
+            WHERE username = $1
+            "#,
+            username
+        )
+        .fetch_optional(self.pool())
+        .await
+        .map_err(AuthError::DatabaseError)
+    }
+
+    pub async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, AuthError> {
+        sqlx::query_as!(
+            User,
+            r#"
+            SELECT
+                id, username, email, email_verified, password_hash, discord_id,
+                discord_linked, last_password_change, created_at, last_login,
+                role AS "role: UserRole"
+            FROM users
+            WHERE email = $1
+            "#,
+            email
+        )
+        .fetch_optional(self.pool())
+        .await
+        .map_err(AuthError::DatabaseError)
+    }
+
     pub async fn create_user(&self, user: User) -> Result<Uuid, sqlx::Error> {
         sqlx::query!(
             r#"
@@ -90,9 +136,9 @@ impl Database {
             user.discord_id,
             user.discord_linked,
             user.last_password_change,
-            user.created,
+            user.created_at,
             user.last_login,
-            user.role.as_str() as &str,
+            user.role.clone() as UserRole,
         )
         .execute(self.pool())
         .await?;

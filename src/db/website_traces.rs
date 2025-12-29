@@ -2,6 +2,7 @@
 
 use crate::db::Database;
 use chrono::{DateTime, Utc};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::Type, PartialEq, Clone)]
@@ -35,12 +36,12 @@ pub struct WebsiteTrace {
 }
 
 impl WebsiteTrace {
-    pub fn start<S: Into<String>>(
+    pub fn start(
         method: impl AsRef<str>,
-        path: S,
-        query: Option<S>,
-        user_agent: Option<S>,
-        ip: Option<S>,
+        path: impl Into<String>,
+        query: Option<impl Into<String>>,
+        user_agent: Option<impl Into<String>>,
+        ip: Option<impl Into<String>>,
     ) -> Self {
         Self {
             trace_id: Uuid::now_v7(),
@@ -62,24 +63,16 @@ impl WebsiteTrace {
         }
     }
 
-    pub fn complete(
-        &mut self,
-        duration_ms: i64,
-        status_code: u16,
-        user_id: Option<Uuid>,
-        error: Option<String>,
-    ) {
+    pub fn complete(&mut self, duration_ms: i64, status_code: u16, user_id: Option<Uuid>) {
         self.duration_ms = duration_ms;
         self.status_code = status_code;
         self.user_id = user_id;
-        self.error = error;
     }
 }
 
 impl Database {
     pub async fn save_website_trace(&self, trace: &WebsiteTrace) -> Result<Uuid, sqlx::Error> {
-        let _row = sqlx::query_as!(
-            WebsiteTrace,
+        let row = sqlx::query!(
             r#"
             INSERT INTO website_traces (
                 trace_id, method, path, query, ip_address, user_agent, user_id, started_at,
@@ -112,6 +105,6 @@ impl Database {
         .execute(self.pool())
         .await?;
 
-        todo!()
+        Ok(trace.trace_id)
     }
 }
