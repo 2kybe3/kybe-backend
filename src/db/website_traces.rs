@@ -1,8 +1,5 @@
-#![allow(unused)]
-
 use crate::db::Database;
 use chrono::{DateTime, Utc};
-use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::Type, PartialEq, Clone)]
@@ -72,7 +69,7 @@ impl WebsiteTrace {
 
 impl Database {
     pub async fn save_website_trace(&self, trace: &WebsiteTrace) -> Result<Uuid, sqlx::Error> {
-        let row = sqlx::query!(
+        sqlx::query!(
             r#"
             INSERT INTO website_traces (
                 trace_id, method, path, query, ip_address, user_agent, user_id, started_at,

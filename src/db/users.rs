@@ -1,6 +1,9 @@
 use crate::auth::AuthError;
 use crate::db::Database;
 use chrono::Utc;
+use std::time::Duration;
+use tokio::time::sleep;
+use tracing::error;
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::Type, PartialEq, Clone, Default)]
@@ -144,5 +147,36 @@ impl Database {
         .await?;
 
         Ok(user.id)
+    }
+
+    pub async fn delete_old_unverified_users_loop(&self) {
+        let self_clone = self.clone();
+        tokio::spawn(async move {
+            loop {
+                if let Err(e) = self_clone.delete_old_unverified_users().await {
+                    error!("error deleting old unverified users: {:?}", e)
+                }
+                sleep(Duration::from_mins(1)).await;
+            }
+        });
+    }
+
+    pub async fn delete_old_unverified_users(&self) -> Result<u64, sqlx::Error> {
+        let cutoff = Utc::now() - chrono::Duration::minutes(30);
+
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM users
+            WHERE
+                email_verified = false
+            AND
+                created_at < $1
+            "#,
+            cutoff
+        )
+        .execute(self.pool())
+        .await?;
+
+        Ok(result.rows_affected())
     }
 }

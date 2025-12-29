@@ -38,6 +38,8 @@ async fn main() -> Result<(), anyhow::Error> {
         }
     };
 
+    database.delete_old_unverified_users_loop().await;
+
     let auth = Arc::new(Auth::new(database.clone()));
 
     let bot_handle = tokio::spawn(discord_bot::init_bot(
