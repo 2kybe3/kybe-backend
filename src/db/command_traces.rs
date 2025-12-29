@@ -95,7 +95,7 @@ impl Database {
             log.channel_id,
             log.started_at,
             log.duration_ms,
-            log.status.as_str() as &str,
+            log.status,
             &log.input,
             &log.data,
             log.output.as_deref(),
