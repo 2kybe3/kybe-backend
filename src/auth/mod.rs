@@ -22,7 +22,6 @@ impl From<argon2::password_hash::Error> for AuthError {
 }
 
 pub struct Auth {
-    #[allow(unused)]
     database: Database,
 }
 
@@ -31,7 +30,6 @@ impl Auth {
         Self { database }
     }
 
-    #[allow(unused)]
     pub async fn register(
         &self,
         username: String,

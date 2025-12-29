@@ -11,7 +11,6 @@ pub enum UserRole {
 }
 
 impl UserRole {
-    #[allow(unused)]
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Admin => "admin",
@@ -33,7 +32,6 @@ impl TryFrom<&str> for UserRole {
 }
 
 #[derive(Debug)]
-#[allow(unused)]
 pub struct User {
     pub id: Uuid,
     pub username: String,

@@ -24,18 +24,16 @@ pub enum DbError {
 #[derive(Clone, Debug)]
 pub struct Database {
     pool: PgPool,
-    #[allow(unused)]
-    config: Arc<Config>,
+    _config: Arc<Config>,
 }
 
 static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
 
 impl Database {
     pub fn new(pool: PgPool, config: Arc<Config>) -> Self {
-        Self { pool, config }
+        Self { pool, _config: config }
     }
 
-    #[allow(unused)]
     pub fn pool(&self) -> &PgPool {
         &self.pool
     }

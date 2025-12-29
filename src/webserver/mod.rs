@@ -12,11 +12,9 @@ use tokio::net::TcpListener;
 
 #[derive(Clone)]
 struct WebServerState {
-    #[allow(unused)]
-    config: Arc<Config>,
+    _config: Arc<Config>,
     auth: Arc<Auth>,
-    #[allow(unused)]
-    database: Database,
+    _database: Database,
 }
 
 #[derive(Deserialize)]
@@ -59,7 +57,7 @@ async fn init_webserver_inner(
     auth: Arc<Auth>,
     database: Database,
 ) -> Result<(), anyhow::Error> {
-    let webserver_state = WebServerState { config, auth, database };
+    let webserver_state = WebServerState { auth, _config: config, _database: database };
 
     let app = Router::new()
         .route("/", get(root))
