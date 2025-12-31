@@ -27,11 +27,11 @@ impl From<argon2::password_hash::Error> for AuthError {
     }
 }
 
-pub struct Auth {
+pub struct AuthService {
     database: Database,
 }
 
-impl Auth {
+impl AuthService {
     pub fn new(database: Database) -> Self {
         Self { database }
     }

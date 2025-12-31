@@ -2,10 +2,12 @@ use crate::config::types::EmailConfig;
 use async_imap::types::Fetch;
 use futures::{StreamExt, TryStreamExt};
 use mail_parser::{MessageParser, PartType};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::{Receiver, Sender};
+use tokio::task::JoinHandle;
 use tracing::{error, info};
 
 #[derive(Debug)]
@@ -129,7 +131,7 @@ impl EmailService {
         Ok(())
     }
 
-    pub fn run_loop(self) {
+    pub fn run_loop(self: Arc<Self>) -> JoinHandle<()> {
         tokio::spawn(async move {
             loop {
                 match Self::run(&self).await {
@@ -140,7 +142,7 @@ impl EmailService {
                     }
                 }
             }
-        });
+        })
     }
 
     pub async fn run(&self) -> anyhow::Result<()> {

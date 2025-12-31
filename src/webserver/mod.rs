@@ -1,4 +1,4 @@
-use crate::auth::Auth;
+use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
 use crate::db::website_traces::WebsiteTrace;
@@ -18,7 +18,7 @@ use uuid::Uuid;
 #[derive(Clone)]
 struct WebServerState {
     config: Arc<Config>,
-    auth: Arc<Auth>,
+    auth: Arc<AuthService>,
     database: Database,
 }
 
@@ -116,7 +116,7 @@ async fn register(
 pub async fn init_webserver(
     notifications_clone: Arc<Notifications>,
     config: Arc<Config>,
-    auth: Arc<Auth>,
+    auth: Arc<AuthService>,
     database: Database,
 ) {
     if let Err(e) = init_webserver_inner(config, auth, database).await {
@@ -128,7 +128,7 @@ pub async fn init_webserver(
 
 async fn init_webserver_inner(
     config: Arc<Config>,
-    auth: Arc<Auth>,
+    auth: Arc<AuthService>,
     database: Database,
 ) -> Result<(), anyhow::Error> {
     let webserver_state = WebServerState { auth, config, database };

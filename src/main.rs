@@ -7,14 +7,13 @@ mod notifications;
 pub mod translator;
 mod webserver;
 
-use crate::auth::Auth;
+use crate::auth::AuthService;
 use crate::config::types::{Config, LoggerConfig};
 use crate::db::Database;
 use crate::email::EmailService;
 use crate::notifications::{Notification, Notifications};
 use std::io::stdout;
 use std::sync::Arc;
-use std::time::Instant;
 use tracing::dispatcher::DefaultGuard;
 use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
@@ -23,14 +22,17 @@ use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), anyhow::Error> {
     let bootstrap_guard = init_logger_bootstrap()?;
-    info!("initializing...");
+    info!("initializing backend");
 
-    let config = init_config().await?;
+    let config = Config::init().await?;
     init_logger(&config.logger, bootstrap_guard)?;
 
     let notifications = Arc::new(Notifications::new(&config.notification));
     let database = match Database::init(Arc::clone(&config), Arc::clone(&notifications)).await {
-        Ok(db) => db,
+        Ok(db) => {
+            db.delete_old_unverified_users_loop().await;
+            db
+        }
         Err(e) => {
             error!("Database init failed: {e}");
             notifications
@@ -40,20 +42,23 @@ async fn main() -> Result<(), anyhow::Error> {
         }
     };
 
-    EmailService::new(&config.email).run_loop();
-    database.delete_old_unverified_users_loop().await;
-
-    let auth = Arc::new(Auth::new(database.clone()));
+    let email_service = Arc::new(EmailService::new(&config.email));
+    let email_service_loop_handle = email_service.run_loop();
 
     let bot_handle = tokio::spawn(discord_bot::init_bot(
         Arc::clone(&notifications),
         Arc::clone(&config),
         database.clone(),
     ));
-    let webserver_handle =
-        tokio::spawn(webserver::init_webserver(notifications, config, auth, database));
 
-    tokio::try_join!(webserver_handle, bot_handle)?;
+    let webserver_handle = tokio::spawn(webserver::init_webserver(
+        notifications,
+        config,
+        Arc::new(AuthService::new(database.clone())),
+        database,
+    ));
+
+    tokio::try_join!(webserver_handle, bot_handle, email_service_loop_handle)?;
     Ok(())
 }
 
@@ -100,23 +105,4 @@ fn init_logger(config: &LoggerConfig, old_logger: DefaultGuard) -> Result<(), an
     drop(old_logger);
     tracing::subscriber::set_global_default(subscriber)?;
     Ok(())
-}
-
-async fn init_config() -> Result<Arc<Config>, anyhow::Error> {
-    let args: Vec<String> = std::env::args().collect();
-    if args.iter().any(|arg| arg == "--generate-example") {
-        let time = Instant::now();
-        info!("Generating config.toml.example");
-        Config::create_local_default().await?;
-        info!("Generated config.toml.example in {} NS", time.elapsed().as_nanos());
-        std::process::exit(0)
-    }
-
-    match Config::init().await {
-        Ok(cfg) => Ok(Arc::new(cfg)),
-        Err(e) => {
-            error!("Failed to load config: {e}");
-            std::process::exit(1);
-        }
-    }
 }

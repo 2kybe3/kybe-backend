@@ -4,8 +4,10 @@ use crate::config::types::{
     LoggerConfig, NotificationConfig, TranslatorConfig, WebserverConfig,
 };
 use std::env;
+use std::sync::Arc;
+use std::time::Instant;
 use tokio::fs;
-use tracing::info;
+use tracing::{error, info, warn};
 
 pub mod error;
 pub mod types;
@@ -14,16 +16,47 @@ const DEFAULT_CONFIG_URL: &str =
     "https://raw.githubusercontent.com/2kybe3/kybe-backend/refs/heads/main/config.toml.example";
 
 impl Config {
-    pub async fn init() -> Result<Self, ConfigError> {
+    pub async fn init() -> Result<Arc<Self>, anyhow::Error> {
+        let args: Vec<String> = env::args().collect();
+        if args.iter().any(|arg| arg == "--generate-example") {
+            let time = Instant::now();
+            info!("Generating config.toml.example");
+            Self::create_local_default().await?;
+            info!("Generated config.toml.example in {} NS", time.elapsed().as_nanos());
+            std::process::exit(0)
+        }
+
+        match Self::load_or_create().await {
+            Ok(cfg) => Ok(Arc::new(cfg)),
+            Err(e) => {
+                error!("Failed to load config: {e}");
+                std::process::exit(1);
+            }
+        }
+    }
+
+    pub async fn load_or_create() -> Result<Self, ConfigError> {
+        let start = Instant::now();
         match Self::load().await {
-            Ok(cfg) => Ok(cfg),
+            Ok(cfg) => {
+                info!("config loaded in {} ms", start.elapsed().as_millis());
+                Ok(cfg)
+            }
 
             Err(ConfigError::ReadFile(e)) if e.kind() == std::io::ErrorKind::NotFound => {
                 info!("Creating default config.toml");
                 Self::create_default().await?;
-                Self::load().await?;
-                info!("Default config.toml created! Please edit");
-                std::process::exit(0);
+                info!("config created in {} ms", start.elapsed().as_millis());
+                if let Err(e) = Self::load().await {
+                    warn!(
+                        "default config failed to load! Please open a issue https://github.com/2kybe3/kybe-backend/issues\n Error: {:?}",
+                        e
+                    );
+                    std::process::exit(1);
+                } else {
+                    info!("Default config.toml created! Please edit");
+                    std::process::exit(0);
+                }
             }
 
             Err(e) => Err(e),

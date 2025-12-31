@@ -5,7 +5,7 @@ use crate::notifications::providers::discord::DiscordNotifier;
 use futures::future::join_all;
 use providers::gotify::GotifyNotifier;
 use std::fmt::Debug;
-use tracing::error;
+use tracing::{error, info};
 
 pub mod error;
 mod log;
@@ -37,6 +37,7 @@ pub struct Notifications {
 
 impl Notifications {
     pub fn new(config: &NotificationConfig) -> Self {
+        info!("initializing notifications");
         let mut notifiers: Vec<Box<dyn Notifier + Send + Sync>> = Vec::new();
 
         if config.log.enabled {
@@ -58,6 +59,8 @@ impl Notifications {
                 error!("Discord enabled but missing URL, skipping DiscordNotifier");
             }
         }
+
+        info!("initialized {} notification loggers", notifiers.len());
 
         Self { notifiers }
     }
