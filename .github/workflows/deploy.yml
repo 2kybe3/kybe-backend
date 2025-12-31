@@ -23,6 +23,9 @@ jobs:
           toolchain: stable
           components: clippy, rustfmt
 
+      - name: Remove .git (Cargo fingerprint workaround)
+        run: rm -rf .git
+
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
         env:
@@ -41,6 +44,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Remove .git (Cargo fingerprint workaround)
+        run: rm -rf .git
 
       - name: Log in to private registry
         uses: docker/login-action@v3
