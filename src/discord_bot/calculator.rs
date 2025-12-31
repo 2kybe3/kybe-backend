@@ -14,35 +14,35 @@ pub async fn calculate(
     expression: String,
 ) -> Result<(), Error> {
     let start = Instant::now();
-    let mut log = CommandTrace::start(&ctx, "calculate");
+    let mut trace = CommandTrace::start(&ctx, "calculate");
 
-    log.input = serde_json::json!({
+    trace.input = serde_json::json!({
         "expression": expression,
     });
 
     if let Err(e) = ctx.defer().await {
-        log.status = CommandStatus::Error;
-        log.error = Some(format!("Defer failed: {:?}", e));
+        trace.status = CommandStatus::Error;
+        trace.error = Some(format!("Defer failed: {:?}", e));
 
-        finalize_command_trace!(ctx, log, start);
+        finalize_command_trace!(ctx, trace, start);
         return Err(e.into());
     }
 
     match meval::eval_str(&expression) {
         Ok(result) => {
             let response = format!("**{}** = **{}**", expression, result);
-            log.output = Some(response.clone());
+            trace.output = Some(response.clone());
             reply_or_attach!(ctx, response, "result.txt");
         }
         Err(e) => {
-            log.status = CommandStatus::Error;
-            log.error = Some(format!("{:?}", e));
-            log.output = Some("Error evaluating expression".into());
+            trace.status = CommandStatus::Error;
+            trace.error = Some(format!("{:?}", e));
+            trace.output = Some("Error evaluating expression".into());
             ctx.reply("Error evaluating expression").await?;
         }
     }
 
-    finalize_command_trace!(ctx, log, start);
+    finalize_command_trace!(ctx, trace, start);
 
     Ok(())
 }

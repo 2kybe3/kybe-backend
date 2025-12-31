@@ -37,7 +37,6 @@ fn utf8(opt: Option<&[u8]>) -> Option<String> {
     opt.and_then(|b| std::str::from_utf8(b).ok().map(String::from))
 }
 
-
 impl EmailService {
     pub fn new(config: &EmailConfig) -> Self {
         let (tx, _) = broadcast::channel(64);
@@ -65,27 +64,23 @@ impl EmailService {
     fn get_body(msg: &Fetch) -> Option<Vec<String>> {
         let parsed = MessageParser::default().parse(msg.body()?)?;
 
-        let res: Vec<String> = parsed.parts
+        let res: Vec<String> = parsed
+            .parts
             .iter()
             .filter_map(|part| match &part.body {
-                    PartType::Text(text) => Some(text.to_string()),
-                    _ => None,
+                PartType::Text(text) => Some(text.to_string()),
+                _ => None,
             })
             .collect();
 
-        if res.is_empty() {
-            None
-        } else {
-            Some(res)
-        }
+        if res.is_empty() { None } else { Some(res) }
     }
 
     fn get_sender(msg: &Fetch) -> Vec<Address> {
         msg.envelope()
             .and_then(|env| env.from.as_deref())
             .map(|list| {
-                list
-                    .iter()
+                list.iter()
                     .map(|a| Address {
                         name: utf8(a.name.as_deref()),
                         adl: utf8(a.adl.as_deref()),
@@ -120,12 +115,7 @@ impl EmailService {
                 let from = Self::get_sender(msg);
                 let body = Self::get_body(msg);
 
-                let email = IncomingEmail {
-                    subject,
-                    from,
-                    body,
-                };
-
+                let email = IncomingEmail { subject, from, body };
 
                 info!("New mail: {:?}", email);
 

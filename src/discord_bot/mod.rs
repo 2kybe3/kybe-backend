@@ -171,14 +171,14 @@ macro_rules! reply_or_attach {
 
 #[macro_export]
 macro_rules! finalize_command_trace {
-    ($ctx:expr, $log:expr, $start:expr) => {
-        $log.duration_ms = $start.elapsed().as_millis().try_into().unwrap_or(0);
-        $ctx.data().database.save_command_trace(&$log).await?;
+    ($ctx:expr, $trace:expr, $start:expr) => {
+        $trace.duration_ms = $start.elapsed().as_millis().try_into().unwrap_or(0);
+        $ctx.data().database.save_command_trace(&$trace).await?;
 
-        if $log.status == CommandStatus::Error {
-            tracing::error!(log = ?$log, "command finished with error");
+        if $trace.status == CommandStatus::Error {
+            tracing::error!(log = ?$trace, "command finished with error");
         } else {
-            tracing::debug!(log = ?$log, "command finished");
+            tracing::debug!(log = ?$trace, "command finished");
         }
     };
 }
