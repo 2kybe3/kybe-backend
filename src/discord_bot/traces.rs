@@ -21,7 +21,7 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
         trace.status = CommandStatus::Error;
         trace.error = Some(format!("Defer failed: {:?}", e));
 
-        finalize_command_trace!(ctx, trace, start);
+        finalize_command_trace!(ctx, trace);
         return Err(e.into());
     }
 
@@ -30,7 +30,7 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
         trace.output = Some("You are not allowed to use this command!".into());
 
         ctx.reply("You are not allowed to use this command!").await?;
-        finalize_command_trace!(ctx, trace, start);
+        finalize_command_trace!(ctx, trace);
         return Ok(());
     }
 
@@ -42,7 +42,7 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
             trace.output = Some("Invalid trace ID format".into());
             ctx.reply("Invalid trace ID format (must be a valid UUID)").await?;
 
-            finalize_command_trace!(ctx, trace, start);
+            finalize_command_trace!(ctx, trace);
             return Ok(());
         }
     };
@@ -66,7 +66,7 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
         }
     }
 
-    finalize_command_trace!(ctx, trace, start);
+    finalize_command_trace!(ctx, trace);
 
     Ok(())
 }
@@ -83,7 +83,7 @@ pub async fn get_latest_trace(ctx: Context<'_>) -> Result<(), Error> {
     if let Err(e) = ctx.defer().await {
         trace.status = CommandStatus::Error;
         trace.error = Some(format!("Defer failed: {:?}", e));
-        finalize_command_trace!(ctx, trace, start);
+        finalize_command_trace!(ctx, trace);
         return Err(e.into());
     }
 
@@ -91,7 +91,7 @@ pub async fn get_latest_trace(ctx: Context<'_>) -> Result<(), Error> {
         trace.status = CommandStatus::Disabled;
         trace.output = Some("Not allowed".into());
         ctx.reply("You are not allowed to use this command").await?;
-        finalize_command_trace!(ctx, trace, start);
+        finalize_command_trace!(ctx, trace);
         return Ok(());
     }
 
@@ -114,6 +114,6 @@ pub async fn get_latest_trace(ctx: Context<'_>) -> Result<(), Error> {
         }
     }
 
-    finalize_command_trace!(ctx, trace, start);
+    finalize_command_trace!(ctx, trace);
     Ok(())
 }

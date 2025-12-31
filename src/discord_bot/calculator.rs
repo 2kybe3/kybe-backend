@@ -1,7 +1,6 @@
 use crate::db::command_traces::{CommandStatus, CommandTrace};
 use crate::discord_bot::{Context, Error};
 use crate::{finalize_command_trace, reply_or_attach};
-use std::time::Instant;
 
 #[poise::command(
     slash_command,
@@ -13,7 +12,6 @@ pub async fn calculate(
     #[description = "Mathematical expression (e.g. 1+2*(3^2) or sqrt(16) or sin(pi/2)"]
     expression: String,
 ) -> Result<(), Error> {
-    let start = Instant::now();
     let mut trace = CommandTrace::start(&ctx, "calculate");
 
     trace.input = serde_json::json!({
@@ -24,7 +22,7 @@ pub async fn calculate(
         trace.status = CommandStatus::Error;
         trace.error = Some(format!("Defer failed: {:?}", e));
 
-        finalize_command_trace!(ctx, trace, start);
+        finalize_command_trace!(ctx, trace);
         return Err(e.into());
     }
 
@@ -42,7 +40,7 @@ pub async fn calculate(
         }
     }
 
-    finalize_command_trace!(ctx, trace, start);
+    finalize_command_trace!(ctx, trace);
 
     Ok(())
 }

@@ -1,5 +1,7 @@
 use crate::config::types::EmailConfig;
+use async_imap::Session;
 use async_imap::types::Fetch;
+use async_native_tls::TlsStream;
 use futures::{StreamExt, TryStreamExt};
 use mail_parser::{MessageParser, PartType};
 use std::sync::Arc;
@@ -145,38 +147,49 @@ impl EmailService {
         })
     }
 
-    pub async fn run(&self) -> anyhow::Result<()> {
+    pub async fn connect_and_login(&self) -> anyhow::Result<Session<TlsStream<TcpStream>>> {
         let imap_addr = (self.server.clone(), self.port);
         let tcp_stream = TcpStream::connect(imap_addr.clone()).await?;
         let tls = async_native_tls::TlsConnector::new();
         let tls_stream = tls.connect(self.server.clone(), tcp_stream).await?;
 
         let client = async_imap::Client::new(tls_stream);
-        let mut imap_session =
-            client.login(self.email.clone(), self.password.clone()).await.map_err(|e| e.0)?;
+        Ok(client.login(self.email.clone(), self.password.clone()).await.map_err(|e| e.0)?)
+    }
 
-        let mut mailboxes_stream = imap_session.list(None, Some("*")).await?;
-
+    pub async fn ensure_processed_mailbox(
+        imap_session: &mut Session<TlsStream<TcpStream>>,
+    ) -> anyhow::Result<()> {
         let mut has_processed = false;
-        while let Some(result) = mailboxes_stream.next().await {
-            match result {
-                Ok(name) => {
-                    if name.name() == "Processed" {
-                        has_processed = true;
-                        break;
+        {
+            let mut mailboxes_stream = imap_session.list(None, Some("*")).await?;
+
+            while let Some(result) = mailboxes_stream.next().await {
+                match result {
+                    Ok(name) => {
+                        if name.name() == "Processed" {
+                            has_processed = true;
+                            break;
+                        }
                     }
-                }
-                Err(e) => {
-                    error!("Error listing mailboxes: {e}");
+                    Err(e) => {
+                        error!("Error listing mailboxes: {e}");
+                    }
                 }
             }
         }
 
-        drop(mailboxes_stream);
-
         if !has_processed {
             let _ = imap_session.create("Processed").await;
         }
+
+        Ok(())
+    }
+
+    pub async fn run(&self) -> anyhow::Result<()> {
+        let mut imap_session = self.connect_and_login().await?;
+
+        Self::ensure_processed_mailbox(&mut imap_session).await?;
 
         Self::process_messages(&mut imap_session, &self.tx).await?;
 
@@ -184,13 +197,23 @@ impl EmailService {
             let mut idle = imap_session.idle();
             idle.init().await?;
 
-            idle.wait().0.await?;
+            {
+                let wait_future = idle.wait();
+                match wait_future.0.await {
+                    Ok(_) => {
+                        info!("Wake-up from IDLE: fetching new messages");
+                    }
+                    Err(e) => {
+                        error!("IDLE wait failed (connection likely lost): {e:?}");
+                        break;
+                    }
+                }
+            }
 
             imap_session = idle.done().await?;
 
-            info!("Wake-up from IDLE: fetching new messages");
-
             Self::process_messages(&mut imap_session, &self.tx).await?;
         }
+        Ok(())
     }
 }

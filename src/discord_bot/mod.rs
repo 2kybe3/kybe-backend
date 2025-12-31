@@ -171,8 +171,8 @@ macro_rules! reply_or_attach {
 
 #[macro_export]
 macro_rules! finalize_command_trace {
-    ($ctx:expr, $trace:expr, $start:expr) => {
-        $trace.duration_ms = $start.elapsed().as_millis().try_into().unwrap_or(0);
+    ($ctx:expr, $trace:expr) => {
+        $trace.duration_ms = chrono::Utc::now().signed_duration_since($trace.started_at).num_milliseconds();
         $ctx.data().database.save_command_trace(&$trace).await?;
 
         if $trace.status == CommandStatus::Error {

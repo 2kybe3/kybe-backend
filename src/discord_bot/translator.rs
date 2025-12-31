@@ -1,7 +1,6 @@
 use crate::db::command_traces::{CommandStatus, CommandTrace};
 use crate::discord_bot::{Context, Error};
 use crate::{finalize_command_trace, reply_or_attach};
-use std::time::Instant;
 
 #[poise::command(
     slash_command,
@@ -13,7 +12,6 @@ pub async fn detect(
     #[description = "The text"] text: String,
     #[description = "verbose"] verbose: Option<bool>,
 ) -> Result<(), Error> {
-    let start = Instant::now();
     let mut trace = CommandTrace::start(&ctx, "detect");
 
     trace.input = serde_json::json!({
@@ -25,7 +23,7 @@ pub async fn detect(
         trace.status = CommandStatus::Error;
         trace.error = Some(format!("Defer failed: {:?}", e));
 
-        finalize_command_trace!(ctx, trace, start);
+        finalize_command_trace!(ctx, trace);
         return Err(e.into());
     }
 
@@ -63,7 +61,7 @@ pub async fn detect(
         ctx.reply("Translation is not enabled!").await?;
     }
 
-    finalize_command_trace!(ctx, trace, start);
+    finalize_command_trace!(ctx, trace);
 
     Ok(())
 }
@@ -74,14 +72,13 @@ pub async fn detect(
     interaction_context = "Guild|BotDm|PrivateChannel"
 )]
 pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
-    let start = Instant::now();
     let mut trace = CommandTrace::start(&ctx, "languages");
 
     if let Err(e) = ctx.defer().await {
         trace.status = CommandStatus::Error;
         trace.error = Some(format!("Defer failed: {:?}", e));
 
-        finalize_command_trace!(ctx, trace, start);
+        finalize_command_trace!(ctx, trace);
         return Err(e.into());
     }
 
@@ -107,7 +104,7 @@ pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
         ctx.reply("Translation is not enabled!").await?;
     }
 
-    finalize_command_trace!(ctx, trace, start);
+    finalize_command_trace!(ctx, trace);
 
     Ok(())
 }
@@ -124,7 +121,6 @@ pub async fn translate(
     #[description = "The text"] text: String,
     #[description = "verbose"] verbose: Option<bool>,
 ) -> Result<(), Error> {
-    let start = Instant::now();
     let mut trace = CommandTrace::start(&ctx, "translate");
 
     let source_str = source.as_deref().unwrap_or("auto");
@@ -141,7 +137,7 @@ pub async fn translate(
         trace.status = CommandStatus::Error;
         trace.error = Some(format!("Defer failed: {:?}", e));
 
-        finalize_command_trace!(ctx, trace, start);
+        finalize_command_trace!(ctx, trace);
         return Err(e.into());
     }
 
@@ -178,7 +174,7 @@ pub async fn translate(
         ctx.reply("Translation is not enabled!").await?;
     }
 
-    finalize_command_trace!(ctx, trace, start);
+    finalize_command_trace!(ctx, trace);
 
     Ok(())
 }
