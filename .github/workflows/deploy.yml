@@ -25,11 +25,13 @@ jobs:
 
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
-        env: GIT_SHA=${{ github.sha }}
+        env:
+          GIT_SHA: ${{ github.sha }}
 
       - name: Check formatting
         run: cargo fmt --all -- --check
-        env: GIT_SHA=${{ github.sha }}
+        env:
+          GIT_SHA: ${{ github.sha }}
 
   deploy-backend:
     name: Build, Push & Deploy Backend
