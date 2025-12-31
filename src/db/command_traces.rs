@@ -111,8 +111,8 @@ impl Database {
             "#,
             trace_id
         )
-        .fetch_optional(&self.pool)
-        .await
+            .fetch_optional(&self.pool)
+            .await
     }
 
     pub async fn get_latest_command_trace(&self) -> Result<Option<CommandTrace>, sqlx::Error> {
@@ -127,7 +127,7 @@ impl Database {
             LIMIT 1
             "#
         )
-        .fetch_optional(&self.pool)
-        .await
+            .fetch_optional(&self.pool)
+            .await
     }
 }

@@ -16,13 +16,13 @@ const DEFAULT_CONFIG_URL: &str =
     "https://raw.githubusercontent.com/2kybe3/kybe-backend/refs/heads/main/config.toml.example";
 
 impl Config {
-    pub async fn init() -> Result<Arc<Self>, anyhow::Error> {
+    pub async fn init() -> Result<Arc<Self>, ConfigError> {
         let args: Vec<String> = env::args().collect();
         if args.iter().any(|arg| arg == "--generate-example") {
             let time = Instant::now();
             info!("Generating config.toml.example");
             Self::create_local_default().await?;
-            info!("Generated config.toml.example in {} NS", time.elapsed().as_nanos());
+            info!("Generated config.toml.example in {} MS", time.elapsed().as_millis());
             std::process::exit(0)
         }
 
@@ -44,7 +44,7 @@ impl Config {
             }
 
             Err(ConfigError::ReadFile(e)) if e.kind() == std::io::ErrorKind::NotFound => {
-                info!("Creating default config.toml");
+                info!("creating default config.toml");
                 Self::create_default().await?;
                 info!("config created in {} ms", start.elapsed().as_millis());
                 if let Err(e) = Self::load().await {
@@ -89,8 +89,6 @@ impl Config {
 
         let resp = reqwest::get(DEFAULT_CONFIG_URL).await?;
         let content = resp.text().await?;
-
-        toml::from_str::<Config>(&content)?;
 
         fs::write(path, content).await.map_err(ConfigError::WriteFile)?;
         Ok(())

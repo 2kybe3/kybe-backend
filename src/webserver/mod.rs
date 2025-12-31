@@ -130,7 +130,7 @@ async fn init_webserver_inner(
     config: Arc<Config>,
     auth: Arc<AuthService>,
     database: Database,
-) -> Result<(), anyhow::Error> {
+) -> anyhow::Result<()> {
     let webserver_state = WebServerState { auth, config, database };
 
     let app = Router::new()

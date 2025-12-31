@@ -93,7 +93,7 @@ async fn init_bot_inner(
 
                     notifications.notify(Notification::new(
                         "Discord Bot Error",
-                             &format!("Error: {}", error),
+                        &format!("Error: {}", error),
                     )).await
                 } else {
                     error!("Error without context: {:?}", error);
