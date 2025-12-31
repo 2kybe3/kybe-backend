@@ -19,6 +19,8 @@ use tracing::{error, warn};
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 
+const GIT_SHA: &str = env!("KYBE_GIT_SHA");
+
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
 	let bootstrap_guard = init_logger_bootstrap()?;

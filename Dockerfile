@@ -1,6 +1,9 @@
 FROM rust:latest AS builder
 WORKDIR /usr/src/kybe-backend
 
+ARG GIT_SHA
+ENV GIT_SHA=${GIT_SHA}
+
 COPY Cargo.toml Cargo.lock* ./
 RUN mkdir -p src && echo 'fn main() { println!("hello"); }' > src/main.rs
 RUN --mount=type=cache,target=/usr/local/cargo/registry cargo build --release
@@ -8,6 +11,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry cargo build --release
 COPY src ./src
 COPY migrations ./migrations
 COPY .sqlx ./.sqlx
+COPY build.rs ./
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry <<EOF
   set -e

@@ -58,6 +58,8 @@ jobs:
             ${{ env.IMAGE }}:latest
           cache-from: type=local,src=/home/github-runner/.docker-build-cache
           cache-to: type=local,dest=/home/github-runner/.docker-build-cache,mode=max
+          build-args: |
+            GIT_SHA=${{ github.sha }}
 
       - name: Copy docker-compose.yml to server
         uses: appleboy/scp-action@v0.1.4

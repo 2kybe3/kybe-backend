@@ -1,6 +1,7 @@
 mod calculator;
 mod traces;
 mod translator;
+mod version;
 
 use crate::config::types::Config;
 use crate::notifications::{Notification, Notifications};
@@ -86,6 +87,7 @@ async fn init_bot_inner(
                 translator::translate(),
                 traces::get_trace(),
                 traces::get_latest_trace(),
+				version::version(),
             ],
             on_error: |error: FrameworkError<'_, Data, Error>| Box::pin(async move {
                 if let Some(ctx) = error.ctx() {
