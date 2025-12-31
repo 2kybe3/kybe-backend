@@ -4,17 +4,17 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum NotificationError {
-    InvalidConfig(String),
-    Transport(String),
-    Auth(String),
+	InvalidConfig(String),
+	Transport(String),
+	Auth(String),
 }
 
 impl fmt::Display for NotificationError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            NotificationError::InvalidConfig(msg) => write!(f, "Invalid config: {}", msg),
-            NotificationError::Transport(msg) => write!(f, "Transport error: {}", msg),
-            NotificationError::Auth(msg) => write!(f, "Auth error: {}", msg),
-        }
-    }
+	fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+		match self {
+			NotificationError::InvalidConfig(msg) => write!(f, "Invalid config: {}", msg),
+			NotificationError::Transport(msg) => write!(f, "Transport error: {}", msg),
+			NotificationError::Auth(msg) => write!(f, "Auth error: {}", msg),
+		}
+	}
 }

@@ -20,64 +20,64 @@ pub const MAX_MSG_LENGTH: usize = 2000;
 
 #[derive(Clone, Debug)]
 pub struct Data {
-    pub notifications: Arc<Notifications>,
-    #[allow(dead_code)]
-    pub config: Arc<Config>,
-    pub translator: Option<Arc<Translator>>,
-    #[allow(dead_code)]
-    pub database: Database,
+	pub notifications: Arc<Notifications>,
+	#[allow(dead_code)]
+	pub config: Arc<Config>,
+	pub translator: Option<Arc<Translator>>,
+	#[allow(dead_code)]
+	pub database: Database,
 }
 
 pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>, database: Database) {
-    let mut retries = 0;
-    let mut last_failure: Option<Instant> = None;
+	let mut retries = 0;
+	let mut last_failure: Option<Instant> = None;
 
-    loop {
-        match init_bot_inner(notifications.clone(), config.clone(), database.clone()).await {
-            Ok(_) => break,
-            Err(e) => {
-                let now = Instant::now();
+	loop {
+		match init_bot_inner(notifications.clone(), config.clone(), database.clone()).await {
+			Ok(_) => break,
+			Err(e) => {
+				let now = Instant::now();
 
-                if let Some(last) = last_failure
-                    && now.duration_since(last) > Duration::from_mins(5)
-                {
-                    retries = 0;
-                }
+				if let Some(last) = last_failure
+					&& now.duration_since(last) > Duration::from_mins(5)
+				{
+					retries = 0;
+				}
 
-                last_failure = Some(now);
-                retries += 1;
+				last_failure = Some(now);
+				retries += 1;
 
-                notifications
-                    .notify(Notification::new(
-                        "Discord Bot Critical Failure",
-                        &format!("attempt {retries}: {e}"),
-                    ))
-                    .await;
+				notifications
+					.notify(Notification::new(
+						"Discord Bot Critical Failure",
+						&format!("attempt {retries}: {e}"),
+					))
+					.await;
 
-                if retries >= 5 {
-                    notifications
-                        .notify(Notification::new(
-                            "Disabling discord bot",
-                            &format!("due to error: {e} on retry {retries}"),
-                        ))
-                        .await;
-                    break;
-                }
+				if retries >= 5 {
+					notifications
+						.notify(Notification::new(
+							"Disabling discord bot",
+							&format!("due to error: {e} on retry {retries}"),
+						))
+						.await;
+					break;
+				}
 
-                tokio::time::sleep(Duration::from_secs(5 * retries)).await;
-            }
-        }
-    }
+				tokio::time::sleep(Duration::from_secs(5 * retries)).await;
+			}
+		}
+	}
 }
 
 async fn init_bot_inner(
-    notifications: Arc<Notifications>,
-    config: Arc<Config>,
-    database: Database,
+	notifications: Arc<Notifications>,
+	config: Arc<Config>,
+	database: Database,
 ) -> Result<(), Error> {
-    let token = config.discord_bot.token.clone();
+	let token = config.discord_bot.token.clone();
 
-    let framework = poise::Framework::builder()
+	let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![
                 calculator::calculate(),
@@ -141,32 +141,36 @@ async fn init_bot_inner(
         })
         .build();
 
-    let intents = serenity::GatewayIntents::non_privileged();
+	let intents = serenity::GatewayIntents::non_privileged();
 
-    let client = serenity::ClientBuilder::new(&token, intents).framework(framework).await;
+	let client = serenity::ClientBuilder::new(&token, intents)
+		.framework(framework)
+		.await;
 
-    let mut client = client?;
-    client.start().await?;
-    Ok(())
+	let mut client = client?;
+	client.start().await?;
+	Ok(())
 }
 
 #[macro_export]
 macro_rules! reply_or_attach {
-    ($ctx:expr, $s:expr, $filename:expr) => {{
-        let text = $s.to_string();
-        let result = if text.chars().count() <= $crate::discord_bot::MAX_MSG_LENGTH {
-            $ctx.reply(&text).await
-        } else {
-            let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, $filename);
-            let reply = poise::CreateReply::default().attachment(attachment);
-            $ctx.send(reply).await
-        };
+	($ctx:expr, $s:expr, $filename:expr) => {{
+		let text = $s.to_string();
+		let result = if text.chars().count() <= $crate::discord_bot::MAX_MSG_LENGTH {
+			$ctx.reply(&text).await
+		} else {
+			let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, $filename);
+			let reply = poise::CreateReply::default().attachment(attachment);
+			$ctx.send(reply).await
+		};
 
-        if let Err(e) = result {
-            tracing::error!("Failed to send response: {:?}", e);
-            let _ = $ctx.say("Failed to send the full response due to an error.").await;
-        }
-    }};
+		if let Err(e) = result {
+			tracing::error!("Failed to send response: {:?}", e);
+			let _ = $ctx
+				.say("Failed to send the full response due to an error.")
+				.await;
+		}
+	}};
 }
 
 #[macro_export]

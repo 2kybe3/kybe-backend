@@ -6,20 +6,20 @@ use tracing::info;
 pub struct LogNotifier {}
 
 impl LogNotifier {
-    pub fn new() -> Self {
-        Self {}
-    }
+	pub fn new() -> Self {
+		Self {}
+	}
 }
 
 #[async_trait::async_trait]
 impl Notifier for LogNotifier {
-    async fn send(&self, notification: &Notification) -> Result<(), NotificationError> {
-        info!("{:?}", notification);
+	async fn send(&self, notification: &Notification) -> Result<(), NotificationError> {
+		info!("{:?}", notification);
 
-        Ok(())
-    }
+		Ok(())
+	}
 
-    fn name(&self) -> &'static str {
-        "Log"
-    }
+	fn name(&self) -> &'static str {
+		"Log"
+	}
 }
