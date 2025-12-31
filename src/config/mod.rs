@@ -1,7 +1,7 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
-    Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, GotifyConfig, LogConfig, LoggerConfig,
-    NotificationConfig, TranslatorConfig, WebserverConfig,
+    Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, EmailConfig, GotifyConfig, LogConfig,
+    LoggerConfig, NotificationConfig, TranslatorConfig, WebserverConfig,
 };
 use std::env;
 use tokio::fs;
@@ -109,6 +109,12 @@ impl Default for Config {
             webserver: WebserverConfig {
                 behind_proxy: false,
                 trust_proxy_header: "X-Forwarded-For".into(),
+            },
+            email: EmailConfig {
+                server: "mail.kybe.xyz".into(),
+                port: 993,
+                email: "system@kybe.xyz".into(),
+                password: "".into(),
             },
         }
     }

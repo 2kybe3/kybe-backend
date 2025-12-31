@@ -2,6 +2,7 @@ mod auth;
 mod config;
 mod db;
 mod discord_bot;
+pub mod email;
 mod notifications;
 pub mod translator;
 mod webserver;
@@ -9,6 +10,7 @@ mod webserver;
 use crate::auth::Auth;
 use crate::config::types::{Config, LoggerConfig};
 use crate::db::Database;
+use crate::email::EmailService;
 use crate::notifications::{Notification, Notifications};
 use std::io::stdout;
 use std::sync::Arc;
@@ -38,6 +40,7 @@ async fn main() -> Result<(), anyhow::Error> {
         }
     };
 
+    EmailService::new(&config.email).run_loop();
     database.delete_old_unverified_users_loop().await;
 
     let auth = Arc::new(Auth::new(database.clone()));

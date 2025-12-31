@@ -28,3 +28,9 @@ postgres_url = "postgres://postgres:password@localhost/test"
 [logger]
 file_logger_enabled = true
 file_logger_path = "./log"
+
+[email]
+email = "system@kybe.xyz"
+password = ""
+server = "mail.kybe.xyz"
+port = 993

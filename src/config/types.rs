@@ -7,6 +7,7 @@ pub struct Config {
     pub webserver: WebserverConfig,
     pub database: DatabaseConfig,
     pub logger: LoggerConfig,
+    pub email: EmailConfig,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -62,4 +63,12 @@ pub struct LoggerConfig {
 pub struct WebserverConfig {
     pub behind_proxy: bool,
     pub trust_proxy_header: String,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct EmailConfig {
+    pub email: String,
+    pub password: String,
+    pub server: String,
+    pub port: u16,
 }
