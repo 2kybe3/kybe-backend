@@ -63,7 +63,7 @@ pub async fn cat(
 	trace.input = serde_json::json!({
 		"tag": tag,
 		"says": says,
-		"cate_type": cat_type,
+		"cat_type": cat_type,
 		"filter": filter,
 		"fit": fit,
 		"position": position,
