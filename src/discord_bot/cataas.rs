@@ -2,18 +2,15 @@ use crate::db::command_traces::{CommandStatus, CommandTrace};
 use crate::discord_bot::{Context, Error, reply_or_attach};
 use crate::finalize_command_trace;
 use futures::{Stream, StreamExt};
-use log::info;
 use poise::CreateReply;
 use poise::serenity_prelude::CreateAttachment;
 use serde_json::Value;
-use tokio::time::Instant;
 use tracing::error;
 
 async fn autocomplete_tag<'a>(
 	ctx: Context<'_>,
 	partial: &'a str,
 ) -> impl Stream<Item = String> + 'a {
-	let now = Instant::now();
 	let tags = {
 		let mut catass = ctx.data().catass.write().await;
 		catass.tags().await
