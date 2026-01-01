@@ -1,4 +1,5 @@
 mod calculator;
+mod cataas;
 mod traces;
 mod translator;
 mod version;
@@ -13,6 +14,7 @@ use tracing::error;
 use crate::db::Database;
 use crate::translator::Translator;
 use poise::serenity_prelude as serenity;
+use reqwest::Client;
 
 type Error = anyhow::Error;
 pub(crate) type Context<'a> = poise::Context<'a, Data, Error>;
@@ -27,6 +29,8 @@ pub struct Data {
 	pub translator: Option<Arc<Translator>>,
 	#[allow(dead_code)]
 	pub database: Database,
+
+	pub client: reqwest::Client,
 }
 
 pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>, database: Database) {
@@ -88,6 +92,7 @@ async fn init_bot_inner(
                 traces::get_trace(),
                 traces::get_latest_trace(),
 				version::version(),
+				cataas::cat(),
             ],
             on_error: |error: FrameworkError<'_, Data, Error>| Box::pin(async move {
                 if let Some(ctx) = error.ctx() {
@@ -133,11 +138,19 @@ async fn init_bot_inner(
                     }
                 };
 
+				let client = Client::builder()
+					.user_agent("kybe_backend / ".to_string() + crate::GIT_SHA)
+					.timeout(Duration::from_secs(2))
+					.read_timeout(Duration::from_secs(2))
+					.connect_timeout(Duration::from_secs(2))
+					.build()?;
+
                 Ok(Data {
                     notifications,
                     config,
                     translator,
                     database,
+					client,
                 })
             })
         })
