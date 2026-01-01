@@ -51,9 +51,9 @@ pub enum Position {
 	Top,
 	RightTop,
 	Right,
-	RightBottomm,
-	Bottomm,
-	LeftBottomm,
+	RightBottom,
+	Bottom,
+	LeftBottom,
 	Left,
 	LeftTop,
 	#[default]
