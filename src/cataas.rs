@@ -49,12 +49,16 @@ pub enum Fit {
 #[serde(rename_all = "lowercase")]
 pub enum Position {
 	Top,
+	#[serde(rename = "right top")]
 	RightTop,
 	Right,
+	#[serde(rename = "right bottom")]
 	RightBottom,
 	Bottom,
+	#[serde(rename = "left bottom")]
 	LeftBottom,
 	Left,
+	#[serde(rename = "left top")]
 	LeftTop,
 	#[default]
 	Center,
