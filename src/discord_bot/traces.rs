@@ -1,6 +1,6 @@
 use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error};
-use crate::{finalize_command_trace, reply_or_attach};
+use crate::discord_bot::{Context, Error, reply_or_attach};
+use crate::finalize_command_trace;
 use std::time::Instant;
 use uuid::Uuid;
 
@@ -51,10 +51,10 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
 
 	match ctx.data().database.get_command_trace(uuid).await {
 		Ok(Some(db_trace)) => {
-			let res = format!("{:#?}", db_trace);
+			let res = format!("```json\n{}\n```", serde_json::to_string_pretty(&db_trace)?);
 			let duration = start.elapsed();
 			trace.output = Some(format!("Trace fetched in {:?}", duration));
-			reply_or_attach!(ctx, res, "trace.txt");
+			reply_or_attach(&ctx, res, "trace.txt").await;
 		}
 		Ok(None) => {
 			trace.output = Some("No trace found".into());
@@ -101,10 +101,10 @@ pub async fn get_latest_trace(ctx: Context<'_>) -> Result<(), Error> {
 
 	match ctx.data().database.get_latest_command_trace().await {
 		Ok(Some(db_trace)) => {
-			let output = format!("{:#?}", db_trace);
+			let output = format!("```json\n{}\n```", serde_json::to_string_pretty(&db_trace)?);
 			let duration = start.elapsed();
 			trace.output = Some(format!("Latest Trace fetched in {:?}", duration));
-			reply_or_attach!(ctx, output, "latest_trace.txt");
+			reply_or_attach(&ctx, output, "latest_trace.txt").await;
 		}
 		Ok(None) => {
 			trace.output = Some("No traces found".into());

@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod cataas;
 mod config;
 mod db;
 mod discord_bot;

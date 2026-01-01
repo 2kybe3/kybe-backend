@@ -1,7 +1,9 @@
 use crate::db::Database;
+use serde::Serialize;
+use serde_json::Map;
 use uuid::Uuid;
 
-#[derive(Debug, sqlx::Type, PartialEq, Clone)]
+#[derive(Debug, sqlx::Type, PartialEq, Clone, Serialize)]
 #[sqlx(type_name = "command_status", rename_all = "lowercase")]
 pub enum CommandStatus {
 	Success,
@@ -24,7 +26,7 @@ impl TryFrom<&str> for CommandStatus {
 	}
 }
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, sqlx::FromRow, Serialize)]
 pub struct CommandTrace {
 	pub trace_id: Uuid,
 	pub command: String,
@@ -56,8 +58,8 @@ impl CommandTrace {
 			started_at: chrono::Utc::now(),
 			duration_ms: 0,
 			status: CommandStatus::Success,
-			input: serde_json::json!({}),
-			data: serde_json::json!({}),
+			input: serde_json::Value::Object(Map::new()),
+			data: serde_json::Value::Object(Map::new()),
 			output: None,
 			error: None,
 			created_at: None,

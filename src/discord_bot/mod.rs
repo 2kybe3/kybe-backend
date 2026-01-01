@@ -6,22 +6,24 @@ mod version;
 
 use crate::config::types::Config;
 use crate::notifications::{Notification, Notifications};
-use poise::FrameworkError;
+use poise::{CreateReply, FrameworkError};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tracing::error;
 
+use crate::cataas::CatAss;
 use crate::db::Database;
 use crate::translator::Translator;
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
+use tokio::sync::RwLock;
 
 type Error = anyhow::Error;
 pub(crate) type Context<'a> = poise::Context<'a, Data, Error>;
 
 pub const MAX_MSG_LENGTH: usize = 2000;
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Data {
 	pub notifications: Arc<Notifications>,
 	#[allow(dead_code)]
@@ -30,7 +32,8 @@ pub struct Data {
 	#[allow(dead_code)]
 	pub database: Database,
 
-	pub client: reqwest::Client,
+	pub client: Arc<Client>,
+	pub catass: RwLock<CatAss>,
 }
 
 pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>, database: Database) {
@@ -138,12 +141,14 @@ async fn init_bot_inner(
                     }
                 };
 
-				let client = Client::builder()
+				let client = Arc::new(Client::builder()
 					.user_agent("kybe_backend / ".to_string() + crate::GIT_SHA)
 					.timeout(Duration::from_secs(2))
 					.read_timeout(Duration::from_secs(2))
 					.connect_timeout(Duration::from_secs(2))
-					.build()?;
+					.build()?);
+
+				let catass = RwLock::new(CatAss::new(client.clone()));
 
                 Ok(Data {
                     notifications,
@@ -151,6 +156,7 @@ async fn init_bot_inner(
                     translator,
                     database,
 					client,
+					catass,
                 })
             })
         })
@@ -167,25 +173,21 @@ async fn init_bot_inner(
 	Ok(())
 }
 
-#[macro_export]
-macro_rules! reply_or_attach {
-	($ctx:expr, $s:expr, $filename:expr) => {{
-		let text = $s.to_string();
-		let result = if text.chars().count() <= $crate::discord_bot::MAX_MSG_LENGTH {
-			$ctx.reply(&text).await
-		} else {
-			let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, $filename);
-			let reply = poise::CreateReply::default().attachment(attachment);
-			$ctx.send(reply).await
-		};
+pub async fn reply_or_attach(ctx: &Context<'_>, text: String, filename: impl Into<String>) {
+	let result = if text.chars().count() <= MAX_MSG_LENGTH {
+		ctx.reply(&text).await
+	} else {
+		let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, filename);
+		let reply = CreateReply::default().attachment(attachment);
+		ctx.send(reply).await
+	};
 
-		if let Err(e) = result {
-			tracing::error!("Failed to send response: {:?}", e);
-			let _ = $ctx
-				.say("Failed to send the full response due to an error.")
-				.await;
-		}
-	}};
+	if let Err(e) = result {
+		error!("Failed to send response: {:?}", e);
+		let _ = ctx
+			.say("Failed to send the full response due to an error.")
+			.await;
+	}
 }
 
 #[macro_export]

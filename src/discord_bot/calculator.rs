@@ -1,6 +1,6 @@
 use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error};
-use crate::{finalize_command_trace, reply_or_attach};
+use crate::discord_bot::{Context, Error, reply_or_attach};
+use crate::finalize_command_trace;
 
 #[poise::command(
 	slash_command,
@@ -30,7 +30,7 @@ pub async fn calculate(
 		Ok(result) => {
 			let response = format!("**{}** = **{}**", expression, result);
 			trace.output = Some(response.clone());
-			reply_or_attach!(ctx, response, "result.txt");
+			reply_or_attach(&ctx, response, "result.txt").await;
 		}
 		Err(e) => {
 			trace.status = CommandStatus::Error;

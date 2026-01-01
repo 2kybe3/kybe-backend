@@ -1,6 +1,6 @@
 use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error};
-use crate::{finalize_command_trace, reply_or_attach};
+use crate::discord_bot::{Context, Error, reply_or_attach};
+use crate::finalize_command_trace;
 
 #[poise::command(
 	slash_command,
@@ -43,7 +43,7 @@ pub async fn detect(
 						.join(" -> ");
 					trace.output = Some(summary.clone());
 
-					reply_or_attach!(ctx, summary, "detected_languages.txt");
+					reply_or_attach(&ctx, summary, "detected_languages.txt").await;
 				}
 			}
 			Err(e) => {
@@ -92,7 +92,7 @@ pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
 			Ok(res) => {
 				let output = serde_json::to_string_pretty(&res)?;
 				trace.output = Some(format!("{} languages supported", res.len()));
-				reply_or_attach!(ctx, output, "languages_supported.json");
+				reply_or_attach(&ctx, output, "languages_supported.json").await;
 			}
 			Err(e) => {
 				trace.status = CommandStatus::Error;
@@ -161,14 +161,14 @@ pub async fn translate(
 				if verbose {
 					let output = serde_json::to_string_pretty(&res)?;
 					trace.output = Some(output.clone());
-					reply_or_attach!(ctx, output, "translation.json");
+					reply_or_attach(&ctx, output, "translation.json").await;
 				} else {
 					if let Some(det) = &res.detected_language {
 						source = det.language.clone();
 					}
 					let output = format!("{} → {} \"{}\"", source, target, res.translated_text);
 					trace.output = Some(output.clone());
-					reply_or_attach!(ctx, output, "translation.txt");
+					reply_or_attach(&ctx, output, "translation.txt").await;
 				}
 			}
 			Err(e) => {
