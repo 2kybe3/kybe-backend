@@ -1,3 +1,4 @@
+use crate::cataas::{CATAASCatRequest, Filter, Fit, Position, Type};
 use crate::db::command_traces::{CommandStatus, CommandTrace};
 use crate::discord_bot::{Context, Error, reply_or_attach};
 use crate::finalize_command_trace;
@@ -17,10 +18,19 @@ async fn autocomplete_tag<'a>(
 	};
 
 	futures::stream::iter(tags)
-		.filter(move |tag| futures::future::ready(tag.starts_with(partial)))
-		.map(|tag| tag.to_string())
+		.filter(move |tag| {
+			futures::future::ready(tag.starts_with(partial.split(",").last().unwrap_or("")))
+		})
+		.map(|tag| {
+			let partial = match partial.rfind(',') {
+				Some(pos) => &partial[..=pos],
+				None => "",
+			};
+			format!("{}{}", partial, tag)
+		})
 }
 
+#[allow(clippy::too_many_arguments)]
 #[poise::command(
 	slash_command,
 	install_context = "Guild|User",
@@ -32,13 +42,41 @@ pub async fn cat(
 	#[autocomplete = autocomplete_tag]
 	tag: Option<String>,
 	#[description = "Adds a text to the image"] says: Option<String>,
-	verbose: Option<bool>,
+	#[description = "Cat Type"] cat_type: Option<Type>,
+	#[description = "Filter"] filter: Option<Filter>,
+	#[description = "Fit"] fit: Option<Fit>,
+	#[description = "Position"] position: Option<Position>,
+	#[description = "Width of result image"] width: Option<i32>,
+	#[description = "Height of result image"] height: Option<i32>,
+	#[description = "Blur the image"] blur: Option<i32>,
+	#[description = "With custom filter"] r: Option<i32>,
+	#[description = "With custom filter"] g: Option<i32>,
+	#[description = "With custom filter"] b: Option<i32>,
+	#[description = "With custom filter"] brightness: Option<i32>,
+	#[description = "With custom filter"] saturation: Option<i32>,
+	#[description = "With custom filter"] hue: Option<i32>,
+	#[description = "With custom filter"] lightness: Option<i32>,
+	#[description = "Vebose result"] verbose: Option<bool>,
 ) -> anyhow::Result<(), Error> {
 	let mut trace = CommandTrace::start(&ctx, "cat");
 
 	trace.input = serde_json::json!({
 		"tag": tag,
 		"says": says,
+		"cate_type": cat_type,
+		"filter": filter,
+		"fit": fit,
+		"position": position,
+		"width": width,
+		"height": height,
+		"blur": blur,
+		"r": r,
+		"g": g,
+		"b": b,
+		"brightness": brightness,
+		"saturation": saturation,
+		"hue": hue,
+		"lightness": lightness,
 		"verbose": verbose,
 	});
 
@@ -52,13 +90,33 @@ pub async fn cat(
 		return Err(e.into());
 	}
 
+	let request = CATAASCatRequest {
+		cat_type,
+		filter,
+		fit,
+		position,
+		width,
+		height,
+		blur,
+		r,
+		g,
+		b,
+		brightness,
+		saturation,
+		hue,
+		lightness,
+		json: Some(true),
+	};
+
 	let res = {
 		let catass = ctx.data().catass.read().await;
-		catass.get_cat_url(tag.as_deref(), says.as_deref()).await
+		catass
+			.get_cat_url(&request, tag.as_deref(), says.as_deref())
+			.await
 	};
 
 	match res {
-		Ok(res) => {
+		Ok(Some(res)) => {
 			if let Value::Object(map) = &mut trace.data {
 				map.insert("cataas".to_string(), serde_json::to_value(res.clone())?);
 			}
@@ -110,6 +168,10 @@ pub async fn cat(
 					}
 				}
 			}
+		}
+		Ok(None) => {
+			trace.output = Some("No cat found".into());
+			ctx.reply("No cat found").await?;
 		}
 		Err(e) => {
 			trace.status = CommandStatus::Error;

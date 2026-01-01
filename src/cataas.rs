@@ -1,5 +1,7 @@
 use axum::body::Bytes;
+use axum::http::StatusCode;
 use chrono::{DateTime, Utc};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::error;
@@ -16,6 +18,68 @@ pub struct CATAASCatResponse {
 	pub mimetype: String,
 }
 
+#[derive(Debug, Serialize, poise::ChoiceParameter)]
+#[serde(rename_all = "lowercase")]
+pub enum Type {
+	Square,
+	Medium,
+	Small,
+	XSmall,
+}
+
+#[derive(Debug, Serialize, poise::ChoiceParameter)]
+#[serde(rename_all = "lowercase")]
+pub enum Filter {
+	Mono,
+	Negate,
+	Custom,
+}
+
+#[derive(Debug, Serialize, poise::ChoiceParameter)]
+#[serde(rename_all = "lowercase")]
+pub enum Fit {
+	Cover,
+	Contain,
+	Fill,
+	Inside,
+	Outside,
+}
+
+#[derive(Debug, Serialize, Default, poise::ChoiceParameter)]
+#[serde(rename_all = "lowercase")]
+pub enum Position {
+	Top,
+	RightTop,
+	Right,
+	RightBottomm,
+	Bottomm,
+	LeftBottomm,
+	Left,
+	LeftTop,
+	#[default]
+	Center,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CATAASCatRequest {
+	#[serde(rename = "type")]
+	pub cat_type: Option<Type>,
+	pub filter: Option<Filter>,
+	pub fit: Option<Fit>,
+	pub position: Option<Position>,
+	pub width: Option<i32>,
+	pub height: Option<i32>,
+	pub blur: Option<i32>,
+	pub r: Option<i32>,
+	pub g: Option<i32>,
+	pub b: Option<i32>,
+	pub brightness: Option<i32>,
+	pub saturation: Option<i32>,
+	pub hue: Option<i32>,
+	pub lightness: Option<i32>,
+	pub json: Option<bool>,
+}
+
 #[derive(Debug, Clone)]
 pub struct CatAss {
 	client: Arc<reqwest::Client>,
@@ -30,13 +94,10 @@ impl CatAss {
 	pub async fn tags(&mut self) -> Vec<String> {
 		match self.tags.clone() {
 			Some(tags) => tags,
-			None => match self.fetch_tags().await {
-				Ok(tags) => tags,
-				Err(e) => {
-					error!("Error fetching tags: {:?}", e);
-					vec![]
-				}
-			},
+			None => self.fetch_tags().await.unwrap_or_else(|e| {
+				error!("Error fetching tags: {:?}", e);
+				vec![]
+			}),
 		}
 	}
 
@@ -49,7 +110,7 @@ impl CatAss {
 			.json::<Vec<String>>()
 			.await?
 			.into_iter()
-			.filter(|tag| !tag.is_empty())
+			.filter(|tag| !tag.trim().is_empty())
 			.collect();
 		self.tags = Some(tags.clone());
 		Ok(tags)
@@ -62,9 +123,10 @@ impl CatAss {
 
 	pub async fn get_cat_url(
 		&self,
+		req: &CATAASCatRequest,
 		tag: Option<&str>,
 		says: Option<&str>,
-	) -> anyhow::Result<CATAASCatResponse> {
+	) -> anyhow::Result<Option<CATAASCatResponse>> {
 		let mut url = "https://cataas.com/cat".to_string();
 
 		if let Some(tag) = tag {
@@ -75,10 +137,17 @@ impl CatAss {
 			url.push_str("/says/");
 			url.push_str(&urlencoding::encode(says));
 		}
-		url.push_str("?json=true");
+
+		let mut url = Url::parse(&url)?;
+		let query = serde_qs::to_string(req)?;
+		url.set_query(Some(&query));
 
 		let resp = self.client.get(url).send().await?;
 
-		Ok(resp.json::<CATAASCatResponse>().await?)
+		if resp.status() == StatusCode::NOT_FOUND {
+			Ok(None)
+		} else {
+			Ok(Some(resp.json::<CATAASCatResponse>().await?))
+		}
 	}
 }

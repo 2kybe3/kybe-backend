@@ -143,9 +143,9 @@ async fn init_bot_inner(
 
 				let client = Arc::new(Client::builder()
 					.user_agent("kybe_backend / ".to_string() + crate::GIT_SHA)
-					.timeout(Duration::from_secs(2))
-					.read_timeout(Duration::from_secs(2))
-					.connect_timeout(Duration::from_secs(2))
+					.timeout(Duration::from_secs(5))
+					.read_timeout(Duration::from_secs(5))
+					.connect_timeout(Duration::from_secs(5))
 					.build()?);
 
 				let catass = RwLock::new(CatAss::new(client.clone()));
