@@ -12,7 +12,7 @@ pub enum RequestStatus {
 	Unauthorized,
 }
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, sqlx::FromRow, Clone)]
 pub struct WebsiteTrace {
 	pub trace_id: Uuid,
 	pub method: String,

@@ -1,4 +1,4 @@
-mod auth;
+pub mod auth;
 mod config;
 mod db;
 mod discord_bot;

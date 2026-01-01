@@ -1,18 +1,21 @@
+mod register;
+
 use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
 use crate::db::website_traces::WebsiteTrace;
 use crate::notifications::{Notification, Notifications};
-use axum::extract::{ConnectInfo, RawQuery, State};
-use axum::http::{HeaderMap, StatusCode};
-use axum::response::IntoResponse;
+use axum::Router;
+use axum::extract::ConnectInfo;
+use axum::http::{HeaderMap, Request};
 use axum::routing::{get, post};
-use axum::{Json, Router};
-use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tracing::error;
+use tower_governor::governor::GovernorConfigBuilder;
+use tower_governor::key_extractor::KeyExtractor;
+use tower_governor::{GovernorError, GovernorLayer};
+use tracing::{debug, error};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -22,106 +25,67 @@ struct WebServerState {
 	database: Database,
 }
 
-#[derive(Deserialize, Serialize)]
-struct RegisterPayload {
-	username: String,
-	email: String,
-	password: String,
+pub trait IpExtractionConfig {
+	fn behind_proxy(&self) -> bool;
+	fn trust_proxy_header(&self) -> &str;
+}
+
+impl IpExtractionConfig for Config {
+	fn behind_proxy(&self) -> bool {
+		self.webserver.behind_proxy
+	}
+
+	fn trust_proxy_header(&self) -> &str {
+		&self.webserver.trust_proxy_header
+	}
+}
+
+impl IpExtractionConfig for &ClientIpKeyExtractor {
+	fn behind_proxy(&self) -> bool {
+		self.behind_proxy
+	}
+
+	fn trust_proxy_header(&self) -> &str {
+		&self.trust_proxy_header
+	}
+}
+
+fn client_ip<T: IpExtractionConfig>(
+	headers: &HeaderMap,
+	remote_addr: SocketAddr,
+	config: &T,
+) -> Option<String> {
+	if config.behind_proxy() {
+		headers
+			.get(config.trust_proxy_header())
+			.and_then(|v| v.to_str().ok())
+			.map(|s| s.split(',').next().unwrap_or(s).trim().to_string())
+	} else {
+		Some(remote_addr.ip().to_string())
+	}
 }
 
 async fn root() -> &'static str {
 	"Hello, Stranger!"
 }
 
-macro_rules! website_trace_from_headers {
-	($method:expr, $path:expr, $query:expr, $headers:expr, $remote_addr:expr, $state:expr) => {{
-		let user_agent = $headers
-			.get(axum::http::header::USER_AGENT)
-			.and_then(|v| v.to_str().ok());
-
-		let ip = if $state.config.webserver.behind_proxy {
-			$headers
-				.get($state.config.webserver.trust_proxy_header.clone())
-				.and_then(|v| v.to_str().ok())
-				.map(|s| s.split(',').next().unwrap_or(s).trim().to_string())
-		} else {
-			Some($remote_addr.to_string())
-		};
-
-		WebsiteTrace::start($method, $path, $query, user_agent, ip)
-	}};
-}
-
-#[derive(Debug, Serialize)]
-pub struct RegistrationResponse {
-	success: bool,
-	error: Option<String>,
-	trace_id: Option<Uuid>,
-}
-
-#[axum::debug_handler]
-async fn register(
-	headers: HeaderMap,
-	RawQuery(query): RawQuery,
-	State(state): State<WebServerState>,
-	ConnectInfo(remote_addr): ConnectInfo<SocketAddr>,
-	Json(payload): Json<RegisterPayload>,
-) -> impl IntoResponse {
-	let mut trace: WebsiteTrace =
-		website_trace_from_headers!("POST", "/register", query, headers, remote_addr, state);
-
-	trace.request_body = Some(serde_json::json!({
-		"username": payload.username,
-		"email": payload.email
-	}));
-
+async fn finish_trace(
+	trace: &mut WebsiteTrace,
+	status_code: u16,
+	user_id: Option<Uuid>,
+	database: &Database,
+) {
 	let duration = chrono::Utc::now()
 		.signed_duration_since(trace.started_at)
 		.num_milliseconds();
 
-	match state
-		.auth
-		.register(payload.username, payload.email, payload.password)
-		.await
-	{
-		Ok(_) => {
-			trace.complete(duration, 201, None);
+	trace.complete(duration, status_code, user_id);
 
-			if let Err(e) = state.database.save_website_trace(&trace).await {
-				error!("error saving trace {:?}", e)
-			}
-
-			(StatusCode::CREATED, "Registration successful".into())
-		}
-		Err(e) => {
-			trace.complete(duration, 400, None);
-
-			let response = serde_json::json!(RegistrationResponse {
-				success: false,
-				error: Some(format!("{:?}", e)),
-				trace_id: Some(trace.trace_id),
-			});
-
-			let response_str = match serde_json::to_string_pretty(&response) {
-				Ok(v) => v,
-				Err(e) => {
-					error!("error pretty printing {:?}", e);
-					return (
-						StatusCode::INTERNAL_SERVER_ERROR,
-						"Internal Server Error".into(),
-					);
-				}
-			};
-
-			trace.response_body = Some(response);
-
-			if let Err(e) = state.database.save_website_trace(&trace).await {
-				error!("error saving trace {:?}", e)
-			}
-
-			(StatusCode::BAD_REQUEST, response_str)
-		}
+	if let Err(e) = database.save_website_trace(trace).await {
+		error!("Failed to save website trace: {e:?}");
 	}
+
+	debug!(trace = ?trace, "API request finished");
 }
 
 pub async fn init_webserver(
@@ -140,11 +104,56 @@ pub async fn init_webserver(
 	}
 }
 
+#[derive(Clone)]
+pub struct ClientIpKeyExtractor {
+	behind_proxy: bool,
+	trust_proxy_header: String,
+}
+
+impl ClientIpKeyExtractor {
+	pub fn new(behind_proxy: bool, trust_proxy_header: String) -> Self {
+		Self {
+			behind_proxy,
+			trust_proxy_header,
+		}
+	}
+}
+
+impl KeyExtractor for ClientIpKeyExtractor {
+	type Key = String;
+
+	fn extract<T>(&self, req: &Request<T>) -> Result<Self::Key, GovernorError> {
+		let headers = req.headers();
+		let connect_info = req
+			.extensions()
+			.get::<ConnectInfo<SocketAddr>>()
+			.map(|ci| ci.0)
+			.unwrap_or(SocketAddr::from(([127, 0, 0, 1], 0)));
+
+		let ip = client_ip(headers, connect_info, &self)
+			.unwrap_or_else(|| connect_info.ip().to_string());
+
+		Ok(ip)
+	}
+}
+
 async fn init_webserver_inner(
 	config: Arc<Config>,
 	auth: Arc<AuthService>,
 	database: Database,
 ) -> anyhow::Result<()> {
+	let register_limiter = Arc::new(
+		GovernorConfigBuilder::default()
+			.per_second(60)
+			.burst_size(10)
+			.key_extractor(ClientIpKeyExtractor::new(
+				config.webserver.behind_proxy,
+				config.webserver.trust_proxy_header.clone(),
+			))
+			.finish()
+			.unwrap(),
+	);
+
 	let webserver_state = WebServerState {
 		auth,
 		config,
@@ -153,7 +162,11 @@ async fn init_webserver_inner(
 
 	let app = Router::new()
 		.route("/", get(root))
-		.route("/register", post(register))
+		.route("/health", get(|| async { "OK" }))
+		.route(
+			"/register",
+			post(register::register).layer(GovernorLayer::new(register_limiter)),
+		)
 		.with_state(webserver_state);
 
 	let listener = TcpListener::bind("0.0.0.0:3000").await?;

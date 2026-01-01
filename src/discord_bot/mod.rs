@@ -182,9 +182,9 @@ macro_rules! finalize_command_trace {
         $ctx.data().database.save_command_trace(&$trace).await?;
 
         if $trace.status == CommandStatus::Error {
-            tracing::error!(log = ?$trace, "command finished with error");
+            tracing::error!(trace = ?$trace, "command finished with error");
         } else {
-            tracing::debug!(log = ?$trace, "command finished");
+            tracing::debug!(trace = ?$trace, "command finished");
         }
     };
 }
