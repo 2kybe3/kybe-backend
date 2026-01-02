@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use tokio::sync::OnceCell;
 use tracing::error;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -87,25 +88,29 @@ pub struct CATAASCatRequest {
 #[derive(Debug, Clone)]
 pub struct CatAss {
 	client: Arc<reqwest::Client>,
-	tags: Option<Vec<String>>,
+	tags: OnceCell<Vec<String>>,
 }
 
 impl CatAss {
 	pub fn new(client: Arc<reqwest::Client>) -> Self {
-		Self { client, tags: None }
-	}
-
-	pub async fn tags(&mut self) -> Vec<String> {
-		match self.tags.clone() {
-			Some(tags) => tags,
-			None => self.fetch_tags().await.unwrap_or_else(|e| {
-				error!("Error fetching tags: {:?}", e);
-				vec![]
-			}),
+		Self {
+			client,
+			tags: OnceCell::new(),
 		}
 	}
 
-	async fn fetch_tags(&mut self) -> anyhow::Result<Vec<String>> {
+	pub async fn tags(&self) -> &Vec<String> {
+		self.tags
+			.get_or_init(async || {
+				return self.fetch_tags().await.unwrap_or_else(|e| {
+					error!("Error fething cat tags: {:?}", e);
+					vec![]
+				});
+			})
+			.await
+	}
+
+	async fn fetch_tags(&self) -> anyhow::Result<Vec<String>> {
 		let tags: Vec<String> = self
 			.client
 			.get("https://cataas.com/api/tags")
@@ -116,7 +121,6 @@ impl CatAss {
 			.into_iter()
 			.filter(|tag| !tag.trim().is_empty())
 			.collect();
-		self.tags = Some(tags.clone());
 		Ok(tags)
 	}
 

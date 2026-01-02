@@ -12,10 +12,7 @@ async fn autocomplete_tag<'a>(
 	ctx: Context<'_>,
 	partial: &'a str,
 ) -> impl Stream<Item = String> + 'a {
-	let tags = {
-		let mut catass = ctx.data().catass.write().await;
-		catass.tags().await
-	};
+	let tags = ctx.data().catass.tags().await.to_owned();
 
 	futures::stream::iter(tags)
 		.filter(move |tag| {
@@ -108,12 +105,11 @@ pub async fn cat(
 		json: Some(true),
 	};
 
-	let res = {
-		let catass = ctx.data().catass.read().await;
-		catass
-			.get_cat_url(&request, tag.as_deref(), says.as_deref())
-			.await
-	};
+	let res = ctx
+		.data()
+		.catass
+		.get_cat_url(&request, tag.as_deref(), says.as_deref())
+		.await;
 
 	match res {
 		Ok(Some(res)) => {
@@ -121,11 +117,7 @@ pub async fn cat(
 				map.insert("cataas".to_string(), serde_json::to_value(res.clone())?);
 			}
 
-			let bytes_result = {
-				let catass = ctx.data().catass.read().await;
-				catass.get_image(&res.url).await
-			};
-			match bytes_result {
+			match ctx.data().catass.get_image(&res.url).await {
 				Ok(bytes) => {
 					let ext = match res.mimetype.as_str() {
 						"image/png" => "png",

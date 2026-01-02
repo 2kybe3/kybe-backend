@@ -16,7 +16,6 @@ use crate::db::Database;
 use crate::translator::Translator;
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
-use tokio::sync::RwLock;
 
 type Error = anyhow::Error;
 pub(crate) type Context<'a> = poise::Context<'a, Data, Error>;
@@ -33,7 +32,7 @@ pub struct Data {
 	pub database: Database,
 
 	pub client: Arc<Client>,
-	pub catass: RwLock<CatAss>,
+	pub catass: CatAss,
 }
 
 pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>, database: Database) {
@@ -148,7 +147,7 @@ async fn init_bot_inner(
 					.connect_timeout(Duration::from_secs(5))
 					.build()?);
 
-				let catass = RwLock::new(CatAss::new(client.clone()));
+				let catass = CatAss::new(client.clone());
 
                 Ok(Data {
                     notifications,
