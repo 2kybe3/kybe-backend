@@ -51,13 +51,13 @@ impl Style {
 		}
 	}
 
-    pub fn bold(mut self, bold: bool) -> Self {
-        self.bold = bold;
-        self
-    }
+	pub fn bold(mut self, bold: bool) -> Self {
+		self.bold = bold;
+		self
+	}
 
-    pub fn dim(mut self, dim: bool) -> Self {
-        self.dim = dim;
-        self
-    }
+	pub fn dim(mut self, dim: bool) -> Self {
+		self.dim = dim;
+		self
+	}
 }

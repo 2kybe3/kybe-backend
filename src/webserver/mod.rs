@@ -102,37 +102,34 @@ async fn root(
 			language: Some("bash"),
 			code: "curl https://kybe.xyz",
 		},
-        Object::TextBlob {
-            text: "Projects:\n\n",
-            style: Some(Style::new_fg(render::Color::Red)),
-        },
-        Object::TextBlob {
-            text: "kybe-backend: https://github.com/2kybe3/kybe-backend",
-            style: Some(Style::new_fg(render::Color::Yellow)),
-        },
-        Object::TextBlob {
-            text: " (this site)\n",
-            style: Some(Style::new_fg(render::Color::White).bold(true).dim(true)),
-        },
-        Object::TextBlob {
-            text: "nix-dotfiles: https://codeberg.org/kybe/nix-dotfiles",
-            style: Some(Style::new_fg(render::Color::Yellow)),
-        },
-        Object::TextBlob {
-            text: " (i use nix btw)\n",
-            style: Some(Style::new_fg(render::Color::White).bold(true).dim(true)),
-        },
-        Object::TextBlob {
-            text: "\n",
-            style: Some(Style::default()),
-        },
+		Object::TextBlob {
+			text: "Projects:\n\n",
+			style: Some(Style::new_fg(render::Color::Red)),
+		},
+		Object::TextBlob {
+			text: "kybe-backend: https://github.com/2kybe3/kybe-backend",
+			style: Some(Style::new_fg(render::Color::Yellow)),
+		},
+		Object::TextBlob {
+			text: " (this site)\n",
+			style: Some(Style::new_fg(render::Color::White).bold(true).dim(true)),
+		},
+		Object::TextBlob {
+			text: "nix-dotfiles: https://codeberg.org/kybe/nix-dotfiles",
+			style: Some(Style::new_fg(render::Color::Yellow)),
+		},
+		Object::TextBlob {
+			text: " (i use nix btw)\n",
+			style: Some(Style::new_fg(render::Color::White).bold(true).dim(true)),
+		},
+		Object::TextBlob {
+			text: "\n",
+			style: Some(Style::default()),
+		},
 	]);
 
-	if user_agent
-		.unwrap_or_default()
-		.to_lowercase()
-		.contains("curl")
-	{
+	let user_agent = user_agent.unwrap_or_default().to_lowercase();
+	if user_agent.contains("curl") || user_agent.contains("lynx") {
 		let result = page.render_ansi();
 		trace.request_status = RequestStatus::Success;
 		trace.status_code = StatusCode::OK.into();
