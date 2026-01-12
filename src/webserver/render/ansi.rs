@@ -68,14 +68,31 @@ impl<'a> Page<'a> {
 
 		for obj in &self.objects {
 			match obj {
-				super::Object::TextBlob { text, style } => {
-					if let Some(s) = style {
-						output.push_str(&s.ansi_code());
-						output.push_str(text);
-						output.push_str(&Style::default().ansi_code());
-					} else {
-						output.push_str(text);
+				super::Object::TextBlob {
+					text,
+					style,
+					link_to,
+				} => {
+					output.push_str(&style.ansi_code());
+
+					let mut text = text.to_string();
+					if let Some(link_to) = link_to
+						&& !text.contains(link_to)
+						&& link_to.starts_with("http")
+					{
+						let index = text.trim_start().find("\n");
+						if let Some(index) = index {
+							let rest = text.split_off(index);
+							text.push_str(&format!(" => {}", link_to));
+							text.push_str(&rest);
+						} else {
+							text.push_str(&format!(" => {}", link_to));
+						}
 					}
+
+					output.push_str(&text);
+
+					output.push_str(&Style::default().ansi_code());
 				}
 				super::Object::CodeBlock {
 					title,

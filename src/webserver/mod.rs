@@ -88,14 +88,19 @@ async fn root(
 
 	let mut trace = WebsiteTrace::start(METHOD, PATH.to_string(), query, user_agent.clone(), ip);
 
+	// TODO: prob should make a macro for this with some kind of string parsing
+	// like
+	// <Red:Default>Hi<Red:Red>hi
 	let page = Page::new(vec![
 		Object::TextBlob {
 			text: "Hello Stranger\n\n",
-			style: Some(Style::new_fg(render::Color::Red)),
+			style: Style::new_fg(render::Color::Red),
+			link_to: None,
 		},
 		Object::TextBlob {
 			text: "This site supports curl\n",
-			style: Some(Style::default()),
+			style: Style::default(),
+			link_to: None,
 		},
 		Object::CodeBlock {
 			title: Some("curl"),
@@ -104,27 +109,73 @@ async fn root(
 		},
 		Object::TextBlob {
 			text: "Projects:\n\n",
-			style: Some(Style::new_fg(render::Color::Red)),
+			style: Style::new_fg(render::Color::Red),
+			link_to: None,
 		},
 		Object::TextBlob {
-			text: "kybe-backend: https://github.com/2kybe3/kybe-backend",
-			style: Some(Style::new_fg(render::Color::Yellow)),
+			text: "kybe-backend: ",
+			style: Style::new_fg(render::Color::Yellow),
+			link_to: None,
+		},
+		Object::TextBlob {
+			text: "https://github.com/2kybe3/kybe-backend",
+			style: Style::new_fg(render::Color::Green),
+			link_to: Some("https://github.com/2kybe3/kybe-backend"),
 		},
 		Object::TextBlob {
 			text: " (this site)\n",
-			style: Some(Style::new_fg(render::Color::White).bold(true).dim(true)),
+			style: Style::new_fg(render::Color::White).bold(true).dim(true),
+			link_to: None,
 		},
 		Object::TextBlob {
-			text: "nix-dotfiles: https://codeberg.org/kybe/nix-dotfiles",
-			style: Some(Style::new_fg(render::Color::Yellow)),
+			text: "nix-dotfiles: ",
+			style: Style::new_fg(render::Color::Yellow),
+			link_to: None,
+		},
+		Object::TextBlob {
+			text: "https://codeberg.org/kybe/nix-dotfiles",
+			style: Style::new_fg(render::Color::Green),
+			link_to: Some("https://codeberg.org/kybe/nix-dotfiles"),
 		},
 		Object::TextBlob {
 			text: " (i use nix btw)\n",
-			style: Some(Style::new_fg(render::Color::White).bold(true).dim(true)),
+			style: Style::new_fg(render::Color::White).bold(true).dim(true),
+			link_to: None,
 		},
 		Object::TextBlob {
-			text: "\n",
-			style: Some(Style::default()),
+			text: "\nContact:\n\n",
+			style: Style::new_fg(render::Color::Red),
+			link_to: None,
+		},
+		Object::TextBlob {
+			text: "PGP: ",
+			style: Style::new_fg(render::Color::Yellow),
+			link_to: None,
+		},
+		Object::TextBlob {
+			text: "https://kybe.xyz/key\n",
+			style: Style::new_fg(render::Color::Green),
+			link_to: Some("https://kybe.xyz/key"),
+		},
+		Object::TextBlob {
+			text: "Email: ",
+			style: Style::new_fg(render::Color::Yellow),
+			link_to: None,
+		},
+		Object::TextBlob {
+			text: "kybe@kybe.xyz\n",
+			style: Style::new_fg(render::Color::Green),
+			link_to: Some("mailto:kybe@kybe.xyz"),
+		},
+		Object::TextBlob {
+			text: "Matrix: ",
+			style: Style::new_fg(render::Color::Yellow),
+			link_to: None,
+		},
+		Object::TextBlob {
+			text: "@kybe:kybe.xyz\n",
+			style: Style::new_fg(render::Color::Green),
+			link_to: Some("https://matrix.to/#/@kybe:kybe.xyz"),
 		},
 	]);
 

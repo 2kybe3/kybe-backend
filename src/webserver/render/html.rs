@@ -66,16 +66,23 @@ impl<'a> Page<'a> {
 
 		for obj in &self.objects {
 			match obj {
-				super::Object::TextBlob { text, style } => {
-					if let Some(s) = style {
-						output.push_str(&format!(
-							"<span style=\"{}\">{}</span>",
-							s.html_style(),
-							&html_escape::encode_text(text)
-						));
-					} else {
-						output.push_str(&html_escape::encode_text(text));
-					}
+				super::Object::TextBlob {
+					text,
+					style,
+					link_to,
+				} => {
+					let (start, end) = match link_to {
+						Some(link_to) => {
+							(&*format!("<a style=\"[style]\" href={}>", link_to), "</a>")
+						}
+						None => ("<span style=\"[style]\">", "</span>"),
+					};
+					output.push_str(&format!(
+						"{}{}{}",
+						&start.replace("[style]", &style.html_style()),
+						&html_escape::encode_text(text),
+						end
+					));
 				}
 				super::Object::CodeBlock {
 					title,

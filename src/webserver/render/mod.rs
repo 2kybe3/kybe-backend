@@ -8,7 +8,8 @@ pub use color::{Color, Style};
 pub enum Object<'a> {
 	TextBlob {
 		text: &'a str,
-		style: Option<Style>,
+		style: Style,
+		link_to: Option<&'a str>,
 	},
 	CodeBlock {
 		title: Option<&'a str>,
