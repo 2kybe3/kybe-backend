@@ -94,7 +94,7 @@ async fn root(
 			style: Some(Style::new_fg(render::Color::Red)),
 		},
 		Object::TextBlob {
-			text: "This site supports curl\nTry it out!\n",
+			text: "This site supports curl\n",
 			style: Some(Style::default()),
 		},
 		Object::CodeBlock {
@@ -102,6 +102,30 @@ async fn root(
 			language: Some("bash"),
 			code: "curl https://kybe.xyz",
 		},
+        Object::TextBlob {
+            text: "Projects:\n\n",
+            style: Some(Style::new_fg(render::Color::Red)),
+        },
+        Object::TextBlob {
+            text: "kybe-backend: https://github.com/2kybe3/kybe-backend",
+            style: Some(Style::new_fg(render::Color::Yellow)),
+        },
+        Object::TextBlob {
+            text: " (this site)\n",
+            style: Some(Style::new_fg(render::Color::White).bold(true).dim(true)),
+        },
+        Object::TextBlob {
+            text: "nix-dotfiles: https://codeberg.org/kybe/nix-dotfiles",
+            style: Some(Style::new_fg(render::Color::Yellow)),
+        },
+        Object::TextBlob {
+            text: " (i use nix btw)\n",
+            style: Some(Style::new_fg(render::Color::White).bold(true).dim(true)),
+        },
+        Object::TextBlob {
+            text: "\n",
+            style: Some(Style::default()),
+        },
 	]);
 
 	if user_agent

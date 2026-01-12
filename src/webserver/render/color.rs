@@ -50,4 +50,14 @@ impl Style {
 			dim: false,
 		}
 	}
+
+    pub fn bold(mut self, bold: bool) -> Self {
+        self.bold = bold;
+        self
+    }
+
+    pub fn dim(mut self, dim: bool) -> Self {
+        self.dim = dim;
+        self
+    }
 }

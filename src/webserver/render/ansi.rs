@@ -58,7 +58,7 @@ impl Style {
 			Color::BrightWhite => "107",
 		});
 
-		format!("\x1b[{}m", codes.join(";"))
+		format!("\x1b[0m\x1b[{}m", codes.join(";"))
 	}
 }
 
