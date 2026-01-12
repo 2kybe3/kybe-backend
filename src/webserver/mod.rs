@@ -245,6 +245,17 @@ async fn init_webserver_inner(
 			.finish()
 			.ok_or(anyhow!("governor init failed"))?,
 	);
+	let root_limiter = Arc::new(
+		GovernorConfigBuilder::default()
+			.per_second(1)
+			.burst_size(10)
+			.key_extractor(ClientIpKeyExtractor::new(
+				config.webserver.behind_proxy,
+				config.webserver.trust_proxy_header.clone(),
+			))
+			.finish()
+			.ok_or(anyhow!("governor init failed"))?,
+	);
 
 	let webserver_state = WebServerState {
 		auth,
@@ -253,7 +264,7 @@ async fn init_webserver_inner(
 	};
 
 	let app = Router::new()
-		.route("/", get(root))
+		.route("/", get(root).layer(GovernorLayer::new(root_limiter)))
 		.route("/health", get(|| async { "OK" }))
 		.route(
 			"/register",
