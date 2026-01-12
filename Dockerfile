@@ -6,26 +6,26 @@ ENV GIT_SHA=${GIT_SHA}
 
 COPY Cargo.toml Cargo.lock* ./
 RUN mkdir -p src && echo 'fn main() { println!("hello"); }' > src/main.rs
-RUN --mount=type=cache,target=/usr/local/cargo/registry cargo build --release
+
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/src/kybe-backend/target \
+    cargo build --release
 
 COPY src ./src
 COPY migrations ./migrations
 COPY .sqlx ./.sqlx
 COPY build.rs ./
 
-RUN --mount=type=cache,target=/usr/local/cargo/registry <<EOF
-  set -e
-
-  touch /usr/src/kybe-backend/src/main.rs
-  cargo build --release
-EOF
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/src/kybe-backend/target \
+    cargo build --release && cp target/release/kybe-backend /usr/src/kybe-backend/kybe-backend
 
 FROM debian:trixie-slim
 WORKDIR /opt/backend
 
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/kybe-backend/target/release/kybe-backend /usr/bin/
+COPY --from=builder /usr/src/kybe-backend/kybe-backend /usr/bin/
 
 EXPOSE 3000
 CMD ["kybe-backend"]
