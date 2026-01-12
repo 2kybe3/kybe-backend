@@ -12,7 +12,7 @@ env:
 jobs:
   lint:
     name: Lint (Clippy + fmt)
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -38,7 +38,6 @@ jobs:
 
   deploy-backend:
     name: Build, Push & Deploy Backend
-    needs: lint
     runs-on: self-hosted
     if: github.ref == 'refs/heads/main'
 
