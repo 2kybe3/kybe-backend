@@ -1,14 +1,19 @@
 mod register;
+mod render;
 
 use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
-use crate::db::website_traces::WebsiteTrace;
+use crate::db::website_traces::{RequestStatus, WebsiteTrace};
 use crate::notifications::{Notification, Notifications};
+use crate::webserver::render::{Object, Page, Style};
+use anyhow::anyhow;
 use axum::Router;
-use axum::extract::ConnectInfo;
+use axum::extract::{ConnectInfo, RawQuery};
 use axum::http::{HeaderMap, Request};
+use axum::response::{Html, IntoResponse};
 use axum::routing::{get, post};
+use reqwest::StatusCode;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -65,8 +70,73 @@ fn client_ip<T: IpExtractionConfig>(
 	}
 }
 
-async fn root() -> &'static str {
-	"Hello, Stranger!"
+async fn root(
+	headers: HeaderMap,
+	RawQuery(query): RawQuery,
+	axum::extract::State(state): axum::extract::State<WebServerState>,
+	ConnectInfo(remote_addr): ConnectInfo<SocketAddr>,
+) -> impl IntoResponse {
+	const METHOD: &str = "GET";
+	const PATH: &str = "/";
+
+	let user_agent = headers
+		.get(axum::http::header::USER_AGENT)
+		.and_then(|v| v.to_str().ok())
+		.map(|s| s.to_string());
+
+	let ip = client_ip(&headers, remote_addr, &*state.config);
+
+	let mut trace = WebsiteTrace::start(METHOD, PATH.to_string(), query, user_agent.clone(), ip);
+
+	let page = Page::new(vec![
+		Object::TextBlob {
+			text: "Hello Stranger\n\n",
+			style: Some(Style::new_fg(render::Color::Red)),
+		},
+		Object::TextBlob {
+			text: "This site supports curl\nTry it out!\n",
+			style: Some(Style::default()),
+		},
+		Object::CodeBlock {
+			title: Some("curl"),
+			language: Some("bash"),
+			code: "curl https://kybe.xyz",
+		},
+	]);
+
+	if user_agent
+		.unwrap_or_default()
+		.to_lowercase()
+		.contains("curl")
+	{
+		let result = page.render_ansi();
+		trace.request_status = RequestStatus::Success;
+		trace.status_code = StatusCode::OK.into();
+
+		finish_trace(
+			&mut trace,
+			StatusCode::CREATED.as_u16(),
+			None,
+			&state.database,
+		)
+		.await;
+
+		(StatusCode::OK, result).into_response()
+	} else {
+		let result = page.render_html_page("kybe");
+		trace.request_status = RequestStatus::Success;
+		trace.status_code = StatusCode::OK.into();
+
+		finish_trace(
+			&mut trace,
+			StatusCode::CREATED.as_u16(),
+			None,
+			&state.database,
+		)
+		.await;
+
+		(StatusCode::OK, Html(result)).into_response()
+	}
 }
 
 async fn finish_trace(
@@ -98,9 +168,10 @@ pub async fn init_webserver(
 		notifications_clone
 			.notify(Notification::new(
 				"Webserver",
-				&format!("Webserver failed: {:?}", e),
+				&format!("Webserver init failed: {:?}", e),
 			))
 			.await;
+		std::process::exit(1);
 	}
 }
 
@@ -151,7 +222,7 @@ async fn init_webserver_inner(
 				config.webserver.trust_proxy_header.clone(),
 			))
 			.finish()
-			.unwrap(),
+			.ok_or(anyhow!("governor init failed"))?,
 	);
 
 	let webserver_state = WebServerState {

@@ -24,6 +24,9 @@ const GIT_SHA: &str = env!("KYBE_GIT_SHA");
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
+	// Init logger in two phases:
+	// 1. without file logging to print info about loading the config
+	// 2. with file logging derived from the config persistent for the rest of the application
 	let bootstrap_guard = init_logger_bootstrap()?;
 	let config = Config::init().await?;
 	init_logger(&config.logger, bootstrap_guard)?;
@@ -66,6 +69,7 @@ async fn main() -> anyhow::Result<()> {
 	Ok(())
 }
 
+/// Creates a default tracing logger that is used as long as DefaultGuard is not dropped
 fn init_logger_bootstrap() -> anyhow::Result<DefaultGuard> {
 	let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
 		EnvFilter::new("info").add_directive("kybe_backend=debug".parse().unwrap())
@@ -80,6 +84,10 @@ fn init_logger_bootstrap() -> anyhow::Result<DefaultGuard> {
 	Ok(tracing::subscriber::set_default(subscriber))
 }
 
+/// Takes a old_logger (from init_logger_bootstrap) and creates a new logger which includes file
+/// logging which location we should have from the config
+///
+/// Drops the old_logger before setting the new logger
 fn init_logger(config: &LoggerConfig, old_logger: DefaultGuard) -> anyhow::Result<()> {
 	let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
 		EnvFilter::new("info").add_directive("kybe_backend=debug".parse().unwrap())
