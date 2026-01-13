@@ -82,7 +82,7 @@ pub async fn root(
 		TextBlobBuilder::new("https://kybe.xyz/pgp\n")
 			.style(Style::new_fg(Color::Green))
 			.link_to(
-				LinkToBuilder::new("https://kybe.xyz/key")
+				LinkToBuilder::new("https://kybe.xyz/pgp")
 					.seperator_style(Style::new_fg(Color::White))
 					.build(),
 			)
