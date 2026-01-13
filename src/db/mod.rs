@@ -57,7 +57,7 @@ impl Database {
 		for attempt in 1..=5 {
 			match Self::inner_init(Arc::clone(&config)).await {
 				Ok(db) => {
-                    info!("starting migrations");
+					info!("starting migrations");
 					MIGRATOR
 						.run(&db.pool)
 						.await

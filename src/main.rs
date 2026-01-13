@@ -16,7 +16,7 @@ use crate::notifications::{Notification, Notifications};
 use std::io::stdout;
 use std::sync::Arc;
 use tracing::dispatcher::DefaultGuard;
-use tracing::{error, warn, info};
+use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 
@@ -33,7 +33,7 @@ async fn main() -> anyhow::Result<()> {
 
 	let notifications = Arc::new(Notifications::new(&config.notification));
 	// TODO: add timeout
-    info!("connecting to db");
+	info!("connecting to db");
 	let database = match Database::init(Arc::clone(&config), Arc::clone(&notifications)).await {
 		Ok(db) => {
 			db.delete_old_unverified_users_loop().await;
@@ -50,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
 			std::process::exit(1);
 		}
 	};
-    info!("db connected");
+	info!("db connected");
 
 	let email_service = Arc::new(EmailService::new(&config.email));
 	let email_service_loop_handle = email_service.run_loop();
