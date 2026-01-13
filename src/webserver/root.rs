@@ -112,33 +112,22 @@ pub async fn root(
 	]);
 
 	let user_agent = user_agent.unwrap_or_default().to_lowercase();
-	if user_agent.contains("curl") || user_agent.contains("lynx") {
-		let result = page.render_ansi();
-		trace.request_status = RequestStatus::Success;
-		trace.status_code = StatusCode::OK.into();
-
-		finish_trace(
-			&mut trace,
-			StatusCode::CREATED.as_u16(),
-			None,
-			&state.database,
-		)
-		.await;
-
-		(StatusCode::OK, result).into_response()
+	let result = if user_agent.contains("curl") || user_agent.contains("lynx") {
+		page.render_ansi()
 	} else {
-		let result = page.render_html_page("kybe");
-		trace.request_status = RequestStatus::Success;
-		trace.status_code = StatusCode::OK.into();
+		page.render_html_page("kybe - root")
+	};
 
-		finish_trace(
-			&mut trace,
-			StatusCode::CREATED.as_u16(),
-			None,
-			&state.database,
-		)
-		.await;
+	trace.request_status = RequestStatus::Success;
+	trace.status_code = StatusCode::OK.into();
 
-		(StatusCode::OK, Html(result)).into_response()
-	}
+	finish_trace(
+		&mut trace,
+		StatusCode::CREATED.as_u16(),
+		None,
+		&state.database,
+	)
+	.await;
+
+	(StatusCode::OK, Html(result)).into_response()
 }
