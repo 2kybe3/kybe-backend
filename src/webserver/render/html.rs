@@ -50,7 +50,7 @@ impl Color {
 	}
 }
 
-const HTML_TEMPLATE: &str = include_str!("assets/template.html");
+const HTML_TEMPLATE: &str = include_str!("../../../assets/template.html");
 
 impl<'a> Page<'a> {
 	pub fn render_html_page(&self, title: &str) -> String {

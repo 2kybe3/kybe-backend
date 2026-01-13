@@ -20,7 +20,7 @@ use tracing::{error, warn};
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 
-const GIT_SHA: &str = env!("KYBE_GIT_SHA");
+const GIT_SHA: &str = include_str!("../assets/git.sha");
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {

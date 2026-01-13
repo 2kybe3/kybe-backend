@@ -37,7 +37,7 @@ pub async fn pgp(
 		TextBlobBuilder::new("Hello Stranger, and maybe PGP user :-)\n\n")
 			.style(Style::new_fg(Color::Red))
 			.build(),
-		CodeBlockBuilder::new(include_str!("assets/key.pgp"))
+		CodeBlockBuilder::new(include_str!("../../assets/key.pgp"))
 			.title("kybe <kybe@kybe.xyz>")
 			.build(),
 	]);
