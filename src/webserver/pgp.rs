@@ -15,14 +15,14 @@ use crate::{
 	},
 };
 
-pub async fn gpg(
+pub async fn pgp(
 	headers: HeaderMap,
 	RawQuery(query): RawQuery,
 	axum::extract::State(state): axum::extract::State<WebServerState>,
 	ConnectInfo(remote_addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
 	const METHOD: &str = "GET";
-	const PATH: &str = "/gpg";
+	const PATH: &str = "/pgp";
 
 	let user_agent = headers
 		.get(axum::http::header::USER_AGENT)
@@ -34,10 +34,10 @@ pub async fn gpg(
 	let mut trace = WebsiteTrace::start(METHOD, PATH.to_string(), query, user_agent.clone(), ip);
 
 	let page = Page::from_iter([
-		TextBlobBuilder::new("Hello Stranger, and maybe GPG user :-)\n\n")
+		TextBlobBuilder::new("Hello Stranger, and maybe PGP user :-)\n\n")
 			.style(Style::new_fg(Color::Red))
 			.build(),
-		CodeBlockBuilder::new(include_str!("assets/key.gpg"))
+		CodeBlockBuilder::new(include_str!("assets/key.pgp"))
 			.title("kybe <kybe@kybe.xyz>")
 			.build(),
 	]);
@@ -46,7 +46,7 @@ pub async fn gpg(
 	let result = if user_agent.contains("curl") || user_agent.contains("lynx") {
 		page.render_ansi()
 	} else {
-		page.render_html_page("kybe - gpg")
+		page.render_html_page("kybe - pgp")
 	};
 
 	trace.request_status = RequestStatus::Success;

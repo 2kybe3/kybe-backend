@@ -1,4 +1,4 @@
-mod gpg;
+mod pgp;
 mod register;
 mod render;
 mod root;
@@ -178,8 +178,8 @@ async fn init_webserver_inner(
 			get(root::root).layer(GovernorLayer::new(root_limiter.clone())),
 		)
 		.route(
-			"/gpg",
-			get(gpg::gpg).layer(GovernorLayer::new(root_limiter)),
+			"/pgp",
+			get(pgp::pgp).layer(GovernorLayer::new(root_limiter)),
 		)
 		.route("/health", get(|| async { "OK" }))
 		.route(
