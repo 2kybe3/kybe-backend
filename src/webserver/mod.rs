@@ -6,7 +6,7 @@ use crate::config::types::Config;
 use crate::db::Database;
 use crate::db::website_traces::{RequestStatus, WebsiteTrace};
 use crate::notifications::{Notification, Notifications};
-use crate::webserver::render::{Object, Page, Style};
+use crate::webserver::render::{CodeBlockBuilder, Page, Style, TextBlobBuilder};
 use anyhow::anyhow;
 use axum::Router;
 use axum::extract::{ConnectInfo, RawQuery};
@@ -88,95 +88,62 @@ async fn root(
 
 	let mut trace = WebsiteTrace::start(METHOD, PATH.to_string(), query, user_agent.clone(), ip);
 
-	// TODO: prob should make a macro for this with some kind of string parsing
-	// like
-	// <Red:Default>Hi<Red:Red>hi
-	let page = Page::new(vec![
-		Object::TextBlob {
-			text: "Hello Stranger\n\n",
-			style: Style::new_fg(render::Color::Red),
-			link_to: None,
-		},
-		Object::TextBlob {
-			text: "This site supports curl\n",
-			style: Style::default(),
-			link_to: None,
-		},
-		Object::CodeBlock {
-			title: Some("curl"),
-			language: Some("bash"),
-			code: "curl https://kybe.xyz",
-		},
-		Object::TextBlob {
-			text: "Projects:\n\n",
-			style: Style::new_fg(render::Color::Red),
-			link_to: None,
-		},
-		Object::TextBlob {
-			text: "kybe-backend: ",
-			style: Style::new_fg(render::Color::Yellow),
-			link_to: None,
-		},
-		Object::TextBlob {
-			text: "https://github.com/2kybe3/kybe-backend",
-			style: Style::new_fg(render::Color::Green),
-			link_to: Some("https://github.com/2kybe3/kybe-backend"),
-		},
-		Object::TextBlob {
-			text: " (this site)\n",
-			style: Style::new_fg(render::Color::White).bold(true).dim(true),
-			link_to: None,
-		},
-		Object::TextBlob {
-			text: "nix-dotfiles: ",
-			style: Style::new_fg(render::Color::Yellow),
-			link_to: None,
-		},
-		Object::TextBlob {
-			text: "https://codeberg.org/kybe/nix-dotfiles",
-			style: Style::new_fg(render::Color::Green),
-			link_to: Some("https://codeberg.org/kybe/nix-dotfiles"),
-		},
-		Object::TextBlob {
-			text: " (i use nix btw)\n",
-			style: Style::new_fg(render::Color::White).bold(true).dim(true),
-			link_to: None,
-		},
-		Object::TextBlob {
-			text: "\nContact:\n\n",
-			style: Style::new_fg(render::Color::Red),
-			link_to: None,
-		},
-		Object::TextBlob {
-			text: "PGP: ",
-			style: Style::new_fg(render::Color::Yellow),
-			link_to: None,
-		},
-		Object::TextBlob {
-			text: "https://kybe.xyz/key\n",
-			style: Style::new_fg(render::Color::Green),
-			link_to: Some("https://kybe.xyz/key"),
-		},
-		Object::TextBlob {
-			text: "Email: ",
-			style: Style::new_fg(render::Color::Yellow),
-			link_to: None,
-		},
-		Object::TextBlob {
-			text: "kybe@kybe.xyz\n",
-			style: Style::new_fg(render::Color::Green),
-			link_to: Some("mailto:kybe@kybe.xyz"),
-		},
-		Object::TextBlob {
-			text: "Matrix: ",
-			style: Style::new_fg(render::Color::Yellow),
-			link_to: None,
-		},
-		Object::TextBlob {
-			text: "@kybe:kybe.xyz\n",
-			style: Style::new_fg(render::Color::Green),
-			link_to: Some("https://matrix.to/#/@kybe:kybe.xyz"),
-		},
+	let page = Page::from_iter([
+		TextBlobBuilder::new("Hello Stranger\n\n")
+			.style(Style::new_fg(render::Color::Red))
+			.build(),
+		TextBlobBuilder::new("This site supports curl\n").build(),
+		CodeBlockBuilder::new("curl https://kybe.xyz")
+			.title("curl")
+			.language("bash")
+			.build(),
+		TextBlobBuilder::new("Projects:\n\n")
+			.style(Style::new_fg(render::Color::Red))
+			.build(),
+		TextBlobBuilder::new("kybe-backend: ")
+			.style(Style::new_fg(render::Color::Yellow))
+			.build(),
+		TextBlobBuilder::new("https://github.com/2kybe3/kybe-backend")
+			.style(Style::new_fg(render::Color::Green))
+			.link_to("https://github.com/2kybe3/kybe-backend")
+			.build(),
+		TextBlobBuilder::new(" (this site)\n")
+			.style(Style::new_fg(render::Color::White).bold(true).dim(true))
+			.build(),
+		TextBlobBuilder::new("nix-dotfiles: ")
+			.style(Style::new_fg(render::Color::Yellow))
+			.build(),
+		TextBlobBuilder::new("https://codeberg.org/kybe/nix-dotfiles")
+			.style(Style::new_fg(render::Color::Green))
+			.link_to("https://codeberg.org/kybe/nix-dotfiles")
+			.build(),
+		TextBlobBuilder::new(" (i use nix btw)\n")
+			.style(Style::new_fg(render::Color::White).bold(true).dim(true))
+			.build(),
+		TextBlobBuilder::new("\nContact:\n\n")
+			.style(Style::new_fg(render::Color::Red))
+			.build(),
+		TextBlobBuilder::new("PGP: ")
+			.style(Style::new_fg(render::Color::Yellow))
+			.build(),
+		TextBlobBuilder::new("https://kybe.xyz/key\n")
+			.style(Style::new_fg(render::Color::Green))
+			.link_to("https://kybe.xyz/key")
+			.build(),
+		TextBlobBuilder::new("Email: ")
+			.style(Style::new_fg(render::Color::Yellow))
+			.build(),
+		TextBlobBuilder::new("kybe@kybe.xyz\n")
+			.style(Style::new_fg(render::Color::Green))
+			.link_to("mailto:kybe@kybe.xyz")
+			.build(),
+		TextBlobBuilder::new("Matrix: ")
+			.style(Style::new_fg(render::Color::Yellow))
+			.build(),
+		TextBlobBuilder::new("@kybe:kybe.xyz\n")
+			.style(Style::new_fg(render::Color::Green))
+			.link_to("https://matrix.to/#/@kybe:kybe.xyz")
+			.build(),
 	]);
 
 	let user_agent = user_agent.unwrap_or_default().to_lowercase();
