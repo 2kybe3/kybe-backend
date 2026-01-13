@@ -72,9 +72,10 @@ impl<'a> Page<'a> {
 					link_to,
 				} => {
 					let (start, end) = match link_to {
-						Some(link_to) => {
-							(&*format!("<a style=\"[style]\" href={}>", link_to), "</a>")
-						}
+						Some(link_to) => (
+							&*format!("<a style=\"[style]\" href={}>", link_to.link),
+							"</a>",
+						),
 						None => ("<span style=\"[style]\">", "</span>"),
 					};
 					output.push_str(&format!(

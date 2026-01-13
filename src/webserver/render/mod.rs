@@ -3,15 +3,20 @@ mod builders;
 mod color;
 mod html;
 
-pub use builders::{CodeBlockBuilder, TextBlobBuilder};
+pub use builders::{CodeBlockBuilder, LinkToBuilder, TextBlobBuilder};
 pub use color::{Color, Style};
+
+pub struct LinkTo<'a> {
+	link: &'a str,
+	seperator_style: Option<Style>,
+	link_style: Option<Style>,
+}
 
 pub enum Object<'a> {
 	TextBlob {
 		text: &'a str,
 		style: Style,
-		// TODO: add more options like (link color seperator color (ascii render))
-		link_to: Option<&'a str>,
+		link_to: Option<LinkTo<'a>>,
 	},
 	CodeBlock {
 		title: Option<&'a str>,

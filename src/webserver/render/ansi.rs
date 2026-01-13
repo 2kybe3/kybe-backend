@@ -77,16 +77,30 @@ impl<'a> Page<'a> {
 
 					let mut text = text.to_string();
 					if let Some(link_to) = link_to
-						&& !text.contains(link_to)
-						&& link_to.starts_with("http")
+						&& !text.contains(link_to.link)
+						&& link_to.link.starts_with("http")
 					{
+						let mut colored = String::new();
+						if let Some(style) = link_to.seperator_style {
+							colored.push_str(&style.ansi_code());
+						}
+						colored.push_str(" => ");
+						if let Some(style) = link_to.link_style {
+							colored.push_str(&style.ansi_code());
+						} else {
+							// If no link style is set use the previous style (the text)
+							colored.push_str(&style.ansi_code());
+						}
+
 						let index = text.trim_start().find("\n");
 						if let Some(index) = index {
 							let rest = text.split_off(index);
-							text.push_str(&format!(" => {}", link_to));
+							text.push_str(&colored);
+							text.push_str(link_to.link);
 							text.push_str(&rest);
 						} else {
-							text.push_str(&format!(" => {}", link_to));
+							text.push_str(&colored);
+							text.push_str(link_to.link);
 						}
 					}
 

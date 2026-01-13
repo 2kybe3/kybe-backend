@@ -6,7 +6,9 @@ use crate::config::types::Config;
 use crate::db::Database;
 use crate::db::website_traces::{RequestStatus, WebsiteTrace};
 use crate::notifications::{Notification, Notifications};
-use crate::webserver::render::{CodeBlockBuilder, Page, Style, TextBlobBuilder};
+use crate::webserver::render::{
+	CodeBlockBuilder, Color, LinkToBuilder, Page, Style, TextBlobBuilder,
+};
 use anyhow::anyhow;
 use axum::Router;
 use axum::extract::{ConnectInfo, RawQuery};
@@ -105,7 +107,11 @@ async fn root(
 			.build(),
 		TextBlobBuilder::new("https://github.com/2kybe3/kybe-backend")
 			.style(Style::new_fg(render::Color::Green))
-			.link_to("https://github.com/2kybe3/kybe-backend")
+			.link_to(
+				LinkToBuilder::new("https://github.com/2kybe3/kybe-backend")
+					.seperator_style(Style::new_fg(Color::White))
+					.build(),
+			)
 			.build(),
 		TextBlobBuilder::new(" (this site)\n")
 			.style(Style::new_fg(render::Color::White).bold(true).dim(true))
@@ -115,7 +121,11 @@ async fn root(
 			.build(),
 		TextBlobBuilder::new("https://codeberg.org/kybe/nix-dotfiles")
 			.style(Style::new_fg(render::Color::Green))
-			.link_to("https://codeberg.org/kybe/nix-dotfiles")
+			.link_to(
+				LinkToBuilder::new("https://codeberg.org/kybe/nix-dotfiles")
+					.seperator_style(Style::new_fg(Color::White))
+					.build(),
+			)
 			.build(),
 		TextBlobBuilder::new(" (i use nix btw)\n")
 			.style(Style::new_fg(render::Color::White).bold(true).dim(true))
@@ -128,21 +138,33 @@ async fn root(
 			.build(),
 		TextBlobBuilder::new("https://kybe.xyz/key\n")
 			.style(Style::new_fg(render::Color::Green))
-			.link_to("https://kybe.xyz/key")
+			.link_to(
+				LinkToBuilder::new("https://kybe.xyz/key")
+					.seperator_style(Style::new_fg(Color::White))
+					.build(),
+			)
 			.build(),
 		TextBlobBuilder::new("Email: ")
 			.style(Style::new_fg(render::Color::Yellow))
 			.build(),
 		TextBlobBuilder::new("kybe@kybe.xyz\n")
 			.style(Style::new_fg(render::Color::Green))
-			.link_to("mailto:kybe@kybe.xyz")
+			.link_to(
+				LinkToBuilder::new("mailto:kybe@kybe.xyz")
+					.seperator_style(Style::new_fg(Color::White))
+					.build(),
+			)
 			.build(),
 		TextBlobBuilder::new("Matrix: ")
 			.style(Style::new_fg(render::Color::Yellow))
 			.build(),
 		TextBlobBuilder::new("@kybe:kybe.xyz\n")
 			.style(Style::new_fg(render::Color::Green))
-			.link_to("https://matrix.to/#/@kybe:kybe.xyz")
+			.link_to(
+				LinkToBuilder::new("https://matrix.to/#/@kybe:kybe.xyz")
+					.seperator_style(Style::new_fg(Color::White))
+					.build(),
+			)
 			.build(),
 	]);
 

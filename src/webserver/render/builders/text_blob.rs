@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::webserver::render::{Object, Style};
+use crate::webserver::render::{LinkTo, Object, Style};
 
 pub struct NoStyle;
 pub struct HasStyle;
@@ -11,7 +11,7 @@ pub struct HasLink;
 pub struct TextBlobBuilder<'a, S, L> {
 	text: &'a str,
 	style: Option<Style>,
-	link_to: Option<&'a str>,
+	link_to: Option<LinkTo<'a>>,
 	_state: PhantomData<(S, L)>,
 }
 
@@ -38,7 +38,7 @@ impl<'a, L> TextBlobBuilder<'a, NoStyle, L> {
 }
 
 impl<'a, S> TextBlobBuilder<'a, S, NoLink> {
-	pub fn link_to(self, link_to: &'a str) -> TextBlobBuilder<'a, S, HasLink> {
+	pub fn link_to(self, link_to: LinkTo<'a>) -> TextBlobBuilder<'a, S, HasLink> {
 		TextBlobBuilder {
 			text: self.text,
 			style: self.style,
