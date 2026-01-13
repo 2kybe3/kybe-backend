@@ -35,7 +35,7 @@ pub async fn root(
 
 	let page = Page::from_iter([
 		TextBlobBuilder::new("Hello Stranger\n\n")
-			.style(Style::new_fg(Color::Red))
+			.style(Style::new_fg(Color::BrightRed))
 			.build(),
 		TextBlobBuilder::new("This site supports curl\n").build(),
 		CodeBlockBuilder::new("curl https://kybe.xyz")
@@ -43,7 +43,7 @@ pub async fn root(
 			.language("bash")
 			.build(),
 		TextBlobBuilder::new("Projects:\n\n")
-			.style(Style::new_fg(Color::Red))
+			.style(Style::new_fg(Color::BrightRed))
 			.build(),
 		TextBlobBuilder::new("kybe-backend: ")
 			.style(Style::new_fg(Color::Yellow))
@@ -74,7 +74,7 @@ pub async fn root(
 			.style(Style::new_fg(Color::White).bold(true).dim(true))
 			.build(),
 		TextBlobBuilder::new("\nContact:\n\n")
-			.style(Style::new_fg(Color::Red))
+			.style(Style::new_fg(Color::BrightRed))
 			.build(),
 		TextBlobBuilder::new("PGP: ")
 			.style(Style::new_fg(Color::Yellow))
