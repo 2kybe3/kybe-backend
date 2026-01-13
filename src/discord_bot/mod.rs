@@ -25,10 +25,8 @@ pub const MAX_MSG_LENGTH: usize = 2000;
 #[derive(Debug)]
 pub struct Data {
 	pub notifications: Arc<Notifications>,
-	#[allow(dead_code)]
 	pub config: Arc<Config>,
 	pub translator: Option<Arc<Translator>>,
-	#[allow(dead_code)]
 	pub database: Database,
 
 	pub client: Arc<Client>,
@@ -141,7 +139,7 @@ async fn init_bot_inner(
                 };
 
 				let client = Arc::new(Client::builder()
-					.user_agent("kybe_backend / ".to_string() + crate::GIT_SHA)
+					.user_agent("2kybe3 / kybe-backend")
 					.timeout(Duration::from_secs(5))
 					.read_timeout(Duration::from_secs(5))
 					.connect_timeout(Duration::from_secs(5))
