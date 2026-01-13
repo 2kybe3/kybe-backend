@@ -1,21 +1,18 @@
+mod gpg;
 mod register;
 mod render;
+mod root;
 
 use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
-use crate::db::website_traces::{RequestStatus, WebsiteTrace};
+use crate::db::website_traces::WebsiteTrace;
 use crate::notifications::{Notification, Notifications};
-use crate::webserver::render::{
-	CodeBlockBuilder, Color, LinkToBuilder, Page, Style, TextBlobBuilder,
-};
 use anyhow::anyhow;
 use axum::Router;
-use axum::extract::{ConnectInfo, RawQuery};
+use axum::extract::ConnectInfo;
 use axum::http::{HeaderMap, Request};
-use axum::response::{Html, IntoResponse};
 use axum::routing::{get, post};
-use reqwest::StatusCode;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -69,134 +66,6 @@ fn client_ip<T: IpExtractionConfig>(
 			.map(|s| s.split(',').next().unwrap_or(s).trim().to_string())
 	} else {
 		Some(remote_addr.ip().to_string())
-	}
-}
-
-async fn root(
-	headers: HeaderMap,
-	RawQuery(query): RawQuery,
-	axum::extract::State(state): axum::extract::State<WebServerState>,
-	ConnectInfo(remote_addr): ConnectInfo<SocketAddr>,
-) -> impl IntoResponse {
-	const METHOD: &str = "GET";
-	const PATH: &str = "/";
-
-	let user_agent = headers
-		.get(axum::http::header::USER_AGENT)
-		.and_then(|v| v.to_str().ok())
-		.map(|s| s.to_string());
-
-	let ip = client_ip(&headers, remote_addr, &*state.config);
-
-	let mut trace = WebsiteTrace::start(METHOD, PATH.to_string(), query, user_agent.clone(), ip);
-
-	let page = Page::from_iter([
-		TextBlobBuilder::new("Hello Stranger\n\n")
-			.style(Style::new_fg(render::Color::Red))
-			.build(),
-		TextBlobBuilder::new("This site supports curl\n").build(),
-		CodeBlockBuilder::new("curl https://kybe.xyz")
-			.title("curl")
-			.language("bash")
-			.build(),
-		TextBlobBuilder::new("Projects:\n\n")
-			.style(Style::new_fg(render::Color::Red))
-			.build(),
-		TextBlobBuilder::new("kybe-backend: ")
-			.style(Style::new_fg(render::Color::Yellow))
-			.build(),
-		TextBlobBuilder::new("https://github.com/2kybe3/kybe-backend")
-			.style(Style::new_fg(render::Color::Green))
-			.link_to(
-				LinkToBuilder::new("https://github.com/2kybe3/kybe-backend")
-					.seperator_style(Style::new_fg(Color::White))
-					.build(),
-			)
-			.build(),
-		TextBlobBuilder::new(" (this site)\n")
-			.style(Style::new_fg(render::Color::White).bold(true).dim(true))
-			.build(),
-		TextBlobBuilder::new("nix-dotfiles: ")
-			.style(Style::new_fg(render::Color::Yellow))
-			.build(),
-		TextBlobBuilder::new("https://codeberg.org/kybe/nix-dotfiles")
-			.style(Style::new_fg(render::Color::Green))
-			.link_to(
-				LinkToBuilder::new("https://codeberg.org/kybe/nix-dotfiles")
-					.seperator_style(Style::new_fg(Color::White))
-					.build(),
-			)
-			.build(),
-		TextBlobBuilder::new(" (i use nix btw)\n")
-			.style(Style::new_fg(render::Color::White).bold(true).dim(true))
-			.build(),
-		TextBlobBuilder::new("\nContact:\n\n")
-			.style(Style::new_fg(render::Color::Red))
-			.build(),
-		TextBlobBuilder::new("PGP: ")
-			.style(Style::new_fg(render::Color::Yellow))
-			.build(),
-		TextBlobBuilder::new("https://kybe.xyz/key\n")
-			.style(Style::new_fg(render::Color::Green))
-			.link_to(
-				LinkToBuilder::new("https://kybe.xyz/key")
-					.seperator_style(Style::new_fg(Color::White))
-					.build(),
-			)
-			.build(),
-		TextBlobBuilder::new("Email: ")
-			.style(Style::new_fg(render::Color::Yellow))
-			.build(),
-		TextBlobBuilder::new("kybe@kybe.xyz\n")
-			.style(Style::new_fg(render::Color::Green))
-			.link_to(
-				LinkToBuilder::new("mailto:kybe@kybe.xyz")
-					.seperator_style(Style::new_fg(Color::White))
-					.build(),
-			)
-			.build(),
-		TextBlobBuilder::new("Matrix: ")
-			.style(Style::new_fg(render::Color::Yellow))
-			.build(),
-		TextBlobBuilder::new("@kybe:kybe.xyz\n")
-			.style(Style::new_fg(render::Color::Green))
-			.link_to(
-				LinkToBuilder::new("https://matrix.to/#/@kybe:kybe.xyz")
-					.seperator_style(Style::new_fg(Color::White))
-					.build(),
-			)
-			.build(),
-	]);
-
-	let user_agent = user_agent.unwrap_or_default().to_lowercase();
-	if user_agent.contains("curl") || user_agent.contains("lynx") {
-		let result = page.render_ansi();
-		trace.request_status = RequestStatus::Success;
-		trace.status_code = StatusCode::OK.into();
-
-		finish_trace(
-			&mut trace,
-			StatusCode::CREATED.as_u16(),
-			None,
-			&state.database,
-		)
-		.await;
-
-		(StatusCode::OK, result).into_response()
-	} else {
-		let result = page.render_html_page("kybe");
-		trace.request_status = RequestStatus::Success;
-		trace.status_code = StatusCode::OK.into();
-
-		finish_trace(
-			&mut trace,
-			StatusCode::CREATED.as_u16(),
-			None,
-			&state.database,
-		)
-		.await;
-
-		(StatusCode::OK, Html(result)).into_response()
 	}
 }
 
@@ -304,7 +173,14 @@ async fn init_webserver_inner(
 	};
 
 	let app = Router::new()
-		.route("/", get(root).layer(GovernorLayer::new(root_limiter)))
+		.route(
+			"/",
+			get(root::root).layer(GovernorLayer::new(root_limiter.clone())),
+		)
+		.route(
+			"/gpg",
+			get(gpg::gpg).layer(GovernorLayer::new(root_limiter)),
+		)
 		.route("/health", get(|| async { "OK" }))
 		.route(
 			"/register",
