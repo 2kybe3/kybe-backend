@@ -32,6 +32,7 @@ async fn main() -> anyhow::Result<()> {
 	init_logger(&config.logger, bootstrap_guard)?;
 
 	let notifications = Arc::new(Notifications::new(&config.notification));
+	// TODO: add timeout
 	let database = match Database::init(Arc::clone(&config), Arc::clone(&notifications)).await {
 		Ok(db) => {
 			db.delete_old_unverified_users_loop().await;
@@ -78,6 +79,9 @@ fn init_logger_bootstrap() -> anyhow::Result<DefaultGuard> {
 	let subscriber = tracing_subscriber::fmt()
 		.with_max_level(tracing::Level::TRACE)
 		.with_thread_ids(true)
+		.with_file(true)
+		.with_line_number(true)
+		.with_target(true)
 		.with_env_filter(filter)
 		.finish();
 
@@ -110,6 +114,9 @@ fn init_logger(config: &LoggerConfig, old_logger: DefaultGuard) -> anyhow::Resul
 	let subscriber = tracing_subscriber::fmt()
 		.with_max_level(tracing::Level::TRACE)
 		.with_thread_ids(true)
+		.with_file(true)
+		.with_line_number(true)
+		.with_target(true)
 		.with_env_filter(filter)
 		.with_writer(writer)
 		.finish();
