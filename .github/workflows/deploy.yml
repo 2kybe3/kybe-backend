@@ -72,8 +72,8 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:${{ env.TAG }}
             ${{ env.IMAGE }}:latest
-          cache-from: type=local,src=/home/github-runner/.docker-build-cache
-          cache-to: type=local,dest=/home/github-runner/.docker-build-cache,mode=max
+          cache-from: type=local,src=/mnt/buildkit-cache
+          cache-to: type=local,dest=/mnt/buildkit-cache,mode=max
           build-args: |
             GIT_SHA=${{ github.sha }}
 
