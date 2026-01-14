@@ -21,6 +21,7 @@ trust_proxy_header = "X-Forwarded-For"
 
 [database]
 postgres_url = "postgres://postgres:password@localhost/test"
+max_connections = 5
 
 [logger]
 file_logger_enabled = true

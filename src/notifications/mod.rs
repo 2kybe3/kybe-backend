@@ -4,29 +4,29 @@ use futures::future::join_all;
 use providers::gotify::GotifyNotifier;
 use std::fmt::Debug;
 use std::sync::Arc;
-use thiserror::Error;
 use tracing::error;
+use thiserror::Error;
 
 mod providers;
 
 #[derive(Debug, Error)]
 pub enum NotificationError {
-	#[error("Invalid config: {0}")]
+    #[error("Invalid config: {0}")]
 	InvalidConfig(String),
 
-	#[error("Transport error: {0}")]
+    #[error("Transport error: {0}")]
 	Transport(String),
 
-	#[error("Auth error: {0}")]
+    #[error("Auth error: {0}")]
 	Auth(String),
 }
 
 #[async_trait::async_trait]
 pub trait Notifier: Send + Sync + Debug {
-	/// Sends a notification to the provider
+    /// Sends a notification to the provider
 	async fn send(&self, notification: &Notification) -> Result<(), NotificationError>;
 
-	/// Name to identify the Notifier
+    /// Name to identify the Notifier
 	fn name(&self) -> &'static str;
 }
 
@@ -75,23 +75,20 @@ impl Notifications {
 
 	pub async fn notify<S: Into<Notification>>(&self, notification: S) {
 		let notification = notification.into();
-		let notifiers = self.notifiers.clone();
+        let notifiers = self.notifiers.clone();
 
-		let futures = notifiers.into_iter().map(move |notifier| {
-			let notification = notification.clone();
-			async move {
-				if let Err(err) = notifier.send(&notification).await {
-					error!(
-						"Failed to send notification via {}: {:?}",
-						notifier.name(),
-						err
-					);
-				}
-			}
-		});
+        let futures = notifiers.into_iter().map(move |notifier| {
+            let notification = notification.clone();
+            async move {
+                if let Err(err) = notifier.send(&notification).await {
+                    error!("Failed to send notification via {}: {:?}", notifier.name(), err);
 
-		tokio::spawn(async move {
-			join_all(futures).await;
-		});
+                }
+            }
+        });
+
+        tokio::spawn(async move {
+            join_all(futures).await;
+        });
 	}
 }
