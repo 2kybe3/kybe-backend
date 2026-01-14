@@ -146,6 +146,7 @@ impl Default for Config {
 			},
 			database: DatabaseConfig {
 				postgres_url: "postgres://postgres:password@localhost/test".into(),
+				max_connections: 5,
 			},
 			logger: LoggerConfig {
 				file_logger_enabled: true,

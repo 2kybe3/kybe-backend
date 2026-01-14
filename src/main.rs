@@ -12,15 +12,28 @@ use crate::auth::AuthService;
 use crate::config::types::{Config, LoggerConfig};
 use crate::db::Database;
 use crate::email::EmailService;
-use crate::notifications::{Notification, Notifications};
+use crate::notifications::Notifications;
+use std::backtrace::Backtrace;
 use std::io::stdout;
 use std::sync::Arc;
 use tracing::dispatcher::DefaultGuard;
-use tracing::{error, info, warn};
+use tracing::warn;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 
 const GIT_SHA: &str = include_str!("../assets/git.sha");
+
+macro_rules! exit_error {
+	($notifications:expr, $title:expr, $msg:expr) => {{
+		tracing::error!("{}: {}", $title, $msg);
+
+		$notifications
+			.notify(crate::notifications::Notification::new($title, $msg))
+			.await;
+
+		std::process::exit(1);
+	}};
+}
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
@@ -32,25 +45,14 @@ async fn main() -> anyhow::Result<()> {
 	init_logger(&config.logger, bootstrap_guard)?;
 
 	let notifications = Arc::new(Notifications::new(&config.notification));
-	// TODO: add timeout
-	info!("connecting to db");
-	let database = match Database::init(Arc::clone(&config), Arc::clone(&notifications)).await {
-		Ok(db) => {
-			db.delete_old_unverified_users_loop().await;
-			db
-		}
-		Err(e) => {
-			error!("Database init failed: {e}");
-			notifications
-				.notify(Notification::new(
-					"Database",
-					format!("Database init failed: {e}"),
-				))
-				.await;
-			std::process::exit(1);
-		}
+	let database = match Database::init(Arc::clone(&config)).await {
+		Ok(db) => db,
+		Err(e) => exit_error!(
+			notifications,
+			"Database",
+			format!("init failed: {e}\nBacktrace: {}", Backtrace::capture())
+		),
 	};
-	info!("db connected");
 
 	let email_service = Arc::new(EmailService::new(&config.email));
 	let email_service_loop_handle = email_service.run_loop();

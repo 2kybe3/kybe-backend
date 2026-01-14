@@ -45,6 +45,7 @@ pub struct TranslatorConfig {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DatabaseConfig {
 	pub postgres_url: String,
+	pub max_connections: u32,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
