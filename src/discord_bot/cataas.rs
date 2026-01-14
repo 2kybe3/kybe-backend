@@ -1,6 +1,6 @@
-use crate::cataas::{CATAASCatRequest, Filter, Fit, Position, Type};
 use crate::db::command_traces::{CommandStatus, CommandTrace};
 use crate::discord_bot::{Context, Error, reply_or_attach};
+use crate::external::cataas::{CATAASCatRequest, Filter, Fit, Position, Type};
 use crate::finalize_command_trace;
 use futures::{Stream, StreamExt};
 use poise::CreateReply;
@@ -12,7 +12,7 @@ async fn autocomplete_tag<'a>(
 	ctx: Context<'_>,
 	partial: &'a str,
 ) -> impl Stream<Item = String> + 'a {
-	let tags = ctx.data().catass.tags().await.to_owned();
+	let tags = ctx.data().cataas.tags().await.to_owned();
 
 	futures::stream::iter(tags)
 		.filter(move |tag| {
@@ -107,7 +107,7 @@ pub async fn cat(
 
 	let res = ctx
 		.data()
-		.catass
+		.cataas
 		.get_cat_url(&request, tag.as_deref(), says.as_deref())
 		.await;
 
@@ -117,7 +117,7 @@ pub async fn cat(
 				map.insert("cataas".to_string(), serde_json::to_value(res.clone())?);
 			}
 
-			match ctx.data().catass.get_image(&res.url).await {
+			match ctx.data().cataas.get_image(&res.url).await {
 				Ok(bytes) => {
 					let ext = match res.mimetype.as_str() {
 						"image/png" => "png",

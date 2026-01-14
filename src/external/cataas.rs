@@ -86,12 +86,12 @@ pub struct CATAASCatRequest {
 }
 
 #[derive(Debug, Clone)]
-pub struct CatAss {
+pub struct CATAAS {
 	client: Arc<reqwest::Client>,
 	tags: OnceCell<Vec<String>>,
 }
 
-impl CatAss {
+impl CATAAS {
 	pub fn new(client: Arc<reqwest::Client>) -> Self {
 		Self {
 			client,

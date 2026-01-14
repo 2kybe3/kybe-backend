@@ -1,9 +1,9 @@
 pub mod auth;
-pub mod cataas;
 mod config;
 mod db;
 mod discord_bot;
 pub mod email;
+pub mod external;
 mod notifications;
 pub mod translator;
 mod webserver;

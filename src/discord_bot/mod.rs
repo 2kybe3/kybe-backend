@@ -5,17 +5,16 @@ mod translator;
 mod version;
 
 use crate::config::types::Config;
+use crate::db::Database;
+use crate::external::cataas::CATAAS;
 use crate::notifications::{Notification, Notifications};
+use crate::translator::Translator;
+use poise::serenity_prelude as serenity;
 use poise::{CreateReply, FrameworkError};
+use reqwest::Client;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tracing::error;
-
-use crate::cataas::CatAss;
-use crate::db::Database;
-use crate::translator::Translator;
-use poise::serenity_prelude as serenity;
-use reqwest::Client;
 
 type Error = anyhow::Error;
 pub(crate) type Context<'a> = poise::Context<'a, Data, Error>;
@@ -30,7 +29,7 @@ pub struct Data {
 	pub database: Database,
 
 	pub client: Arc<Client>,
-	pub catass: CatAss,
+	pub cataas: CATAAS,
 }
 
 pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>, database: Database) {
@@ -145,7 +144,7 @@ async fn init_bot_inner(
 					.connect_timeout(Duration::from_secs(5))
 					.build()?);
 
-				let catass = CatAss::new(client.clone());
+				let cataas = CATAAS::new(client.clone());
 
                 Ok(Data {
                     notifications,
@@ -153,7 +152,7 @@ async fn init_bot_inner(
                     translator,
                     database,
 					client,
-					catass,
+					cataas,
                 })
             })
         })
