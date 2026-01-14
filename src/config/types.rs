@@ -12,14 +12,8 @@ pub struct Config {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct NotificationConfig {
-	pub log: LogConfig,
 	pub gotify: GotifyConfig,
 	pub discord: DiscordConfig,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct LogConfig {
-	pub enabled: bool,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

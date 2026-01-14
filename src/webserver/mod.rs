@@ -99,7 +99,7 @@ pub async fn init_webserver(
 		notifications_clone
 			.notify(Notification::new(
 				"Webserver",
-				&format!("Webserver init failed: {:?}", e),
+				format!("Webserver init failed: {:?}", e),
 			))
 			.await;
 		std::process::exit(1);

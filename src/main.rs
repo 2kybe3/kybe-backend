@@ -44,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
 			notifications
 				.notify(Notification::new(
 					"Database",
-					&format!("Database init failed: {e}"),
+					format!("Database init failed: {e}"),
 				))
 				.await;
 			std::process::exit(1);

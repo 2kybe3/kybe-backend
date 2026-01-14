@@ -1,5 +1,4 @@
-use crate::notifications::error::NotificationError;
-use crate::notifications::{Notification, Notifier};
+use crate::notifications::{Notification, NotificationError, Notifier};
 use poise::serenity_prelude::{CreateEmbed, ExecuteWebhook, Http, Webhook};
 
 #[derive(Debug)]

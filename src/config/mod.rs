@@ -1,6 +1,6 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
-	Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, EmailConfig, GotifyConfig, LogConfig,
+	Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, EmailConfig, GotifyConfig,
 	LoggerConfig, NotificationConfig, TranslatorConfig, WebserverConfig,
 };
 use std::env;
@@ -126,7 +126,6 @@ impl Default for Config {
 	fn default() -> Self {
 		Config {
 			notification: NotificationConfig {
-				log: LogConfig { enabled: true },
 				discord: DiscordConfig {
 					enabled: false,
 					url: Some("https://discord.com/api/webhooks/.../...".into()),

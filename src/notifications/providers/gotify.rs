@@ -1,5 +1,4 @@
-use crate::notifications::error::NotificationError;
-use crate::notifications::{Notification, Notifier};
+use crate::notifications::{Notification, NotificationError, Notifier};
 use reqwest::{Client, StatusCode};
 use serde::Serialize;
 

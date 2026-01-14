@@ -54,7 +54,7 @@ pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>, da
 				notifications
 					.notify(Notification::new(
 						"Discord Bot Critical Failure",
-						&format!("attempt {retries}: {e}"),
+						format!("attempt {retries}: {e}"),
 					))
 					.await;
 
@@ -62,7 +62,7 @@ pub async fn init_bot(notifications: Arc<Notifications>, config: Arc<Config>, da
 					notifications
 						.notify(Notification::new(
 							"Disabling discord bot",
-							&format!("due to error: {e} on retry {retries}"),
+							format!("due to error: {e} on retry {retries}"),
 						))
 						.await;
 					break;
@@ -99,7 +99,7 @@ async fn init_bot_inner(
 
                     notifications.notify(Notification::new(
                         "Discord Bot Error",
-                        &format!("Error: {}", error),
+                        format!("Error: {}", error),
                     )).await
                 } else {
                     error!("Error without context: {:?}", error);
@@ -126,7 +126,7 @@ async fn init_bot_inner(
                             notifications
                                 .notify(Notification::new(
                                     "Discord Bot - Translator Initialization Failed",
-                                    &format!(
+                                    format!(
                                         "Failed to initialize translator.\n\nError details:\n{:#?}\n\nTranslation commands will be unavailable.",
                                         e
                                     ),

@@ -1,6 +1,3 @@
-[notification.log]
-enabled = true
-
 [notification.gotify]
 enabled = false
 url = "https://gotify.kybe.xyz/message?token=<token>"
