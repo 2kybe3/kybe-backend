@@ -32,23 +32,23 @@ pub struct Style {
 }
 
 impl Style {
-	pub fn new_fg(fg: Color) -> Self {
+	pub fn new() -> Self {
 		Self {
-			fg,
+			fg: Color::default(),
 			bg: Color::default(),
 			bold: false,
 			dim: false,
 		}
 	}
 
-	#[allow(unused)]
-	pub fn new_bg(bg: Color) -> Self {
-		Self {
-			fg: Color::default(),
-			bg,
-			bold: false,
-			dim: false,
-		}
+	pub fn fg(mut self, fg: Color) -> Self {
+		self.fg = fg;
+		self
+	}
+
+	pub fn bg(mut self, bg: Color) -> Self {
+		self.bg = bg;
+		self
 	}
 
 	pub fn bold(mut self, bold: bool) -> Self {

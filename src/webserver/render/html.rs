@@ -104,7 +104,7 @@ impl<'a> Page<'a> {
 							parts.push(format!("Lang: {}", html_escape::encode_text(lang)));
 						}
 
-						let header_style = Style::new_fg(Color::Cyan);
+						let header_style = Style::new().fg(Color::Cyan);
 						output.push_str(&format!(
 							"<div style=\"{}\">{}</div>",
 							header_style.html_style(),

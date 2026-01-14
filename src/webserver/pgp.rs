@@ -35,7 +35,7 @@ pub async fn pgp(
 
 	let page = Page::from_iter([
 		TextBlobBuilder::new("Hello Stranger, and maybe PGP user :-)\n\n")
-			.style(Style::new_fg(Color::BrightRed))
+			.style(Style::new().fg(Color::BrightRed))
 			.build(),
 		CodeBlockBuilder::new(include_str!("../../assets/key.pgp"))
 			.title("kybe <kybe@kybe.xyz>")

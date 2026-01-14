@@ -35,79 +35,90 @@ pub async fn root(
 
 	let page = Page::from_iter([
 		TextBlobBuilder::new("Hello Stranger\n\n")
-			.style(Style::new_fg(Color::BrightRed))
+			.style(Style::new().fg(Color::BrightRed))
 			.build(),
-		TextBlobBuilder::new("This site supports curl\n").build(),
+		TextBlobBuilder::new("This site is made to also look good on curl\n").build(),
 		CodeBlockBuilder::new("curl https://kybe.xyz")
 			.title("curl")
 			.language("bash")
 			.build(),
 		TextBlobBuilder::new("Projects:\n\n")
-			.style(Style::new_fg(Color::BrightRed))
+			.style(Style::new().fg(Color::BrightRed))
 			.build(),
 		TextBlobBuilder::new("kybe-backend: ")
-			.style(Style::new_fg(Color::Yellow))
+			.style(Style::new().fg(Color::Yellow))
 			.build(),
 		TextBlobBuilder::new("https://github.com/2kybe3/kybe-backend")
-			.style(Style::new_fg(Color::Green))
+			.style(Style::new().fg(Color::Green))
 			.link_to(
 				LinkToBuilder::new("https://github.com/2kybe3/kybe-backend")
-					.seperator_style(Style::new_fg(Color::White))
+					.seperator_style(Style::new().fg(Color::White))
 					.build(),
 			)
 			.build(),
 		TextBlobBuilder::new(" (this site)\n")
-			.style(Style::new_fg(Color::White).bold(true).dim(true))
+			.style(Style::new().fg(Color::White).bold(true).dim(true))
 			.build(),
 		TextBlobBuilder::new("nix-dotfiles: ")
-			.style(Style::new_fg(Color::Yellow))
+			.style(Style::new().fg(Color::Yellow))
 			.build(),
 		TextBlobBuilder::new("https://codeberg.org/kybe/nix-dotfiles")
-			.style(Style::new_fg(Color::Green))
+			.style(Style::new().fg(Color::Green))
 			.link_to(
 				LinkToBuilder::new("https://codeberg.org/kybe/nix-dotfiles")
-					.seperator_style(Style::new_fg(Color::White))
+					.seperator_style(Style::new().fg(Color::White))
 					.build(),
 			)
 			.build(),
 		TextBlobBuilder::new(" (i use nix btw)\n")
-			.style(Style::new_fg(Color::White).bold(true).dim(true))
+			.style(Style::new().fg(Color::White).bold(true).dim(true))
 			.build(),
 		TextBlobBuilder::new("\nContact:\n\n")
-			.style(Style::new_fg(Color::BrightRed))
+			.style(Style::new().fg(Color::BrightRed))
 			.build(),
 		TextBlobBuilder::new("PGP: ")
-			.style(Style::new_fg(Color::Yellow))
+			.style(Style::new().fg(Color::Yellow))
 			.build(),
 		TextBlobBuilder::new("https://kybe.xyz/pgp\n")
-			.style(Style::new_fg(Color::Green))
+			.style(Style::new().fg(Color::Green))
 			.link_to(
 				LinkToBuilder::new("https://kybe.xyz/pgp")
-					.seperator_style(Style::new_fg(Color::White))
+					.seperator_style(Style::new().fg(Color::White))
 					.build(),
 			)
 			.build(),
 		TextBlobBuilder::new("Email: ")
-			.style(Style::new_fg(Color::Yellow))
+			.style(Style::new().fg(Color::Yellow))
 			.build(),
 		TextBlobBuilder::new("kybe@kybe.xyz\n")
-			.style(Style::new_fg(Color::Green))
+			.style(Style::new().fg(Color::Green))
 			.link_to(
 				LinkToBuilder::new("mailto:kybe@kybe.xyz")
-					.seperator_style(Style::new_fg(Color::White))
+					.seperator_style(Style::new().fg(Color::White))
 					.build(),
 			)
 			.build(),
 		TextBlobBuilder::new("Matrix: ")
-			.style(Style::new_fg(Color::Yellow))
+			.style(Style::new().fg(Color::Yellow))
 			.build(),
 		TextBlobBuilder::new("@kybe:kybe.xyz\n")
-			.style(Style::new_fg(Color::Green))
+			.style(Style::new().fg(Color::Green))
 			.link_to(
 				LinkToBuilder::new("https://matrix.to/#/@kybe:kybe.xyz")
-					.seperator_style(Style::new_fg(Color::White))
+					.seperator_style(Style::new().fg(Color::White))
 					.build(),
 			)
+			.build(),
+		// DE flag
+		TextBlobBuilder::new("\n\n").build(),
+		TextBlobBuilder::new("           \n")
+			.style(Style::new().fg(Color::Black).bg(Color::Black))
+			.build(),
+		TextBlobBuilder::new("           \n")
+			.style(Style::new().fg(Color::BrightRed).bg(Color::BrightRed))
+			.build(),
+		TextBlobBuilder::new("           \n")
+			.style(Style::new().fg(Color::Yellow).bg(Color::Yellow))
 			.build(),
 	]);
 
