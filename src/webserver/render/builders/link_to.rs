@@ -53,12 +53,12 @@ impl<'a, S> LinkToBuilder<'a, S, NoLinkStyle> {
 	}
 }
 
-impl<'a, S, L> LinkToBuilder<'a, S, L> {
-	pub fn build(self) -> LinkTo<'a> {
+impl<'a, S, L> From<LinkToBuilder<'a, S, L>> for LinkTo<'a> {
+	fn from(l: LinkToBuilder<'a, S, L>) -> LinkTo<'a> {
 		LinkTo {
-			link: self.link,
-			seperator_style: self.seperator_style,
-			link_style: self.link_style,
+			link: l.link,
+			seperator_style: l.seperator_style,
+			link_style: l.link_style,
 		}
 	}
 }

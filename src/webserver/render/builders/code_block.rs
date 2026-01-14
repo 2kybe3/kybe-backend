@@ -1,7 +1,5 @@
-use std::marker::PhantomData;
-
 use crate::webserver::render::Object;
-
+use std::marker::PhantomData;
 pub struct HasTitle;
 pub struct NoTitle;
 
@@ -48,12 +46,12 @@ impl<'a, L> CodeBlockBuilder<'a, NoTitle, L> {
 	}
 }
 
-impl<'a, T, L> CodeBlockBuilder<'a, T, L> {
-	pub fn build(self) -> Object<'a> {
+impl<'a, T, L> From<CodeBlockBuilder<'a, T, L>> for Object<'a> {
+	fn from(b: CodeBlockBuilder<'a, T, L>) -> Self {
 		Object::CodeBlock {
-			title: self.title,
-			language: self.language,
-			code: self.code,
+			title: b.title,
+			language: b.language,
+			code: b.code,
 		}
 	}
 }

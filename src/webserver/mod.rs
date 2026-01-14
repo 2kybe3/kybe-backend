@@ -1,3 +1,4 @@
+mod ip;
 mod pgp;
 mod register;
 mod render;
@@ -176,6 +177,10 @@ async fn init_webserver_inner(
 		.route(
 			"/",
 			get(root::root).layer(GovernorLayer::new(root_limiter.clone())),
+		)
+		.route(
+			"/ip",
+			get(ip::ip).layer(GovernorLayer::new(root_limiter.clone())),
 		)
 		.route(
 			"/pgp",

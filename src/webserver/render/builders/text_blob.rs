@@ -48,12 +48,12 @@ impl<'a, S> TextBlobBuilder<'a, S, NoLink> {
 	}
 }
 
-impl<'a, S, L> TextBlobBuilder<'a, S, L> {
-	pub fn build(self) -> Object<'a> {
+impl<'a, S, L> From<TextBlobBuilder<'a, S, L>> for Object<'a> {
+	fn from(value: TextBlobBuilder<'a, S, L>) -> Object<'a> {
 		Object::TextBlob {
-			text: self.text,
-			style: self.style.unwrap_or_default(),
-			link_to: self.link_to,
+			text: value.text,
+			style: value.style.unwrap_or_default(),
+			link_to: value.link_to,
 		}
 	}
 }

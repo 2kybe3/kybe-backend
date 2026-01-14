@@ -11,7 +11,7 @@ use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
 	webserver::{
 		WebServerState, client_ip, finish_trace,
-		render::{CodeBlockBuilder, Color, Page, Style, TextBlobBuilder},
+		render::{Color, Object, Page, Style},
 	},
 };
 
@@ -34,16 +34,17 @@ pub async fn pgp(
 	let mut trace = WebsiteTrace::start(METHOD, PATH.to_string(), query, user_agent.clone(), ip);
 
 	let page = Page::from_iter([
-		TextBlobBuilder::new("Hello Stranger, and maybe PGP user :-)\n\n")
+		Object::text("Hello Stranger, and maybe PGP user :-)\n\n")
 			.style(Style::new().fg(Color::BrightRed))
-			.build(),
-		CodeBlockBuilder::new(include_str!("../../assets/key.pgp"))
+			.into(),
+		Object::code(include_str!("../../assets/key.pgp"))
 			.title("kybe <kybe@kybe.xyz>")
-			.build(),
+			.into(),
 	]);
 
 	let user_agent = user_agent.unwrap_or_default().to_lowercase();
-	let result = if user_agent.contains("curl") || user_agent.contains("lynx") {
+	let is_cli = user_agent.contains("curl") || user_agent.contains("lynx");
+	let result = if is_cli {
 		page.render_ansi()
 	} else {
 		page.render_html_page("kybe - pgp")
@@ -60,5 +61,9 @@ pub async fn pgp(
 	)
 	.await;
 
-	(StatusCode::OK, Html(result)).into_response()
+	if is_cli {
+		(StatusCode::OK, result).into_response()
+	} else {
+		(StatusCode::OK, Html(result)).into_response()
+	}
 }
