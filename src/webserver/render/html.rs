@@ -1,7 +1,7 @@
 use std::vec;
 
 use crate::webserver::render::{
-	LinkTo, Page,
+	ColorMapping, LinkTo, Page,
 	color::{Color, Style},
 };
 
@@ -51,7 +51,7 @@ impl Color {
 
 const HTML_TEMPLATE: &str = include_str!("../../../assets/template.html");
 
-impl<'a> Page<'a> {
+impl Page {
 	pub fn render_html_page(&self, title: &str) -> String {
 		let inner_html = self.render_html();
 
@@ -77,8 +77,8 @@ impl<'a> Page<'a> {
 	}
 
 	pub fn render_html_code_block(
-		title: &Option<&str>,
-		language: &Option<&str>,
+		title: &Option<String>,
+		language: &Option<String>,
 		code: &str,
 	) -> String {
 		let mut output = String::new();
@@ -114,6 +114,42 @@ impl<'a> Page<'a> {
 		output
 	}
 
+	fn render_html_canvas(data: &str, color_mapping: &ColorMapping) -> Option<String> {
+		let mut output = String::new();
+		let mut buffer = String::new();
+
+		for ch in data.chars() {
+			buffer.push(ch);
+
+			if buffer == "NL" {
+				output.push('\n');
+				buffer.clear();
+				continue;
+			}
+
+			if let Some(&color) = color_mapping.get(&buffer) {
+				output.push_str(&format!(
+					"<span style=\"{}\">{}</span>",
+					Style::new().fg(color).bg(color).html_style(),
+					&html_escape::encode_text(" ")
+				));
+				buffer.clear();
+				continue;
+			}
+
+			let max_key_len = color_mapping.keys().map(|k| k.len()).max().unwrap_or(0);
+			if buffer.len() > max_key_len {
+				return None;
+			}
+		}
+
+		if !buffer.is_empty() {
+			return None;
+		}
+
+		Some(output)
+	}
+
 	pub fn render_html(&self) -> String {
 		let mut output = String::new();
 
@@ -129,6 +165,16 @@ impl<'a> Page<'a> {
 					language,
 					code,
 				} => output.push_str(&Self::render_html_code_block(title, language, code)),
+				super::Object::Canvas {
+					data,
+					color_mapping,
+				} => output.push_str(&Self::render_html_canvas(data, color_mapping).unwrap_or(
+					Self::render_html_text_blob(
+						"Error rendering Canvas",
+						&Style::new().fg(Color::Red),
+						&None,
+					),
+				)),
 			}
 		}
 

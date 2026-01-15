@@ -8,17 +8,17 @@ pub struct HasStyle;
 pub struct NoLink;
 pub struct HasLink;
 
-pub struct TextBlobBuilder<'a, S, L> {
-	text: &'a str,
+pub struct TextBlobBuilder<S, L> {
+	text: String,
 	style: Option<Style>,
-	link_to: Option<LinkTo<'a>>,
+	link_to: Option<LinkTo>,
 	_state: PhantomData<(S, L)>,
 }
 
-impl<'a> TextBlobBuilder<'a, NoStyle, NoLink> {
-	pub fn new(text: &'a str) -> Self {
+impl TextBlobBuilder<NoStyle, NoLink> {
+	pub fn new(text: impl Into<String>) -> Self {
 		Self {
-			text,
+			text: text.into(),
 			style: None,
 			link_to: None,
 			_state: PhantomData::<(NoStyle, NoLink)>,
@@ -26,8 +26,8 @@ impl<'a> TextBlobBuilder<'a, NoStyle, NoLink> {
 	}
 }
 
-impl<'a, L> TextBlobBuilder<'a, NoStyle, L> {
-	pub fn style(self, style: Style) -> TextBlobBuilder<'a, HasStyle, L> {
+impl<L> TextBlobBuilder<NoStyle, L> {
+	pub fn style(self, style: Style) -> TextBlobBuilder<HasStyle, L> {
 		TextBlobBuilder {
 			text: self.text,
 			style: Some(style),
@@ -37,8 +37,8 @@ impl<'a, L> TextBlobBuilder<'a, NoStyle, L> {
 	}
 }
 
-impl<'a, S> TextBlobBuilder<'a, S, NoLink> {
-	pub fn link_to(self, link_to: LinkTo<'a>) -> TextBlobBuilder<'a, S, HasLink> {
+impl<S> TextBlobBuilder<S, NoLink> {
+	pub fn link_to(self, link_to: LinkTo) -> TextBlobBuilder<S, HasLink> {
 		TextBlobBuilder {
 			text: self.text,
 			style: self.style,
@@ -48,8 +48,8 @@ impl<'a, S> TextBlobBuilder<'a, S, NoLink> {
 	}
 }
 
-impl<'a, S, L> From<TextBlobBuilder<'a, S, L>> for Object<'a> {
-	fn from(value: TextBlobBuilder<'a, S, L>) -> Object<'a> {
+impl<S, L> From<TextBlobBuilder<S, L>> for Object {
+	fn from(value: TextBlobBuilder<S, L>) -> Object {
 		Object::TextBlob {
 			text: value.text,
 			style: value.style.unwrap_or_default(),

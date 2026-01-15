@@ -1,7 +1,9 @@
+mod canvas;
 mod code_block;
 mod link_to;
 mod text_blob;
 
+pub use canvas::{COLOR_MAPPING, CanvasBuilder};
 #[allow(unused)]
 pub use code_block::{CodeBlockBuilder, HasLanguage, HasTitle, NoLanguage, NoTitle};
 #[allow(unused)]

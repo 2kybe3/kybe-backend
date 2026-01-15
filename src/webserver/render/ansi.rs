@@ -1,9 +1,8 @@
 use crate::webserver::render::{
-	LinkTo, Page,
+	ColorMapping, LinkTo, Page,
 	color::{Color, Style},
 };
 
-// TODO: maybe improve this mapping a bit
 impl Style {
 	pub fn ansi_code(self) -> String {
 		let mut codes = vec![];
@@ -62,15 +61,15 @@ impl Style {
 	}
 }
 
-impl<'a> Page<'a> {
-	fn render_ansi_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo<'_>>) -> String {
+impl Page {
+	fn render_ansi_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String {
 		let mut output = String::new();
 
 		output.push_str(&style.ansi_code());
 
 		let mut text = text.to_string();
 		if let Some(link_to) = link_to
-			&& !text.contains(link_to.link)
+			&& !text.contains(&link_to.link)
 			&& link_to.link.starts_with("http")
 		{
 			let mut colored = String::new();
@@ -89,11 +88,11 @@ impl<'a> Page<'a> {
 			if let Some(index) = index {
 				let rest = text.split_off(index);
 				text.push_str(&colored);
-				text.push_str(link_to.link);
+				text.push_str(&link_to.link);
 				text.push_str(&rest);
 			} else {
 				text.push_str(&colored);
-				text.push_str(link_to.link);
+				text.push_str(&link_to.link);
 			}
 		}
 
@@ -104,7 +103,11 @@ impl<'a> Page<'a> {
 		output
 	}
 
-	fn render_ansi_code_block(title: &Option<&str>, language: &Option<&str>, code: &str) -> String {
+	fn render_ansi_code_block(
+		title: &Option<String>,
+		language: &Option<String>,
+		code: &str,
+	) -> String {
 		let mut output = String::new();
 
 		if title.is_some() || language.is_some() {
@@ -137,6 +140,44 @@ impl<'a> Page<'a> {
 		output
 	}
 
+	fn render_ansi_canvas(data: &str, color_mapping: &ColorMapping) -> Option<String> {
+		let mut output = String::new();
+		let mut buffer = String::new();
+		let mut last_color = Color::Default;
+
+		for ch in data.chars() {
+			buffer.push(ch);
+
+			if buffer == "NL" {
+				output.push('\n');
+				buffer.clear();
+				continue;
+			}
+
+			if let Some(&color) = color_mapping.get(&buffer) {
+				if color != last_color {
+					output.push_str(&Style::new().fg(color).bg(color).ansi_code());
+				}
+
+				output.push(' ');
+				last_color = color;
+				buffer.clear();
+				continue;
+			}
+
+			let max_key_len = color_mapping.keys().map(|k| k.len()).max().unwrap_or(0);
+			if buffer.len() > max_key_len {
+				return None;
+			}
+		}
+
+		if !buffer.is_empty() {
+			return None;
+		}
+
+		Some(output)
+	}
+
 	pub fn render_ansi(&self) -> String {
 		let mut output = String::new();
 
@@ -152,6 +193,16 @@ impl<'a> Page<'a> {
 					language,
 					code,
 				} => output.push_str(&Self::render_ansi_code_block(title, language, code)),
+				super::Object::Canvas {
+					data,
+					color_mapping,
+				} => output.push_str(&Self::render_ansi_canvas(data, color_mapping).unwrap_or(
+					Self::render_ansi_text_blob(
+						"Error rendering Canvas",
+						&Style::new().fg(Color::Red),
+						&None,
+					),
+				)),
 			}
 		}
 

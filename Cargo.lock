@@ -1477,6 +1477,7 @@ dependencies = [
  "governor",
  "html-escape",
  "mail-parser",
+ "once_cell",
  "poise",
  "reqwest 0.13.1",
  "rsc",

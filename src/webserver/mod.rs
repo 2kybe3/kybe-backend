@@ -1,3 +1,4 @@
+mod canvas;
 mod ip;
 mod pgp;
 mod register;
@@ -166,7 +167,11 @@ pub async fn init_webserver(
 		)
 		.route(
 			"/pgp",
-			get(pgp::pgp).layer(GovernorLayer::new(root_limiter)),
+			get(pgp::pgp).layer(GovernorLayer::new(root_limiter.clone())),
+		)
+		.route(
+			"/canvas",
+			get(canvas::canvas).layer(GovernorLayer::new(root_limiter)),
 		)
 		.route("/health", get(|| async { "OK" }))
 		.route(

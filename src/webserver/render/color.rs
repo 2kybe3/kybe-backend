@@ -41,13 +41,13 @@ impl Style {
 		}
 	}
 
-	pub fn fg(mut self, fg: Color) -> Self {
-		self.fg = fg;
+	pub fn fg(mut self, fg: impl Into<Color>) -> Self {
+		self.fg = fg.into();
 		self
 	}
 
-	pub fn bg(mut self, bg: Color) -> Self {
-		self.bg = bg;
+	pub fn bg(mut self, bg: impl Into<Color>) -> Self {
+		self.bg = bg.into();
 		self
 	}
 

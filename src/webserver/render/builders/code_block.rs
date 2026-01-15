@@ -6,39 +6,39 @@ pub struct NoTitle;
 pub struct HasLanguage;
 pub struct NoLanguage;
 
-pub struct CodeBlockBuilder<'a, T, L> {
-	title: Option<&'a str>,
-	language: Option<&'a str>,
-	code: &'a str,
+pub struct CodeBlockBuilder<T, L> {
+	title: Option<String>,
+	language: Option<String>,
+	code: String,
 	_state: PhantomData<(T, L)>,
 }
 
-impl<'a> CodeBlockBuilder<'a, NoTitle, NoLanguage> {
-	pub fn new(code: &'a str) -> CodeBlockBuilder<'a, NoTitle, NoLanguage> {
+impl CodeBlockBuilder<NoTitle, NoLanguage> {
+	pub fn new(code: impl Into<String>) -> CodeBlockBuilder<NoTitle, NoLanguage> {
 		CodeBlockBuilder {
 			title: None,
 			language: None,
-			code,
+			code: code.into(),
 			_state: PhantomData::<(NoTitle, NoLanguage)>,
 		}
 	}
 }
 
-impl<'a, T> CodeBlockBuilder<'a, T, NoLanguage> {
-	pub fn language(self, language: &'a str) -> CodeBlockBuilder<'a, T, HasLanguage> {
+impl<T> CodeBlockBuilder<T, NoLanguage> {
+	pub fn language(self, language: impl Into<String>) -> CodeBlockBuilder<T, HasLanguage> {
 		CodeBlockBuilder {
 			title: self.title,
-			language: Some(language),
+			language: Some(language.into()),
 			code: self.code,
 			_state: PhantomData::<(T, HasLanguage)>,
 		}
 	}
 }
 
-impl<'a, L> CodeBlockBuilder<'a, NoTitle, L> {
-	pub fn title(self, title: &'a str) -> CodeBlockBuilder<'a, HasTitle, L> {
+impl<L> CodeBlockBuilder<NoTitle, L> {
+	pub fn title(self, title: impl Into<String>) -> CodeBlockBuilder<HasTitle, L> {
 		CodeBlockBuilder {
-			title: Some(title),
+			title: Some(title.into()),
 			language: self.language,
 			code: self.code,
 			_state: PhantomData::<(HasTitle, L)>,
@@ -46,8 +46,8 @@ impl<'a, L> CodeBlockBuilder<'a, NoTitle, L> {
 	}
 }
 
-impl<'a, T, L> From<CodeBlockBuilder<'a, T, L>> for Object<'a> {
-	fn from(b: CodeBlockBuilder<'a, T, L>) -> Self {
+impl<T, L> From<CodeBlockBuilder<T, L>> for Object {
+	fn from(b: CodeBlockBuilder<T, L>) -> Self {
 		Object::CodeBlock {
 			title: b.title,
 			language: b.language,
