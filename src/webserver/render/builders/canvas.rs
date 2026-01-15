@@ -6,6 +6,7 @@ use crate::webserver::render::{Color, ColorMapping, Object};
 
 pub static COLOR_MAPPING: Lazy<ColorMapping> = Lazy::new(|| {
 	let mut map = HashMap::new();
+	map.insert("D".into(), Color::Default);
 	map.insert("B".into(), Color::Black);
 	map.insert("R".into(), Color::Red);
 	map.insert("G".into(), Color::Green);
