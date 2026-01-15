@@ -7,20 +7,20 @@ use crate::webserver::render::{Color, ColorMapping, Object};
 pub static COLOR_MAPPING: Lazy<ColorMapping> = Lazy::new(|| {
 	let mut map = HashMap::new();
 	map.insert("D".into(), Color::Default);
-	map.insert("B".into(), Color::Black);
+	map.insert("BL".into(), Color::Black);
 	map.insert("R".into(), Color::Red);
 	map.insert("G".into(), Color::Green);
 	map.insert("Y".into(), Color::Yellow);
-	map.insert("BL".into(), Color::Blue);
+	map.insert("BU".into(), Color::Blue);
 	map.insert("M".into(), Color::Magenta);
 	map.insert("C".into(), Color::Cyan);
 	map.insert("W".into(), Color::White);
 
-	map.insert("BrB".into(), Color::BrightBlack);
+	map.insert("BrBL".into(), Color::BrightBlack);
 	map.insert("BrR".into(), Color::BrightRed);
 	map.insert("BrG".into(), Color::BrightGreen);
 	map.insert("BrY".into(), Color::BrightYellow);
-	map.insert("BrBL".into(), Color::BrightBlue);
+	map.insert("BrBU".into(), Color::BrightBlue);
 	map.insert("BrM".into(), Color::BrightMagenta);
 	map.insert("BrC".into(), Color::BrightCyan);
 	map.insert("BrW".into(), Color::BrightWhite);
