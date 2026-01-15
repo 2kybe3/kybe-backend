@@ -1,5 +1,3 @@
-use tracing::info;
-
 use crate::webserver::render::{
 	ColorMapping, LinkTo, Page,
 	color::{Color, Style},
