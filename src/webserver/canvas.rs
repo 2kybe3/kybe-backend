@@ -73,7 +73,7 @@ pub async fn canvas(
 	let result = if is_cli {
 		page.render_ansi()
 	} else {
-		page.render_html_page("kybe - pgp")
+		page.render_html_page("kybe - canvas")
 	};
 
 	trace.request_status = RequestStatus::Success;
