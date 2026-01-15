@@ -123,6 +123,17 @@ pub async fn root(
 					.into(),
 			)
 			.into(),
+		TextBlobBuilder::new("Canvas ")
+			.style(Style::new().fg(Color::Yellow))
+			.into(),
+		TextBlobBuilder::new("https://kybe.xyz/canvas\n")
+			.style(Style::new().fg(Color::Green))
+			.link_to(
+				LinkToBuilder::new("https://kybe.xyz/canvas")
+					.seperator_style(Style::new().fg(Color::White))
+					.into(),
+			)
+			.into(),
 		// DE flag
 		TextBlobBuilder::new("\n\n").into(),
 		TextBlobBuilder::new("           \n")
