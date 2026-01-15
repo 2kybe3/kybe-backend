@@ -27,7 +27,6 @@ pub struct Data {
 	pub config: Arc<Config>,
 	pub translator: Option<Arc<Translator>>,
 	pub database: Database,
-
 	pub client: Arc<Client>,
 	pub cataas: CATAAS,
 }

@@ -1,4 +1,4 @@
-use anyhow::bail;
+use anyhow::anyhow;
 use rsc::Interpreter;
 
 use crate::db::command_traces::{CommandStatus, CommandTrace};
@@ -38,8 +38,9 @@ pub async fn calculate(
 		Err(e) => {
 			trace.status = CommandStatus::Error;
 			trace.error = Some(format!("{:?}", e));
-			trace.output = Some("Error evaluating expression".into());
-			ctx.reply("Error evaluating expression").await?;
+			trace.output = Some(format!("Error evaluating expression: {:?}", e));
+			ctx.reply(format!("Error evaluating expression: {:?}", e))
+				.await?;
 		}
 	}
 
@@ -49,14 +50,9 @@ pub async fn calculate(
 }
 
 fn evaluate(input: &str, interpreter: &mut Interpreter<f64>) -> anyhow::Result<f64> {
-	match rsc::tokenize(input) {
-		Ok(tokens) => match rsc::parse(&tokens) {
-			Ok(expr) => match interpreter.eval(&expr) {
-				Ok(result) => bail!("{}", result),
-				Err(interpret_error) => bail!("{:?}", interpret_error),
-			},
-			Err(parse_error) => bail!("{:?}", parse_error),
-		},
-		Err(tokenize_error) => bail!("{:?}", tokenize_error),
-	}
+	let tokens = rsc::tokenize(input).map_err(|e| anyhow!("error tokenizing: {e:?}"))?;
+	let expr = rsc::parse(&tokens).map_err(|e| anyhow!("error parsing: {e:?}"))?;
+	interpreter
+		.eval(&expr)
+		.map_err(|e| anyhow!("error evaluating: {e:?}"))
 }
