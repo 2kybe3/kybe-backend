@@ -1,5 +1,5 @@
 use crate::webserver::render::{
-	Page,
+	LinkTo, Page,
 	color::{Color, Style},
 };
 
@@ -63,6 +63,80 @@ impl Style {
 }
 
 impl<'a> Page<'a> {
+	fn render_ansi_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo<'_>>) -> String {
+		let mut output = String::new();
+
+		output.push_str(&style.ansi_code());
+
+		let mut text = text.to_string();
+		if let Some(link_to) = link_to
+			&& !text.contains(link_to.link)
+			&& link_to.link.starts_with("http")
+		{
+			let mut colored = String::new();
+			if let Some(style) = link_to.seperator_style {
+				colored.push_str(&style.ansi_code());
+			}
+			colored.push_str(" => ");
+			if let Some(style) = link_to.link_style {
+				colored.push_str(&style.ansi_code());
+			} else {
+				// If no link style is set use the previous style (the text)
+				colored.push_str(&style.ansi_code());
+			}
+
+			let index = text.trim_start().find("\n");
+			if let Some(index) = index {
+				let rest = text.split_off(index);
+				text.push_str(&colored);
+				text.push_str(link_to.link);
+				text.push_str(&rest);
+			} else {
+				text.push_str(&colored);
+				text.push_str(link_to.link);
+			}
+		}
+
+		output.push_str(&text);
+
+		output.push_str(&Style::default().ansi_code());
+
+		output
+	}
+
+	fn render_ansi_code_block(title: &Option<&str>, language: &Option<&str>, code: &str) -> String {
+		let mut output = String::new();
+
+		if title.is_some() || language.is_some() {
+			output.push_str("\n\n--title--\n");
+			output.push_str(&Style::new().fg(Color::Cyan).ansi_code());
+			if let Some(title) = title {
+				output.push_str(&format!(
+					"title: {}{}",
+					title,
+					if language.is_some() { "," } else { "" }
+				));
+			}
+			if let Some(language) = language {
+				if title.is_some() {
+					output.push(' ');
+				}
+				output.push_str(&format!("lang: {}", language));
+			};
+
+			output.push_str(&Style::default().ansi_code());
+			output.push('\n');
+			output.push_str("--code---\n");
+		} else {
+			output.push_str("\n\n--code---\n");
+		}
+
+		output.push_str(code);
+		output.push_str("\n---------\n\n");
+
+		output
+	}
+
 	pub fn render_ansi(&self) -> String {
 		let mut output = String::new();
 
@@ -72,74 +146,12 @@ impl<'a> Page<'a> {
 					text,
 					style,
 					link_to,
-				} => {
-					output.push_str(&style.ansi_code());
-
-					let mut text = text.to_string();
-					if let Some(link_to) = link_to
-						&& !text.contains(link_to.link)
-						&& link_to.link.starts_with("http")
-					{
-						let mut colored = String::new();
-						if let Some(style) = link_to.seperator_style {
-							colored.push_str(&style.ansi_code());
-						}
-						colored.push_str(" => ");
-						if let Some(style) = link_to.link_style {
-							colored.push_str(&style.ansi_code());
-						} else {
-							// If no link style is set use the previous style (the text)
-							colored.push_str(&style.ansi_code());
-						}
-
-						let index = text.trim_start().find("\n");
-						if let Some(index) = index {
-							let rest = text.split_off(index);
-							text.push_str(&colored);
-							text.push_str(link_to.link);
-							text.push_str(&rest);
-						} else {
-							text.push_str(&colored);
-							text.push_str(link_to.link);
-						}
-					}
-
-					output.push_str(&text);
-
-					output.push_str(&Style::default().ansi_code());
-				}
+				} => output.push_str(&Self::render_ansi_text_blob(text, style, link_to)),
 				super::Object::CodeBlock {
 					title,
 					language,
 					code,
-				} => {
-					if title.is_some() || language.is_some() {
-						output.push_str("\n\n--title--\n");
-						output.push_str(&Style::new().fg(Color::Cyan).ansi_code());
-						if let Some(title) = title {
-							output.push_str(&format!(
-								"title: {}{}",
-								title,
-								if language.is_some() { "," } else { "" }
-							));
-						}
-						if let Some(language) = language {
-							if title.is_some() {
-								output.push(' ');
-							}
-							output.push_str(&format!("lang: {}", language));
-						};
-
-						output.push_str(&Style::default().ansi_code());
-						output.push('\n');
-						output.push_str("--code---\n");
-					} else {
-						output.push_str("\n\n--code---\n");
-					}
-
-					output.push_str(code);
-					output.push_str("\n---------\n\n");
-				}
+				} => output.push_str(&Self::render_ansi_code_block(title, language, code)),
 			}
 		}
 

@@ -1,13 +1,12 @@
 use std::vec;
 
 use crate::webserver::render::{
-	Page,
+	LinkTo, Page,
 	color::{Color, Style},
 };
 
 impl Style {
 	pub fn html_hex(&self) -> (&'static str, &'static str) {
-		// ( fg, bg )
 		(self.fg.html_code(), self.bg.html_code())
 	}
 
@@ -61,6 +60,60 @@ impl<'a> Page<'a> {
 			.replace("{{content}}", &inner_html)
 	}
 
+	pub fn render_html_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String {
+		let (start, end) = match link_to {
+			Some(link_to) => (
+				&*format!("<a style=\"[style]\" href={}>", link_to.link),
+				"</a>",
+			),
+			None => ("<span style=\"[style]\">", "</span>"),
+		};
+		format!(
+			"{}{}{}",
+			&start.replace("[style]", &style.html_style()),
+			&html_escape::encode_text(text),
+			end
+		)
+	}
+
+	pub fn render_html_code_block(
+		title: &Option<&str>,
+		language: &Option<&str>,
+		code: &str,
+	) -> String {
+		let mut output = String::new();
+		if title.is_some() || language.is_some() {
+			output.push_str("<pre><code>");
+			let mut parts = vec![];
+			if let Some(t) = title {
+				parts.push(format!(
+					"Title: {}{}",
+					html_escape::encode_text(t),
+					if language.is_some() { "," } else { "" }
+				));
+			}
+			if let Some(lang) = language {
+				parts.push(format!("Lang: {}", html_escape::encode_text(lang)));
+			}
+
+			let header_style = Style::new().fg(Color::Cyan);
+			output.push_str(&format!(
+				"<div style=\"{}\">{}</div>",
+				header_style.html_style(),
+				parts.join(" ")
+			));
+		}
+
+		output.push_str("<pre><code>");
+
+		output.push_str(&html_escape::encode_text(code));
+		output.push_str("</code></pre>");
+		if title.is_some() {
+			output.push_str("</code></pre>");
+		}
+		output
+	}
+
 	pub fn render_html(&self) -> String {
 		let mut output = String::new();
 
@@ -70,55 +123,12 @@ impl<'a> Page<'a> {
 					text,
 					style,
 					link_to,
-				} => {
-					let (start, end) = match link_to {
-						Some(link_to) => (
-							&*format!("<a style=\"[style]\" href={}>", link_to.link),
-							"</a>",
-						),
-						None => ("<span style=\"[style]\">", "</span>"),
-					};
-					output.push_str(&format!(
-						"{}{}{}",
-						&start.replace("[style]", &style.html_style()),
-						&html_escape::encode_text(text),
-						end
-					));
-				}
+				} => output.push_str(&Self::render_html_text_blob(text, style, link_to)),
 				super::Object::CodeBlock {
 					title,
 					language,
 					code,
-				} => {
-					if title.is_some() || language.is_some() {
-						output.push_str("<pre><code>");
-						let mut parts = vec![];
-						if let Some(t) = title {
-							parts.push(format!(
-								"Title: {}{}",
-								html_escape::encode_text(t),
-								if language.is_some() { "," } else { "" }
-							));
-						}
-						if let Some(lang) = language {
-							parts.push(format!("Lang: {}", html_escape::encode_text(lang)));
-						}
-
-						let header_style = Style::new().fg(Color::Cyan);
-						output.push_str(&format!(
-							"<div style=\"{}\">{}</div>",
-							header_style.html_style(),
-							parts.join(" ")
-						));
-					}
-					output.push_str("<pre><code>");
-
-					output.push_str(&html_escape::encode_text(code));
-					output.push_str("</code></pre>");
-					if title.is_some() {
-						output.push_str("</code></pre>");
-					}
-				}
+				} => output.push_str(&Self::render_html_code_block(title, language, code)),
 			}
 		}
 
