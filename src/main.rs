@@ -23,12 +23,14 @@ use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 
 const GIT_SHA: &str = include_str!("../assets/git.sha");
 
+/// Macro to log a error notify it via Notifications and exit
+#[macro_export]
 macro_rules! exit_error {
 	($notifications:expr, $title:expr, $msg:expr) => {{
 		tracing::error!("{}: {}", $title, $msg);
 
 		$notifications
-			.notify(crate::notifications::Notification::new($title, $msg), true)
+			.notify($crate::notifications::Notification::new($title, $msg), true)
 			.await;
 
 		std::process::exit(1);
@@ -41,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
 	// 1. without file logging to print info about loading the config
 	// 2. with file logging derived from the config persistent for the rest of the application
 	let bootstrap_guard = init_logger_bootstrap()?;
-	let config = Config::init().await?;
+	let config = Arc::new(Config::init().await?);
 	init_logger(&config.logger, bootstrap_guard)?;
 
 	let notifications = Arc::new(Notifications::new(&config.notification));
@@ -55,26 +57,51 @@ async fn main() -> anyhow::Result<()> {
 	};
 
 	let email_service = Arc::new(EmailService::new(&config.email));
-	let email_service_loop_handle = email_service.run_loop();
+	let email_service_handle = {
+		let notifications = Arc::clone(&notifications);
 
-	// TODO: better error handling
-	let notifications_clone = Arc::clone(&notifications);
-	let config_clone = Arc::clone(&config);
-	let database_clone = database.clone();
-	let bot_handle = tokio::spawn(async move {
-		discord_bot::init_bot(notifications_clone, config_clone, database_clone)
-			.await
-			.unwrap()
-	});
+		tokio::spawn(async move {
+			if let Err(e) = email_service.run().await {
+				exit_error!(
+					notifications,
+					"Email Service",
+					format!("failed: {e}\nBacktrace: {}", Backtrace::capture())
+				);
+			}
+		})
+	};
 
-	let webserver_handle = tokio::spawn(webserver::init_webserver(
-		notifications,
-		config,
-		Arc::new(AuthService::new(database.clone())),
-		database,
-	));
+	let bot_handle = {
+		let notifications = Arc::clone(&notifications);
+		let config = Arc::clone(&config);
+		let database = database.clone();
 
-	tokio::try_join!(webserver_handle, bot_handle, email_service_loop_handle)?;
+		tokio::spawn(async move {
+			if let Err(e) = discord_bot::init_bot(notifications.clone(), config, database).await {
+				exit_error!(
+					notifications,
+					"Discord Bot",
+					format!("init failed: {e}\nBacktrace: {}", Backtrace::capture())
+				);
+			}
+		})
+	};
+
+	let webserver_handle = {
+		tokio::spawn(async move {
+			let auth = Arc::new(AuthService::new(database.clone()));
+
+			if let Err(e) = webserver::init_webserver(config, auth, database).await {
+				exit_error!(
+					notifications,
+					"Discord Bot",
+					format!("init failed: {e}\nBacktrace: {}", Backtrace::capture())
+				);
+			}
+		})
+	};
+
+	tokio::try_join!(webserver_handle, bot_handle, email_service_handle)?;
 	Ok(())
 }
 

@@ -20,6 +20,7 @@ pub enum DbError {
 	Migration(#[from] MigrateError),
 }
 
+/// PgPool is already wrapped in an Arc so this is fine to clone for now
 #[derive(Clone, Debug)]
 pub struct Database {
 	pool: PgPool,

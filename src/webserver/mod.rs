@@ -8,7 +8,6 @@ use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
 use crate::db::website_traces::WebsiteTrace;
-use crate::notifications::{Notification, Notifications};
 use anyhow::anyhow;
 use axum::Router;
 use axum::extract::ConnectInfo;
@@ -89,24 +88,6 @@ async fn finish_trace(
 	debug!(trace = ?trace, "API request finished");
 }
 
-pub async fn init_webserver(
-	notifications_clone: Arc<Notifications>,
-	config: Arc<Config>,
-	auth: Arc<AuthService>,
-	database: Database,
-) {
-	if let Err(e) = init_webserver_inner(config, auth, database).await {
-		//TODO: use the macro i forgot the name off
-		notifications_clone
-			.notify(
-				Notification::new("Webserver", format!("Webserver init failed: {:?}", e)),
-				true,
-			)
-			.await;
-		std::process::exit(1);
-	}
-}
-
 #[derive(Clone)]
 pub struct ClientIpKeyExtractor {
 	behind_proxy: bool,
@@ -140,7 +121,7 @@ impl KeyExtractor for ClientIpKeyExtractor {
 	}
 }
 
-async fn init_webserver_inner(
+pub async fn init_webserver(
 	config: Arc<Config>,
 	auth: Arc<AuthService>,
 	database: Database,

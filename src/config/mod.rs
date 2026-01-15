@@ -4,7 +4,6 @@ use crate::config::types::{
 	LoggerConfig, NotificationConfig, TranslatorConfig, WebserverConfig,
 };
 use std::env;
-use std::sync::Arc;
 use std::time::Instant;
 use tokio::fs;
 use tracing::{error, info, warn};
@@ -16,7 +15,7 @@ const DEFAULT_CONFIG_URL: &str =
 	"https://raw.githubusercontent.com/2kybe3/kybe-backend/refs/heads/main/config.toml.example";
 
 impl Config {
-	pub async fn init() -> Result<Arc<Self>, ConfigError> {
+	pub async fn init() -> Result<Self, ConfigError> {
 		let args: Vec<String> = env::args().collect();
 		if args.iter().any(|arg| arg == "--generate-example") {
 			let time = Instant::now();
@@ -30,7 +29,7 @@ impl Config {
 		}
 
 		match Self::load_or_create().await {
-			Ok(cfg) => Ok(Arc::new(cfg)),
+			Ok(cfg) => Ok(cfg),
 			Err(e) => {
 				error!("Failed to load config: {e}");
 				std::process::exit(1);

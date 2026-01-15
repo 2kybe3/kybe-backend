@@ -1,3 +1,6 @@
+use anyhow::bail;
+use rsc::Interpreter;
+
 use crate::db::command_traces::{CommandStatus, CommandTrace};
 use crate::discord_bot::{Context, Error, reply_or_attach};
 use crate::finalize_command_trace;
@@ -26,7 +29,7 @@ pub async fn calculate(
 		return Err(e.into());
 	}
 
-	match meval::eval_str(&expression) {
+	match evaluate(&expression, &mut rsc::Interpreter::default()) {
 		Ok(result) => {
 			let response = format!("**{}** = **{}**", expression, result);
 			trace.output = Some(response.clone());
@@ -43,4 +46,17 @@ pub async fn calculate(
 	finalize_command_trace!(ctx, trace);
 
 	Ok(())
+}
+
+fn evaluate(input: &str, interpreter: &mut Interpreter<f64>) -> anyhow::Result<f64> {
+	match rsc::tokenize(input) {
+		Ok(tokens) => match rsc::parse(&tokens) {
+			Ok(expr) => match interpreter.eval(&expr) {
+				Ok(result) => bail!("{}", result),
+				Err(interpret_error) => bail!("{:?}", interpret_error),
+			},
+			Err(parse_error) => bail!("{:?}", parse_error),
+		},
+		Err(tokenize_error) => bail!("{:?}", tokenize_error),
+	}
 }

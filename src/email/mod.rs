@@ -6,12 +6,9 @@ use async_native_tls::TlsStream;
 use chrono::{FixedOffset, NaiveDate, NaiveTime};
 use futures::{StreamExt, TryStreamExt};
 use mail_parser::{Header, HeaderName, HeaderValue, MessageParser};
-use std::sync::Arc;
-use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::{Receiver, Sender};
-use tokio::task::JoinHandle;
 use tracing::{error, info};
 
 #[derive(Debug)]
@@ -187,20 +184,6 @@ impl EmailService {
 		Ok(())
 	}
 
-	pub fn run_loop(self: Arc<Self>) -> JoinHandle<()> {
-		tokio::spawn(async move {
-			loop {
-				match Self::run(&self).await {
-					Ok(_) => {}
-					Err(e) => {
-						error!("EmailService error: {e:?}, restarting in 5s...");
-						tokio::time::sleep(Duration::from_secs(5)).await;
-					}
-				}
-			}
-		})
-	}
-
 	pub async fn connect_and_login(&self) -> anyhow::Result<Session<TlsStream<TcpStream>>> {
 		let imap_addr = (self.server.clone(), self.port);
 		let tcp_stream = TcpStream::connect(imap_addr.clone()).await?;
@@ -214,9 +197,10 @@ impl EmailService {
 			.map_err(|e| e.0)?)
 	}
 
+	/// Ensures the "Processed" Mailbox exists where processed mails get moved too
 	pub async fn ensure_processed_mailbox(
 		imap_session: &mut Session<TlsStream<TcpStream>>,
-	) -> anyhow::Result<()> {
+	) -> Result<(), async_imap::error::Error> {
 		let mut has_processed = false;
 		{
 			let mut mailboxes_stream = imap_session.list(None, Some("*")).await?;
@@ -250,27 +234,20 @@ impl EmailService {
 
 		Self::process_messages(&mut imap_session, &self.tx).await?;
 
+		// Main Message Loop for new messages
 		loop {
+			// Wait for IDLE to wake client up (new msg rarely smth else)
 			let mut idle = imap_session.idle();
 			idle.init().await?;
 
 			{
 				let wait_future = idle.wait();
-				match wait_future.0.await {
-					Ok(_) => {
-						info!("Wake-up from IDLE: fetching new messages");
-					}
-					Err(e) => {
-						error!("IDLE wait failed (connection likely lost): {e:?}");
-						break;
-					}
-				}
+				wait_future.0.await?;
 			}
 
 			imap_session = idle.done().await?;
 
 			Self::process_messages(&mut imap_session, &self.tx).await?;
 		}
-		Ok(())
 	}
 }
