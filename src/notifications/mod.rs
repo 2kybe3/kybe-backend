@@ -73,8 +73,7 @@ impl Notifications {
 		Self { notifiers }
 	}
 
-	#[allow(unused)]
-	pub async fn notify_async<S: Into<Notification>>(&self, notification: S) {
+	pub async fn notify<S: Into<Notification>>(&self, notification: S, wait: bool) {
 		let notification = notification.into();
 		let notifiers = self.notifiers.clone();
 
@@ -91,28 +90,12 @@ impl Notifications {
 			}
 		});
 
-		tokio::spawn(async move {
+		if wait {
 			join_all(futures).await;
-		});
-	}
-
-	pub async fn notify<S: Into<Notification>>(&self, notification: S) {
-		let notification = notification.into();
-		let notifiers = self.notifiers.clone();
-
-		let futures = notifiers.into_iter().map(move |notifier| {
-			let notification = notification.clone();
-			async move {
-				if let Err(err) = notifier.send(&notification).await {
-					error!(
-						"Failed to send notification via {}: {:?}",
-						notifier.name(),
-						err
-					);
-				}
-			}
-		});
-
-		join_all(futures).await;
+		} else {
+			tokio::spawn(async move {
+				join_all(futures).await;
+			});
+		}
 	}
 }

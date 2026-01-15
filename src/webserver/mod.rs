@@ -96,11 +96,12 @@ pub async fn init_webserver(
 	database: Database,
 ) {
 	if let Err(e) = init_webserver_inner(config, auth, database).await {
+		//TODO: use the macro i forgot the name off
 		notifications_clone
-			.notify(Notification::new(
-				"Webserver",
-				format!("Webserver init failed: {:?}", e),
-			))
+			.notify(
+				Notification::new("Webserver", format!("Webserver init failed: {:?}", e)),
+				true,
+			)
 			.await;
 		std::process::exit(1);
 	}

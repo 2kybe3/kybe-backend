@@ -28,7 +28,7 @@ macro_rules! exit_error {
 		tracing::error!("{}: {}", $title, $msg);
 
 		$notifications
-			.notify(crate::notifications::Notification::new($title, $msg))
+			.notify(crate::notifications::Notification::new($title, $msg), true)
 			.await;
 
 		std::process::exit(1);
@@ -57,11 +57,15 @@ async fn main() -> anyhow::Result<()> {
 	let email_service = Arc::new(EmailService::new(&config.email));
 	let email_service_loop_handle = email_service.run_loop();
 
-	let bot_handle = tokio::spawn(discord_bot::init_bot(
-		Arc::clone(&notifications),
-		Arc::clone(&config),
-		database.clone(),
-	));
+	// TODO: better error handling
+	let notifications_clone = Arc::clone(&notifications);
+	let config_clone = Arc::clone(&config);
+	let database_clone = database.clone();
+	let bot_handle = tokio::spawn(async move {
+		discord_bot::init_bot(notifications_clone, config_clone, database_clone)
+			.await
+			.unwrap()
+	});
 
 	let webserver_handle = tokio::spawn(webserver::init_webserver(
 		notifications,
