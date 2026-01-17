@@ -39,13 +39,15 @@ pub async fn ip(
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
 
-	finish_trace(
-		&mut trace,
-		StatusCode::CREATED.as_u16(),
-		None,
-		&state.database,
-	)
-	.await;
+	tokio::spawn(async move {
+		finish_trace(
+			&mut trace,
+			StatusCode::CREATED.as_u16(),
+			None,
+			&state.database,
+		)
+		.await
+	});
 
 	(StatusCode::OK, ip.unwrap_or_default()).into_response()
 }

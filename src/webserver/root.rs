@@ -158,13 +158,15 @@ pub async fn root(
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
 
-	finish_trace(
-		&mut trace,
-		StatusCode::CREATED.as_u16(),
-		None,
-		&state.database,
-	)
-	.await;
+	tokio::spawn(async move {
+		finish_trace(
+			&mut trace,
+			StatusCode::CREATED.as_u16(),
+			None,
+			&state.database,
+		)
+		.await
+	});
 
 	if is_cli {
 		(StatusCode::OK, result).into_response()

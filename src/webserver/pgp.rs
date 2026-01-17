@@ -1,11 +1,10 @@
-use std::net::SocketAddr;
-
 use axum::{
 	extract::{ConnectInfo, RawQuery},
 	http::HeaderMap,
 	response::{Html, IntoResponse},
 };
 use reqwest::StatusCode;
+use std::net::SocketAddr;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
@@ -53,13 +52,15 @@ pub async fn pgp(
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
 
-	finish_trace(
-		&mut trace,
-		StatusCode::CREATED.as_u16(),
-		None,
-		&state.database,
-	)
-	.await;
+	tokio::spawn(async move {
+		finish_trace(
+			&mut trace,
+			StatusCode::CREATED.as_u16(),
+			None,
+			&state.database,
+		)
+		.await
+	});
 
 	if is_cli {
 		(StatusCode::OK, result).into_response()
