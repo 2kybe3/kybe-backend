@@ -97,7 +97,7 @@ pub async fn root(
 				],
 			)
 			.into(),
-		theme.title("\nOther Endpoints:\n").into(),
+		theme.title("\nOther Endpoints:\n\n").into(),
 		theme
 			.label(
 				"IP",
