@@ -1,12 +1,13 @@
 use crate::db::website_traces::WebsiteTrace;
-use crate::webserver::{WebServerState, client_ip, finish_trace};
-use axum::Json;
-use axum::extract::{ConnectInfo, RawQuery, State};
-use axum::http::{HeaderMap, StatusCode};
+use crate::webserver::WebServerState;
+use axum::extract::State;
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
+use axum::{Extension, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::net::SocketAddr;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tracing::error;
 use uuid::Uuid;
 use validator::Validate;
@@ -51,24 +52,11 @@ impl RegistrationResponse {
 
 #[axum::debug_handler]
 pub async fn register(
-	headers: HeaderMap,
-	RawQuery(query): RawQuery,
 	State(state): State<WebServerState>,
-	ConnectInfo(remote_addr): ConnectInfo<SocketAddr>,
+	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
 	Json(payload): Json<RegisterPayload>,
 ) -> impl IntoResponse {
-	const METHOD: &str = "POST";
-	const PATH: &str = "/register";
-
-	let user_agent = headers
-		.get(axum::http::header::USER_AGENT)
-		.and_then(|v| v.to_str().ok())
-		.map(|s| s.to_string());
-
-	let ip = client_ip(&headers, remote_addr, &*state.config);
-
-	let mut trace = WebsiteTrace::start(METHOD, PATH.to_string(), query, user_agent, ip);
-
+	let mut trace = trace.lock().await;
 	trace.request_body = Some(serde_json::json!({
 		"username": payload.username,
 		"email": payload.email
@@ -80,13 +68,6 @@ pub async fn register(
 		trace.error = Some(format!("{:?}", e));
 		let response_json: Value = serde_json::to_value(&response).unwrap_or_default();
 		trace.response_body = Some(response_json.clone());
-		finish_trace(
-			&mut trace,
-			StatusCode::BAD_REQUEST.as_u16(),
-			None,
-			&state.database,
-		)
-		.await;
 
 		return (StatusCode::BAD_REQUEST, Json(response_json)).into_response();
 	};
@@ -101,13 +82,6 @@ pub async fn register(
 			let response = RegistrationResponse::success(user_id);
 			let response_json = serde_json::to_value(&response).unwrap_or_default();
 			trace.response_body = Some(response_json.clone());
-			finish_trace(
-				&mut trace,
-				StatusCode::CREATED.as_u16(),
-				Some(user_id),
-				&state.database,
-			)
-			.await;
 
 			(StatusCode::CREATED, Json(response_json)).into_response()
 		}
@@ -131,7 +105,6 @@ pub async fn register(
 
 			trace.error = Some(format!("{:?}", auth_err));
 			trace.response_body = Some(response_json.clone());
-			finish_trace(&mut trace, status.as_u16(), None, &state.database).await;
 
 			(status, Json(response_json)).into_response()
 		}

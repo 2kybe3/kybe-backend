@@ -18,7 +18,7 @@ pub async fn version(ctx: Context<'_>) -> Result<(), Error> {
 		return Err(e.into());
 	}
 
-	let response = format!("version: `{}`", crate::GIT_SHA);
+	let response = format!("version: `{}`", crate::GIT_SHA.to_owned());
 	ctx.reply(response.clone()).await?;
 	trace.output = Some(response);
 

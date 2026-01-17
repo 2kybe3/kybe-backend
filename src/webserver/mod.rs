@@ -10,18 +10,21 @@ use crate::config::types::Config;
 use crate::db::Database;
 use crate::db::website_traces::WebsiteTrace;
 use anyhow::anyhow;
-use axum::Router;
-use axum::extract::ConnectInfo;
-use axum::http::{HeaderMap, Request};
+use axum::extract::{ConnectInfo, Request, State};
+use axum::http::HeaderMap;
+use axum::middleware::Next;
+use axum::response::Response;
 use axum::routing::{get, post};
+use axum::{Router, middleware};
+use governor::clock::QuantaInstant;
+use governor::middleware::NoOpMiddleware;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tower_governor::governor::GovernorConfigBuilder;
+use tokio::sync::Mutex;
+use tower_governor::governor::{GovernorConfig, GovernorConfigBuilder};
 use tower_governor::key_extractor::KeyExtractor;
 use tower_governor::{GovernorError, GovernorLayer};
-use tracing::{debug, error};
-use uuid::Uuid;
 
 #[derive(Clone)]
 struct WebServerState {
@@ -70,25 +73,6 @@ fn client_ip<T: IpExtractionConfig>(
 	}
 }
 
-async fn finish_trace(
-	trace: &mut WebsiteTrace,
-	status_code: u16,
-	user_id: Option<Uuid>,
-	database: &Database,
-) {
-	let duration = chrono::Utc::now()
-		.signed_duration_since(trace.started_at)
-		.num_milliseconds();
-
-	trace.complete(duration, status_code, user_id);
-
-	if let Err(e) = database.save_website_trace(trace).await {
-		error!("Failed to save website trace: {e:?}");
-	}
-
-	debug!(trace = ?trace, "API request finished");
-}
-
 #[derive(Clone)]
 pub struct ClientIpKeyExtractor {
 	behind_proxy: bool,
@@ -122,33 +106,70 @@ impl KeyExtractor for ClientIpKeyExtractor {
 	}
 }
 
+async fn trace_middleware(
+	State(state): State<WebServerState>,
+
+	headers: HeaderMap,
+	ConnectInfo(remote_addr): ConnectInfo<SocketAddr>,
+
+	mut request: Request,
+	next: Next,
+) -> Response {
+	let user_agent = headers
+		.get(axum::http::header::USER_AGENT)
+		.and_then(|v| v.to_str().ok())
+		.map(|s| s.to_string());
+
+	let ip = client_ip(&headers, remote_addr, &*state.config);
+
+	let trace = Arc::new(Mutex::new(WebsiteTrace::start(
+		request.method(),
+		request.uri().path(),
+		request.uri().query(),
+		user_agent.clone(),
+		ip.clone(),
+	)));
+
+	request.extensions_mut().insert(trace.clone());
+
+	let response = next.run(request).await;
+
+	let status = response.status().into();
+
+	let db = state.database.clone();
+	tokio::spawn(async move {
+		let mut t = trace.lock().await;
+		t.finish(status, None, &db).await
+	});
+
+	response
+}
+
+pub fn make_limiter(
+	config: &Config,
+	per_second: u64,
+	burst_size: u32,
+) -> anyhow::Result<Arc<GovernorConfig<ClientIpKeyExtractor, NoOpMiddleware<QuantaInstant>>>> {
+	Ok(Arc::new(
+		GovernorConfigBuilder::default()
+			.per_second(per_second)
+			.burst_size(burst_size)
+			.key_extractor(ClientIpKeyExtractor::new(
+				config.webserver.behind_proxy,
+				config.webserver.trust_proxy_header.clone(),
+			))
+			.finish()
+			.ok_or(anyhow!("governor init failed"))?,
+	))
+}
+
 pub async fn init_webserver(
 	config: Arc<Config>,
 	auth: Arc<AuthService>,
 	database: Database,
 ) -> anyhow::Result<()> {
-	let register_limiter = Arc::new(
-		GovernorConfigBuilder::default()
-			.per_second(60)
-			.burst_size(10)
-			.key_extractor(ClientIpKeyExtractor::new(
-				config.webserver.behind_proxy,
-				config.webserver.trust_proxy_header.clone(),
-			))
-			.finish()
-			.ok_or(anyhow!("governor init failed"))?,
-	);
-	let root_limiter = Arc::new(
-		GovernorConfigBuilder::default()
-			.per_second(1)
-			.burst_size(10)
-			.key_extractor(ClientIpKeyExtractor::new(
-				config.webserver.behind_proxy,
-				config.webserver.trust_proxy_header.clone(),
-			))
-			.finish()
-			.ok_or(anyhow!("governor init failed"))?,
-	);
+	let register_limiter = make_limiter(&config, 60, 10)?;
+	let root_limiter = make_limiter(&config, 1, 10)?;
 
 	let webserver_state = WebServerState {
 		auth,
@@ -156,27 +177,40 @@ pub async fn init_webserver(
 		database,
 	};
 
+	let trace_layer = middleware::from_fn_with_state(webserver_state.clone(), trace_middleware);
+	let root_limiter_layer = GovernorLayer::new(root_limiter);
+
 	let app = Router::new()
 		.route(
 			"/",
-			get(root::root).layer(GovernorLayer::new(root_limiter.clone())),
+			get(root::root)
+				.layer(root_limiter_layer.clone())
+				.route_layer(trace_layer.clone()),
 		)
 		.route(
 			"/ip",
-			get(ip::ip).layer(GovernorLayer::new(root_limiter.clone())),
+			get(ip::ip)
+				.layer(root_limiter_layer.clone())
+				.route_layer(trace_layer.clone()),
 		)
 		.route(
 			"/pgp",
-			get(pgp::pgp).layer(GovernorLayer::new(root_limiter.clone())),
+			get(pgp::pgp)
+				.layer(root_limiter_layer.clone())
+				.route_layer(trace_layer.clone()),
 		)
 		.route(
 			"/canvas",
-			get(canvas::canvas).layer(GovernorLayer::new(root_limiter)),
+			get(canvas::canvas)
+				.layer(root_limiter_layer.clone())
+				.route_layer(trace_layer.clone()),
 		)
 		.route("/health", get(|| async { "OK" }))
 		.route(
 			"/register",
-			post(register::register).layer(GovernorLayer::new(register_limiter)),
+			post(register::register)
+				.layer(GovernorLayer::new(register_limiter))
+				.route_layer(trace_layer.clone()),
 		)
 		.with_state(webserver_state);
 

@@ -1,37 +1,28 @@
-use std::net::SocketAddr;
+use std::sync::Arc;
 
 use axum::{
-	extract::{ConnectInfo, RawQuery},
+	Extension,
 	http::HeaderMap,
 	response::{Html, IntoResponse},
 };
 use reqwest::StatusCode;
+use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::{
-		WebServerState, client_ip, finish_trace,
-		render::{CodeBlockBuilder, Color, LinkToBuilder, Page, Style, TextBlobBuilder},
-	},
+	webserver::render::{CodeBlockBuilder, Color, LinkToBuilder, Page, Style, TextBlobBuilder},
 };
 
 pub async fn root(
 	headers: HeaderMap,
-	RawQuery(query): RawQuery,
-	axum::extract::State(state): axum::extract::State<WebServerState>,
-	ConnectInfo(remote_addr): ConnectInfo<SocketAddr>,
+	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
 ) -> impl IntoResponse {
-	const METHOD: &str = "GET";
-	const PATH: &str = "/";
-
 	let user_agent = headers
 		.get(axum::http::header::USER_AGENT)
 		.and_then(|v| v.to_str().ok())
 		.map(|s| s.to_string());
 
-	let ip = client_ip(&headers, remote_addr, &*state.config);
-
-	let mut trace = WebsiteTrace::start(METHOD, PATH.to_string(), query, user_agent.clone(), ip);
+	let mut trace = trace.lock().await;
 
 	let page = Page::from_iter([
 		TextBlobBuilder::new("Hello Stranger\n\n")
@@ -136,15 +127,27 @@ pub async fn root(
 			.into(),
 		// DE flag
 		TextBlobBuilder::new("\n\n").into(),
-		TextBlobBuilder::new("           \n")
+		TextBlobBuilder::new("           ")
 			.style(Style::new().fg(Color::Black).bg(Color::Black))
 			.into(),
-		TextBlobBuilder::new("           \n")
+		TextBlobBuilder::new(" Trace ID: ")
+			.style(Style::new().fg(Color::BrightBlack))
+			.into(),
+		TextBlobBuilder::new(format!("{}\n", trace.trace_id)).into(),
+		TextBlobBuilder::new("           ")
 			.style(Style::new().fg(Color::BrightRed).bg(Color::BrightRed))
 			.into(),
-		TextBlobBuilder::new("           \n")
+		TextBlobBuilder::new(" Version: ")
+			.style(Style::new().fg(Color::BrightRed))
+			.into(),
+		TextBlobBuilder::new(format!("{}\n", crate::GIT_SHA.to_owned())).into(),
+		TextBlobBuilder::new("           ")
 			.style(Style::new().fg(Color::Yellow).bg(Color::Yellow))
 			.into(),
+		TextBlobBuilder::new(" Made By: ")
+			.style(Style::new().fg(Color::Yellow))
+			.into(),
+		TextBlobBuilder::new("2kybe3\n").into(),
 	]);
 
 	let user_agent = user_agent.unwrap_or_default().to_lowercase();
@@ -157,16 +160,6 @@ pub async fn root(
 
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
-
-	tokio::spawn(async move {
-		finish_trace(
-			&mut trace,
-			StatusCode::CREATED.as_u16(),
-			None,
-			&state.database,
-		)
-		.await
-	});
 
 	if is_cli {
 		(StatusCode::OK, result).into_response()

@@ -1,36 +1,25 @@
 use axum::{
-	extract::{ConnectInfo, RawQuery},
+	Extension,
 	http::HeaderMap,
 	response::{Html, IntoResponse},
 };
 use reqwest::StatusCode;
-use std::net::SocketAddr;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::{
-		WebServerState, client_ip, finish_trace,
-		render::{Color, Object, Page, Style},
-	},
+	webserver::render::{Color, Object, Page, Style},
 };
 
 pub async fn pgp(
 	headers: HeaderMap,
-	RawQuery(query): RawQuery,
-	axum::extract::State(state): axum::extract::State<WebServerState>,
-	ConnectInfo(remote_addr): ConnectInfo<SocketAddr>,
+	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
 ) -> impl IntoResponse {
-	const METHOD: &str = "GET";
-	const PATH: &str = "/pgp";
-
 	let user_agent = headers
 		.get(axum::http::header::USER_AGENT)
 		.and_then(|v| v.to_str().ok())
 		.map(|s| s.to_string());
-
-	let ip = client_ip(&headers, remote_addr, &*state.config);
-
-	let mut trace = WebsiteTrace::start(METHOD, PATH.to_string(), query, user_agent.clone(), ip);
 
 	let page = Page::from_iter([
 		Object::text("Hello Stranger, and maybe PGP user :-)\n\n")
@@ -49,18 +38,9 @@ pub async fn pgp(
 		page.render_html_page("kybe - pgp")
 	};
 
+	let mut trace = trace.lock().await;
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
-
-	tokio::spawn(async move {
-		finish_trace(
-			&mut trace,
-			StatusCode::CREATED.as_u16(),
-			None,
-			&state.database,
-		)
-		.await
-	});
 
 	if is_cli {
 		(StatusCode::OK, result).into_response()

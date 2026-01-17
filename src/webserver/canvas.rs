@@ -1,19 +1,18 @@
-use std::net::SocketAddr;
+use std::sync::Arc;
 
 use axum::{
-	extract::{ConnectInfo, Query, RawQuery},
+	Extension,
+	extract::Query,
 	http::HeaderMap,
 	response::{Html, IntoResponse},
 };
 use reqwest::StatusCode;
 use serde::Deserialize;
+use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::{
-		WebServerState, client_ip, finish_trace,
-		render::{COLOR_MAPPING, CanvasBuilder, Color, Page, Style, TextBlobBuilder},
-	},
+	webserver::render::{COLOR_MAPPING, CanvasBuilder, Color, Page, Style, TextBlobBuilder},
 };
 
 #[derive(Deserialize)]
@@ -23,22 +22,13 @@ pub struct CanvasParamters {
 
 pub async fn canvas(
 	headers: HeaderMap,
-	RawQuery(query): RawQuery,
 	Query(parsed_query): Query<CanvasParamters>,
-	axum::extract::State(state): axum::extract::State<WebServerState>,
-	ConnectInfo(remote_addr): ConnectInfo<SocketAddr>,
+	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
 ) -> impl IntoResponse {
-	const METHOD: &str = "GET";
-	const PATH: &str = "/canvas";
-
 	let user_agent = headers
 		.get(axum::http::header::USER_AGENT)
 		.and_then(|v| v.to_str().ok())
 		.map(|s| s.to_string());
-
-	let ip = client_ip(&headers, remote_addr, &*state.config);
-
-	let mut trace = WebsiteTrace::start(METHOD, PATH.to_string(), query, user_agent.clone(), ip);
 
 	let q = parsed_query.q.clone();
 	let page = match q {
@@ -76,18 +66,9 @@ pub async fn canvas(
 		page.render_html_page("kybe - canvas")
 	};
 
+	let mut trace = trace.lock().await;
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
-
-	tokio::spawn(async move {
-		finish_trace(
-			&mut trace,
-			StatusCode::CREATED.as_u16(),
-			None,
-			&state.database,
-		)
-		.await
-	});
 
 	if is_cli {
 		(StatusCode::OK, result).into_response()

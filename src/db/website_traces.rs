@@ -1,5 +1,6 @@
 use crate::db::Database;
 use chrono::{DateTime, Utc};
+use tracing::{debug, error};
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::Type, PartialEq, Clone)]
@@ -60,10 +61,33 @@ impl WebsiteTrace {
 		}
 	}
 
-	pub fn complete(&mut self, duration_ms: i64, status_code: u16, user_id: Option<Uuid>) {
+	fn complete(&mut self, duration_ms: i64, status_code: u16, user_id: Option<Uuid>) {
 		self.duration_ms = duration_ms;
 		self.status_code = status_code;
 		self.user_id = user_id;
+
+		self.request_status = match status_code {
+			200..=299 => RequestStatus::Success,
+			300..=399 => RequestStatus::Redirect,
+			401 => RequestStatus::Unauthorized,
+			400..=499 => RequestStatus::ClientError,
+			500..=599 => RequestStatus::ServerError,
+			_ => RequestStatus::ClientError,
+		};
+	}
+
+	pub async fn finish(&mut self, status_code: u16, user_id: Option<Uuid>, database: &Database) {
+		let duration = chrono::Utc::now()
+			.signed_duration_since(self.started_at)
+			.num_milliseconds();
+
+		self.complete(duration, status_code, user_id);
+
+		if let Err(e) = database.save_website_trace(self).await {
+			error!("Failed to save website trace: {e:?}");
+		}
+
+		debug!(trace = ?self, "API request finished");
 	}
 }
 

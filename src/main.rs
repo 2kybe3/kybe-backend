@@ -13,6 +13,7 @@ use crate::config::types::{Config, LoggerConfig};
 use crate::db::Database;
 use crate::email::EmailService;
 use crate::notifications::Notifications;
+use once_cell::sync::Lazy;
 use std::backtrace::Backtrace;
 use std::io::stdout;
 use std::sync::Arc;
@@ -21,7 +22,7 @@ use tracing::warn;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 
-const GIT_SHA: &str = include_str!("../assets/git.sha");
+pub static GIT_SHA: Lazy<&str> = Lazy::new(|| include_str!("../assets/git.sha").trim());
 
 /// Macro to log a error notify it via Notifications and exit
 #[macro_export]
