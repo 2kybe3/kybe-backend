@@ -59,7 +59,7 @@ pub async fn init_bot(
                         format!("Error: {}", error),
                     ), false).await
                 } else {
-                    error!("Error without context: {:?}", error);
+                    panic!("Error starting discord bot: {:?}", error)
                 }
             }),
             ..Default::default()
