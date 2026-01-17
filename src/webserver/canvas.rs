@@ -12,7 +12,10 @@ use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::render::{COLOR_MAPPING, CanvasBuilder, Color, Page, Style, TextBlobBuilder},
+	webserver::render::{
+		Color, Page, Style,
+		builders::{COLOR_MAPPING, CanvasBuilder, TextBlobBuilder},
+	},
 };
 
 #[derive(Deserialize)]

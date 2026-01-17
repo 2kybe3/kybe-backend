@@ -49,11 +49,17 @@ impl<S> TextBlobBuilder<S, NoLink> {
 }
 
 impl<S, L> From<TextBlobBuilder<S, L>> for Object {
-	fn from(value: TextBlobBuilder<S, L>) -> Object {
+	fn from(t: TextBlobBuilder<S, L>) -> Self {
 		Object::TextBlob {
-			text: value.text,
-			style: value.style.unwrap_or_default(),
-			link_to: value.link_to,
+			text: t.text,
+			style: t.style.unwrap_or_default(),
+			link_to: t.link_to,
 		}
+	}
+}
+
+impl From<&str> for TextBlobBuilder<NoStyle, NoLink> {
+	fn from(text: &str) -> Self {
+		Self::new(text)
 	}
 }

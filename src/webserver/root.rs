@@ -10,7 +10,10 @@ use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::render::{CodeBlockBuilder, Color, LinkToBuilder, Page, Style, TextBlobBuilder},
+	webserver::render::{
+		Color, Page, Style, Theme,
+		builders::{CodeBlockBuilder, TextBlobBuilder},
+	},
 };
 
 pub async fn root(
@@ -23,106 +26,96 @@ pub async fn root(
 		.map(|s| s.to_string());
 
 	let mut trace = trace.lock().await;
+	let theme = Theme::default();
 
 	let page = Page::from_iter([
-		TextBlobBuilder::new("Hello Stranger\n\n")
-			.style(Style::new().fg(Color::BrightRed))
+		theme.title("Hello Stranger\n").into(),
+		theme
+			.subtitle("This site is made to also look good on curl\n\n")
 			.into(),
-		TextBlobBuilder::new("This site is made to also look good on curl\n").into(),
 		CodeBlockBuilder::new("curl https://kybe.xyz")
 			.title("curl")
 			.language("bash")
 			.into(),
-		TextBlobBuilder::new("Projects:\n\n")
-			.style(Style::new().fg(Color::BrightRed))
-			.into(),
-		TextBlobBuilder::new("kybe-backend: ")
-			.style(Style::new().fg(Color::Yellow))
-			.into(),
-		TextBlobBuilder::new("https://github.com/2kybe3/kybe-backend")
-			.style(Style::new().fg(Color::Green))
-			.link_to(
-				LinkToBuilder::new("https://github.com/2kybe3/kybe-backend")
-					.seperator_style(Style::new().fg(Color::White))
-					.into(),
+		theme.title("Projects:\n\n").into(),
+		theme
+			.label(
+				"kybe backend",
+				vec![
+					theme
+						.link_colored(
+							"https://codeberg.org/kybe/nix-dotfiles",
+							"https://github.com/2kybe3/kybe-backend",
+						)
+						.into(),
+					theme.comment(" (this site)\n").into(),
+				],
 			)
 			.into(),
-		TextBlobBuilder::new(" (this site)\n")
-			.style(Style::new().fg(Color::White).bold(true).dim(true))
-			.into(),
-		TextBlobBuilder::new("nix-dotfiles: ")
-			.style(Style::new().fg(Color::Yellow))
-			.into(),
-		TextBlobBuilder::new("https://codeberg.org/kybe/nix-dotfiles")
-			.style(Style::new().fg(Color::Green))
-			.link_to(
-				LinkToBuilder::new("https://codeberg.org/kybe/nix-dotfiles")
-					.seperator_style(Style::new().fg(Color::White))
-					.into(),
+		theme
+			.label(
+				"nix-dotfiles",
+				vec![
+					theme
+						.link_colored(
+							"https://codeberg.org/kybe/nix-dotfiles",
+							"https://codeberg.org/kybe/nix-dotfiles",
+						)
+						.into(),
+					theme.comment(" (i use nix btw)\n").into(),
+				],
 			)
 			.into(),
-		TextBlobBuilder::new(" (i use nix btw)\n")
-			.style(Style::new().fg(Color::White).bold(true).dim(true))
-			.into(),
-		TextBlobBuilder::new("\nContact:\n\n")
-			.style(Style::new().fg(Color::BrightRed))
-			.into(),
-		TextBlobBuilder::new("PGP: ")
-			.style(Style::new().fg(Color::Yellow))
-			.into(),
-		TextBlobBuilder::new("https://kybe.xyz/pgp\n")
-			.style(Style::new().fg(Color::Green))
-			.link_to(
-				LinkToBuilder::new("https://kybe.xyz/pgp")
-					.seperator_style(Style::new().fg(Color::White))
-					.into(),
+		theme.title("\nContact:\n\n").into(),
+		theme
+			.label(
+				"PGP:",
+				vec![
+					theme
+						.link_colored("https://kybe.xyz/pgp\n", "https://kybe.xyz/pgp")
+						.into(),
+				],
 			)
 			.into(),
-		TextBlobBuilder::new("Email: ")
-			.style(Style::new().fg(Color::Yellow))
-			.into(),
-		TextBlobBuilder::new("kybe@kybe.xyz\n")
-			.style(Style::new().fg(Color::Green))
-			.link_to(
-				LinkToBuilder::new("mailto:kybe@kybe.xyz")
-					.seperator_style(Style::new().fg(Color::White))
-					.into(),
+		theme
+			.label(
+				"Email",
+				vec![
+					theme
+						.link_colored("kybe@kybe.xyz\n", "mailto:kybe@kybe.xyz")
+						.into(),
+				],
 			)
 			.into(),
-		TextBlobBuilder::new("Matrix: ")
-			.style(Style::new().fg(Color::Yellow))
-			.into(),
-		TextBlobBuilder::new("@kybe:kybe.xyz\n")
-			.style(Style::new().fg(Color::Green))
-			.link_to(
-				LinkToBuilder::new("https://matrix.to/#/@kybe:kybe.xyz")
-					.seperator_style(Style::new().fg(Color::White))
-					.into(),
+		theme
+			.label(
+				"Matrix",
+				vec![
+					theme
+						.link_colored("@kybe:kybe.xyz\n", "https://matrix.to/#/@kybe:kybe.xyz")
+						.into(),
+				],
 			)
 			.into(),
-		TextBlobBuilder::new("\nOther Endpoints:\n")
-			.style(Style::new().fg(Color::BrightRed))
-			.into(),
-		TextBlobBuilder::new("IP ")
-			.style(Style::new().fg(Color::Yellow))
-			.into(),
-		TextBlobBuilder::new("https://kybe.xyz/ip\n")
-			.style(Style::new().fg(Color::Green))
-			.link_to(
-				LinkToBuilder::new("https://kybe.xyz/ip")
-					.seperator_style(Style::new().fg(Color::White))
-					.into(),
+		theme.title("\nOther Endpoints:\n").into(),
+		theme
+			.label(
+				"IP",
+				vec![
+					theme
+						.link_colored("https://kybe.xyz/ip\n", "https://kybe.xyz/ip")
+						.into(),
+				],
 			)
 			.into(),
-		TextBlobBuilder::new("Canvas ")
-			.style(Style::new().fg(Color::Yellow))
-			.into(),
-		TextBlobBuilder::new("https://kybe.xyz/canvas\n")
-			.style(Style::new().fg(Color::Green))
-			.link_to(
-				LinkToBuilder::new("https://kybe.xyz/canvas")
-					.seperator_style(Style::new().fg(Color::White))
-					.into(),
+		theme
+			.label(
+				"Canvas",
+				vec![
+					theme
+						.link_colored("https://kybe.xyz/canvas\n", "https://kybe.xyz/canvas")
+						.into(),
+				],
 			)
 			.into(),
 		// DE flag

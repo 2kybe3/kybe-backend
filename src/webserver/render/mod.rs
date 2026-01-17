@@ -1,16 +1,14 @@
 mod ansi;
-mod builders;
+pub mod builders;
 mod color;
 mod html;
+mod theme;
 
 use std::collections::HashMap;
 
-pub use builders::{
-	COLOR_MAPPING, CanvasBuilder, CodeBlockBuilder, LinkToBuilder, TextBlobBuilder,
-};
+use crate::webserver::render::builders::{CodeBlockBuilder, NoLanguage, NoTitle};
 pub use color::{Color, Style};
-
-use crate::webserver::render::builders::{NoLanguage, NoLink, NoStyle, NoTitle};
+pub use theme::Theme;
 
 pub struct LinkTo {
 	link: String,
@@ -38,12 +36,37 @@ pub enum Object {
 }
 
 impl Object {
-	pub fn text(text: impl Into<String>) -> TextBlobBuilder<NoStyle, NoLink> {
-		TextBlobBuilder::new(text)
-	}
-
 	pub fn code(code: impl Into<String>) -> CodeBlockBuilder<NoTitle, NoLanguage> {
 		CodeBlockBuilder::new(code)
+	}
+}
+
+pub enum Objects {
+	One(Object),
+	Many(Vec<Object>),
+}
+
+impl IntoIterator for Objects {
+	type Item = Object;
+	type IntoIter = std::vec::IntoIter<Object>;
+
+	fn into_iter(self) -> Self::IntoIter {
+		match self {
+			Objects::One(obj) => vec![obj].into_iter(),
+			Objects::Many(vec) => vec.into_iter(),
+		}
+	}
+}
+
+impl From<Vec<Object>> for Objects {
+	fn from(v: Vec<Object>) -> Self {
+		Objects::Many(v)
+	}
+}
+
+impl<T: Into<Object>> From<T> for Objects {
+	fn from(o: T) -> Self {
+		Objects::One(o.into())
 	}
 }
 
@@ -57,8 +80,12 @@ impl Page {
 	}
 }
 
-impl FromIterator<Object> for Page {
-	fn from_iter<T: IntoIterator<Item = Object>>(iter: T) -> Self {
-		Self::new(iter.into_iter().collect())
+impl Page {
+	pub fn from_iter<I>(iter: I) -> Self
+	where
+		I: IntoIterator<Item = Objects>,
+	{
+		let objects = iter.into_iter().flatten().collect();
+		Self::new(objects)
 	}
 }

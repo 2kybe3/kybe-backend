@@ -9,7 +9,7 @@ use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::render::{Color, Object, Page, Style},
+	webserver::render::{Object, Page, Theme},
 };
 
 pub async fn pgp(
@@ -21,9 +21,11 @@ pub async fn pgp(
 		.and_then(|v| v.to_str().ok())
 		.map(|s| s.to_string());
 
+	let theme = Theme::default();
+
 	let page = Page::from_iter([
-		Object::text("Hello Stranger, and maybe PGP user :-)\n\n")
-			.style(Style::new().fg(Color::BrightRed))
+		theme
+			.text("Hello Stranger, and maybe PGP user :-)\n\n")
 			.into(),
 		Object::code(include_str!("../../assets/key.pgp"))
 			.title("kybe <kybe@kybe.xyz>")

@@ -68,9 +68,11 @@ impl Page {
 		output.push_str(&style.ansi_code());
 
 		let mut text = text.to_string();
+
 		if let Some(link_to) = link_to
-			&& !text.contains(&link_to.link)
 			&& link_to.link.starts_with("http")
+			&& !text.contains(&link_to.link)
+			&& let Some(http_index) = text.find("http")
 		{
 			let mut colored = String::new();
 			if let Some(style) = link_to.seperator_style {
@@ -84,8 +86,10 @@ impl Page {
 				colored.push_str(&style.ansi_code());
 			}
 
-			let index = text.trim_start().find("\n");
-			if let Some(index) = index {
+			let trimmed = text.trim_start();
+			let newline_index = trimmed[http_index..].find("\n").map(|i| i + http_index);
+
+			if let Some(index) = newline_index {
 				let rest = text.split_off(index);
 				text.push_str(&colored);
 				text.push_str(&link_to.link);

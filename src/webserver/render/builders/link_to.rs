@@ -38,7 +38,6 @@ impl<L> LinkToBuilder<NoSeperatorStyle, L> {
 	}
 }
 
-#[allow(unused)]
 impl<S> LinkToBuilder<S, NoLinkStyle> {
 	pub fn link_style(self, link_style: Style) -> LinkToBuilder<S, HasLinkStyle> {
 		LinkToBuilder {
