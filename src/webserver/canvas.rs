@@ -54,7 +54,7 @@ pub async fn canvas(
 					.style(Style::new().fg(Color::Yellow))
 					.into(),
 				TextBlobBuilder::new(
-					"\n\nExample: https://kybe.xyz/canvas?q=BBBBBBBBBBNLRRRRRRRRRRNLYYYYYYYYYY\n",
+					"\n\nExample: https://kybe.xyz/canvas?q=BLBLBLBLBLBLBLBLBLBLNLRRRRRRRRRRNLYYYYYYYYYY\n",
 				)
 				.into(),
 			])
