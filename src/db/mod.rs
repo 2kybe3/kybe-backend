@@ -77,7 +77,10 @@ impl Database {
 				&& let Some(mm_city) = lookup.0
 				&& let Some(mm_asn) = lookup.1
 			{
-                info!("updating {} to {:?} and {:?}", trace.trace_id, mm_city, mm_asn);
+				info!(
+					"updating {} to {:?} and {:?}",
+					trace.trace_id, mm_city, mm_asn
+				);
 				sqlx::query!(
 					r#"
                     UPDATE website_traces

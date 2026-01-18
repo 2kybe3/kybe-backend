@@ -227,7 +227,9 @@ pub async fn init_webserver(
 	let trace_layer = middleware::from_fn_with_state(webserver_state.clone(), trace_middleware);
 	let root_limiter_layer = GovernorLayer::new(root_limiter);
 
-	let app = Router::new()
+	let health_route = Router::new().route("/health", get(|| async { "OK" }));
+
+	let api_routes = Router::new()
 		.route("/", get(root::root).layer(root_limiter_layer.clone()))
 		.route("/ip", get(ip::ip).layer(root_limiter_layer.clone()))
 		.route("/pgp", get(pgp::pgp).layer(root_limiter_layer.clone()))
@@ -235,7 +237,6 @@ pub async fn init_webserver(
 			"/canvas",
 			get(canvas::canvas).layer(root_limiter_layer.clone()),
 		)
-		.route("/health", get(|| async { "OK" }))
 		.route(
 			"/register",
 			post(register::register).layer(GovernorLayer::new(register_limiter)),
@@ -243,6 +244,8 @@ pub async fn init_webserver(
 		.layer(trace_layer)
 		.layer(ctx_layer)
 		.with_state(webserver_state);
+
+	let app = health_route.merge(api_routes);
 
 	let listener = TcpListener::bind("0.0.0.0:3000").await?;
 	axum::serve(
