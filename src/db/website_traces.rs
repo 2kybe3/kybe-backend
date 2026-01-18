@@ -8,7 +8,9 @@ use uuid::Uuid;
 pub enum RequestStatus {
 	Success,
 	Redirect,
+    #[rename("client_error")]
 	ClientError,
+    #[rename("server_error")]
 	ServerError,
 	Unauthorized,
 }
