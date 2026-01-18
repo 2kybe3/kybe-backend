@@ -6,6 +6,7 @@ pub struct Config {
 	pub discord_bot: DiscordBotConfig,
 	pub webserver: WebserverConfig,
 	pub database: DatabaseConfig,
+	pub maxmind: MaxMindConfig,
 	pub logger: LoggerConfig,
 	pub email: EmailConfig,
 }
@@ -30,6 +31,7 @@ pub struct DiscordConfig {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DiscordBotConfig {
+	pub enable: bool,
 	pub token: String,
 	pub translator: TranslatorConfig,
 	pub admin_id: String,
@@ -48,6 +50,17 @@ pub struct DatabaseConfig {
 	pub max_connections: u32,
 }
 
+// Max Mind (https://www.maxmind.com/en/geoip-databases)
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct MaxMindConfig {
+	// Use City DB and Path to it
+	pub city_enable: bool,
+	pub city: String,
+	// Use ASN DB and Path to it
+	pub asn_enable: bool,
+	pub asn: String,
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct LoggerConfig {
 	pub file_logger_enabled: bool,
@@ -62,6 +75,7 @@ pub struct WebserverConfig {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct EmailConfig {
+	pub enable: bool,
 	pub email: String,
 	pub password: String,
 	pub server: String,

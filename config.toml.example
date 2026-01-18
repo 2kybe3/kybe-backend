@@ -7,6 +7,7 @@ enabled = false
 url = "https://discord.com/api/webhooks/.../..."
 
 [discord_bot]
+enable = false
 token = "DISCORD_TOKEN"
 admin_id = "921066050009833572"
 
@@ -23,11 +24,16 @@ trust_proxy_header = "X-Forwarded-For"
 postgres_url = "postgres://postgres:password@localhost/test"
 max_connections = 5
 
+[maxmind]
+enable = false
+path = "https://www.maxmind.com/"
+
 [logger]
 file_logger_enabled = true
 file_logger_path = "./log"
 
 [email]
+enable = false
 email = "system@kybe.xyz"
 password = ""
 server = "mail.kybe.xyz"

@@ -9,6 +9,9 @@ use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
 use crate::db::website_traces::WebsiteTrace;
+use crate::maxmind::MaxMind;
+use crate::maxmind::asn::AsnMin;
+use crate::maxmind::city::CityMin;
 use anyhow::anyhow;
 use axum::extract::{ConnectInfo, Request, State};
 use axum::http::HeaderMap;
@@ -18,7 +21,7 @@ use axum::routing::{get, post};
 use axum::{Router, middleware};
 use governor::clock::QuantaInstant;
 use governor::middleware::NoOpMiddleware;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::Mutex;
@@ -28,6 +31,7 @@ use tower_governor::{GovernorError, GovernorLayer};
 
 #[derive(Clone)]
 struct WebServerState {
+	mm: Arc<MaxMind>,
 	config: Arc<Config>,
 	auth: Arc<AuthService>,
 	database: Database,
@@ -62,14 +66,19 @@ fn client_ip<T: IpExtractionConfig>(
 	headers: &HeaderMap,
 	remote_addr: SocketAddr,
 	config: &T,
-) -> Option<String> {
+) -> Option<IpAddr> {
 	if config.behind_proxy() {
 		headers
 			.get(config.trust_proxy_header())
 			.and_then(|v| v.to_str().ok())
-			.map(|s| s.split(',').next().unwrap_or(s).trim().to_string())
+			.and_then(|s| {
+				s.split(',')
+					.next()
+					.map(str::trim)
+					.and_then(|ip| ip.parse::<IpAddr>().ok())
+			})
 	} else {
-		Some(remote_addr.ip().to_string())
+		Some(remote_addr.ip())
 	}
 }
 
@@ -89,7 +98,7 @@ impl ClientIpKeyExtractor {
 }
 
 impl KeyExtractor for ClientIpKeyExtractor {
-	type Key = String;
+	type Key = IpAddr;
 
 	fn extract<T>(&self, req: &Request<T>) -> Result<Self::Key, GovernorError> {
 		let headers = req.headers();
@@ -97,16 +106,23 @@ impl KeyExtractor for ClientIpKeyExtractor {
 			.extensions()
 			.get::<ConnectInfo<SocketAddr>>()
 			.map(|ci| ci.0)
-			.unwrap_or(SocketAddr::from(([127, 0, 0, 1], 0)));
+			.unwrap();
 
-		let ip = client_ip(headers, connect_info, &self)
-			.unwrap_or_else(|| connect_info.ip().to_string());
+		let ip = client_ip(headers, connect_info, &self).unwrap();
 
 		Ok(ip)
 	}
 }
 
-async fn trace_middleware(
+#[derive(Clone)]
+pub struct RequestContext {
+	pub user_agent: String,
+	pub ip: IpAddr,
+	pub mm_asn: Option<AsnMin>,
+	pub mm_city: Option<CityMin>,
+}
+
+async fn user_contex_middleware(
 	State(state): State<WebServerState>,
 
 	headers: HeaderMap,
@@ -118,16 +134,44 @@ async fn trace_middleware(
 	let user_agent = headers
 		.get(axum::http::header::USER_AGENT)
 		.and_then(|v| v.to_str().ok())
-		.map(|s| s.to_string());
+		.map(|s| s.to_string())
+		.unwrap_or_default();
 
-	let ip = client_ip(&headers, remote_addr, &*state.config);
+	let ip = client_ip(&headers, remote_addr, &*state.config).unwrap();
+
+	let mm = state.mm.lookup(ip).unwrap();
+
+	let ctx = RequestContext {
+		user_agent,
+		ip,
+		mm_city: mm.0,
+		mm_asn: mm.1,
+	};
+
+	request.extensions_mut().insert(ctx);
+
+	next.run(request).await
+}
+
+async fn trace_middleware(
+	State(state): State<WebServerState>,
+
+	mut request: Request,
+	next: Next,
+) -> Response {
+	let ctx = request
+		.extensions()
+		.get::<RequestContext>()
+		.expect("user_context_middleware must run first");
 
 	let trace = Arc::new(Mutex::new(WebsiteTrace::start(
 		request.method(),
 		request.uri().path(),
 		request.uri().query(),
-		user_agent.clone(),
-		ip.clone(),
+		ctx.user_agent.clone(),
+		ctx.ip.to_string(),
+		serde_json::json!(ctx.mm_asn),
+		serde_json::json!(ctx.mm_city),
 	)));
 
 	request.extensions_mut().insert(trace.clone());
@@ -167,51 +211,37 @@ pub async fn init_webserver(
 	config: Arc<Config>,
 	auth: Arc<AuthService>,
 	database: Database,
+	mm: Arc<MaxMind>,
 ) -> anyhow::Result<()> {
 	let register_limiter = make_limiter(&config, 60, 10)?;
 	let root_limiter = make_limiter(&config, 1, 10)?;
 
 	let webserver_state = WebServerState {
+		mm,
 		auth,
 		config,
 		database,
 	};
 
+	let ctx_layer = middleware::from_fn_with_state(webserver_state.clone(), user_contex_middleware);
 	let trace_layer = middleware::from_fn_with_state(webserver_state.clone(), trace_middleware);
 	let root_limiter_layer = GovernorLayer::new(root_limiter);
 
 	let app = Router::new()
-		.route(
-			"/",
-			get(root::root)
-				.layer(root_limiter_layer.clone())
-				.route_layer(trace_layer.clone()),
-		)
-		.route(
-			"/ip",
-			get(ip::ip)
-				.layer(root_limiter_layer.clone())
-				.route_layer(trace_layer.clone()),
-		)
-		.route(
-			"/pgp",
-			get(pgp::pgp)
-				.layer(root_limiter_layer.clone())
-				.route_layer(trace_layer.clone()),
-		)
+		.route("/", get(root::root).layer(root_limiter_layer.clone()))
+		.route("/ip", get(ip::ip).layer(root_limiter_layer.clone()))
+		.route("/pgp", get(pgp::pgp).layer(root_limiter_layer.clone()))
 		.route(
 			"/canvas",
-			get(canvas::canvas)
-				.layer(root_limiter_layer.clone())
-				.route_layer(trace_layer.clone()),
+			get(canvas::canvas).layer(root_limiter_layer.clone()),
 		)
 		.route("/health", get(|| async { "OK" }))
 		.route(
 			"/register",
-			post(register::register)
-				.layer(GovernorLayer::new(register_limiter))
-				.route_layer(trace_layer.clone()),
+			post(register::register).layer(GovernorLayer::new(register_limiter)),
 		)
+		.layer(trace_layer)
+		.layer(ctx_layer)
 		.with_state(webserver_state);
 
 	let listener = TcpListener::bind("0.0.0.0:3000").await?;

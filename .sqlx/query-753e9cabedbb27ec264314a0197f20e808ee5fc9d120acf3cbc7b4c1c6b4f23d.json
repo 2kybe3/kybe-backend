@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    UPDATE website_traces\n                    SET mm_city = $1, mm_asn = $2\n                    WHERE trace_id = $3\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Jsonb",
+        "Jsonb",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "753e9cabedbb27ec264314a0197f20e808ee5fc9d120acf3cbc7b4c1c6b4f23d"
+}

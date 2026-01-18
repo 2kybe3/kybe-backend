@@ -19,14 +19,16 @@ pub struct WebsiteTrace {
 	pub method: String,
 	pub path: String,
 	pub query: Option<String>,
-	pub ip_address: Option<String>,
-	pub user_agent: Option<String>,
+	pub ip_address: String,
+	pub user_agent: String,
 	pub user_id: Option<Uuid>,
 	pub started_at: DateTime<Utc>,
 	pub duration_ms: i64,
 	pub status_code: u16,
 	pub request_status: RequestStatus,
 	pub data: serde_json::Value,
+	pub mm_asn: serde_json::Value,
+	pub mm_city: serde_json::Value,
 	pub request_headers: serde_json::Value,
 	pub request_body: Option<serde_json::Value>,
 	pub response_body: Option<serde_json::Value>,
@@ -38,22 +40,26 @@ impl WebsiteTrace {
 		method: impl AsRef<str>,
 		path: impl Into<String>,
 		query: Option<impl Into<String>>,
-		user_agent: Option<impl Into<String>>,
-		ip: Option<impl Into<String>>,
+		user_agent: impl Into<String>,
+		ip: impl Into<String>,
+		mm_asn: impl Into<serde_json::Value>,
+		mm_city: impl Into<serde_json::Value>,
 	) -> Self {
 		Self {
 			trace_id: Uuid::now_v7(),
 			method: method.as_ref().to_uppercase(),
 			path: path.into(),
 			query: query.map(Into::into),
-			ip_address: ip.map(Into::into),
-			user_agent: user_agent.map(Into::into),
+			ip_address: ip.into(),
+			user_agent: user_agent.into(),
 			user_id: None,
 			started_at: Utc::now(),
 			duration_ms: 0,
 			status_code: 0,
 			data: serde_json::json!({}),
 			request_headers: serde_json::json!({}),
+			mm_asn: mm_asn.into(),
+			mm_city: mm_city.into(),
 			request_status: RequestStatus::Success,
 			request_body: None,
 			response_body: None,
@@ -97,13 +103,13 @@ impl Database {
 			r#"
             INSERT INTO website_traces (
                 trace_id, method, path, query, ip_address, user_agent, user_id, started_at,
-                duration_ms, status_code, data, request_headers, request_status, request_body,
-                response_body, error
+                duration_ms, status_code, data, mm_asn, mm_city, request_headers, request_status,
+                request_body, response_body, error
             )
             VALUES (
                 $1, $2, $3, $4, $5, $6, $7, $8,
                 $9, $10, $11, $12, $13, $14,
-                $15, $16
+                $15, $16, $17, $18
             )
             "#,
 			trace.trace_id,
@@ -117,6 +123,8 @@ impl Database {
 			trace.duration_ms,
 			trace.status_code as i32,
 			trace.data,
+			trace.mm_asn,
+			trace.mm_city,
 			trace.request_headers,
 			trace.request_status.clone() as RequestStatus,
 			trace.request_body,

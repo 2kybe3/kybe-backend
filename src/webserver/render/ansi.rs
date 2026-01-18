@@ -115,7 +115,7 @@ impl Page {
 		let mut output = String::new();
 
 		if title.is_some() || language.is_some() {
-			output.push_str("\n\n--title--\n");
+			output.push_str("--title--\n");
 			output.push_str(&Style::new().fg(Color::Cyan).ansi_code());
 			if let Some(title) = title {
 				output.push_str(&format!(

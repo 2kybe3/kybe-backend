@@ -1,7 +1,7 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
 	Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, EmailConfig, GotifyConfig,
-	LoggerConfig, NotificationConfig, TranslatorConfig, WebserverConfig,
+	LoggerConfig, MaxMindConfig, NotificationConfig, TranslatorConfig, WebserverConfig,
 };
 use std::env;
 use std::time::Instant;
@@ -135,6 +135,7 @@ impl Default for Config {
 				},
 			},
 			discord_bot: DiscordBotConfig {
+				enable: false,
 				token: "DISCORD_TOKEN".into(),
 				admin_id: "921066050009833572".into(),
 				translator: TranslatorConfig {
@@ -147,6 +148,12 @@ impl Default for Config {
 				postgres_url: "postgres://postgres:password@localhost/test".into(),
 				max_connections: 5,
 			},
+			maxmind: MaxMindConfig {
+				city_enable: false,
+				city: "".into(),
+				asn_enable: false,
+				asn: "".into(),
+			},
 			logger: LoggerConfig {
 				file_logger_enabled: true,
 				file_logger_path: Some("./log".into()),
@@ -156,6 +163,7 @@ impl Default for Config {
 				trust_proxy_header: "X-Forwarded-For".into(),
 			},
 			email: EmailConfig {
+				enable: false,
 				server: "mail.kybe.xyz".into(),
 				port: 993,
 				email: "system@kybe.xyz".into(),

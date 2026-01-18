@@ -1,25 +1,21 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::sync::Arc;
 
-use axum::{Extension, extract::ConnectInfo, http::HeaderMap, response::IntoResponse};
+use axum::{Extension, response::IntoResponse};
 use reqwest::StatusCode;
 use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::{WebServerState, client_ip},
+	webserver::RequestContext,
 };
 
 pub async fn ip(
-	headers: HeaderMap,
-	axum::extract::State(state): axum::extract::State<WebServerState>,
-	ConnectInfo(remote_addr): ConnectInfo<SocketAddr>,
 	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
+	Extension(ctx): Extension<RequestContext>,
 ) -> impl IntoResponse {
-	let ip = client_ip(&headers, remote_addr, &*state.config);
-
 	let mut trace = trace.lock().await;
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
 
-	(StatusCode::OK, ip.unwrap_or_default()).into_response()
+	(StatusCode::OK, ctx.ip.to_string()).into_response()
 }

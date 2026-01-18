@@ -4,6 +4,7 @@ mod db;
 mod discord_bot;
 pub mod email;
 pub mod external;
+pub mod maxmind;
 mod notifications;
 pub mod translator;
 mod webserver;
@@ -12,13 +13,17 @@ use crate::auth::AuthService;
 use crate::config::types::{Config, LoggerConfig};
 use crate::db::Database;
 use crate::email::EmailService;
-use crate::notifications::Notifications;
+use crate::maxmind::MaxMind;
+use crate::notifications::{Notification, Notifications};
+use futures::future::try_join_all;
 use once_cell::sync::Lazy;
 use std::backtrace::Backtrace;
+use std::env;
 use std::io::stdout;
 use std::sync::Arc;
+use std::time::Duration;
 use tracing::dispatcher::DefaultGuard;
-use tracing::warn;
+use tracing::{error, warn};
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 
@@ -38,7 +43,7 @@ macro_rules! exit_error {
 	}};
 }
 
-#[tokio::main(flavor = "multi_thread")]
+#[tokio::main]
 async fn main() -> anyhow::Result<()> {
 	// Init logger in two phases:
 	// 1. without file logging to print info about loading the config
@@ -46,6 +51,10 @@ async fn main() -> anyhow::Result<()> {
 	let bootstrap_guard = init_logger_bootstrap()?;
 	let config = Arc::new(Config::init().await?);
 	init_logger(&config.logger, bootstrap_guard)?;
+
+	let mm = Arc::new(MaxMind::new(config.maxmind.clone())?);
+
+	let mut handles = Vec::new();
 
 	let notifications = Arc::new(Notifications::new(&config.notification));
 	let database = match Database::init(Arc::clone(&config)).await {
@@ -57,27 +66,52 @@ async fn main() -> anyhow::Result<()> {
 		),
 	};
 
-	let email_service = Arc::new(EmailService::new(&config.email));
-	let email_service_handle = {
+	let args: Vec<String> = env::args().collect();
+	if args.iter().any(|arg| arg == "--sync-maxmind") {
+		database.sync_maxmind(Arc::clone(&mm)).await?;
+	}
+
+	#[allow(unused)]
+	let mut email_service = None;
+	#[allow(unused)]
+	if config.email.enable {
+		let inner_email_service = Arc::new(EmailService::new(&config.email));
+		email_service = Some(Arc::clone(&inner_email_service));
+
 		let notifications = Arc::clone(&notifications);
 
-		tokio::spawn(async move {
-			if let Err(e) = email_service.run().await {
-				exit_error!(
-					notifications,
-					"Email Service",
-					format!("failed: {e}\nBacktrace: {}", Backtrace::capture())
-				);
-			}
-		})
-	};
+		handles.push(tokio::spawn(async move {
+			loop {
+				if let Err(e) = inner_email_service.run().await {
+					error!(
+						"{}: {}",
+						"Email Service",
+						format!("failed: {e}\nBacktrace: {}", Backtrace::capture())
+					);
 
-	let bot_handle = {
+					notifications
+						.notify(
+							Notification::new(
+								"Email Service",
+								format!("failed: {e}\nBacktrace: {}", Backtrace::capture()),
+							),
+							true,
+						)
+						.await;
+
+					tokio::time::sleep(Duration::from_secs(5));
+				}
+			}
+		}))
+	}
+
+	// TODO: add maxmind command
+	if config.discord_bot.enable {
 		let notifications = Arc::clone(&notifications);
 		let config = Arc::clone(&config);
 		let database = database.clone();
 
-		tokio::spawn(async move {
+		handles.push(tokio::spawn(async move {
 			if let Err(e) = discord_bot::init_bot(notifications.clone(), config, database).await {
 				exit_error!(
 					notifications,
@@ -85,24 +119,22 @@ async fn main() -> anyhow::Result<()> {
 					format!("init failed: {e}\nBacktrace: {}", Backtrace::capture())
 				);
 			}
-		})
-	};
+		}));
+	}
 
-	let webserver_handle = {
-		tokio::spawn(async move {
-			let auth = Arc::new(AuthService::new(database.clone()));
+	handles.push(tokio::spawn(async move {
+		let auth = Arc::new(AuthService::new(database.clone()));
 
-			if let Err(e) = webserver::init_webserver(config, auth, database).await {
-				exit_error!(
-					notifications,
-					"Discord Bot",
-					format!("init failed: {e}\nBacktrace: {}", Backtrace::capture())
-				);
-			}
-		})
-	};
+		if let Err(e) = webserver::init_webserver(config, auth, database, mm).await {
+			exit_error!(
+				notifications,
+				"Discord Bot",
+				format!("init failed: {e}\nBacktrace: {}", Backtrace::capture())
+			);
+		}
+	}));
 
-	tokio::try_join!(webserver_handle, bot_handle, email_service_handle)?;
+	try_join_all(handles).await?;
 	Ok(())
 }
 
