@@ -20,13 +20,19 @@ token = ""
 behind_proxy = false
 trust_proxy_header = "X-Forwarded-For"
 
+[webserver.umami]
+script_path = "https://kybe.xyz/script.js"
+id = "umami-id"
+
 [database]
 postgres_url = "postgres://postgres:password@localhost/test"
 max_connections = 5
 
 [maxmind]
-enable = false
-path = "https://www.maxmind.com/"
+city_enable = false
+city = ""
+asn_enable = false
+asn = ""
 
 [logger]
 file_logger_enabled = true

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::{
 	Extension,
+	extract::State,
 	http::HeaderMap,
 	response::{Html, IntoResponse},
 };
@@ -10,13 +11,17 @@ use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::render::{
-		Color, Page, Style, Theme,
-		builders::{CodeBlockBuilder, TextBlobBuilder},
+	webserver::{
+		WebServerState,
+		render::{
+			Color, Page, Style, Theme,
+			builders::{CodeBlockBuilder, TextBlobBuilder},
+		},
 	},
 };
 
 pub async fn root(
+	State(state): State<WebServerState>,
 	headers: HeaderMap,
 	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
 ) -> impl IntoResponse {
@@ -148,7 +153,7 @@ pub async fn root(
 	let result = if is_cli {
 		page.render_ansi()
 	} else {
-		page.render_html_page("kybe - root")
+		page.render_html_page("kybe - root", &state.config.webserver.umami)
 	};
 
 	trace.request_status = RequestStatus::Success;

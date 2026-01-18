@@ -1,8 +1,11 @@
 use std::vec;
 
-use crate::webserver::render::{
-	ColorMapping, LinkTo, Page,
-	color::{Color, Style},
+use crate::{
+	config::types::UmamiConfig,
+	webserver::render::{
+		ColorMapping, LinkTo, Page,
+		color::{Color, Style},
+	},
 };
 
 impl Style {
@@ -52,12 +55,25 @@ impl Color {
 const HTML_TEMPLATE: &str = include_str!("../../../assets/template.html");
 
 impl Page {
-	pub fn render_html_page(&self, title: &str) -> String {
+	pub fn render_html_page(&self, title: &str, umami: &UmamiConfig) -> String {
 		let inner_html = self.render_html();
+
+		let umami = match (umami.id.clone(), umami.script_path.clone()) {
+			(Some(id), Some(path)) => format!(
+				"<script defer src=\"{}\" data-website-id=\"{}\"></script>",
+				path, id
+			),
+			(Some(id), None) => format!(
+				"<script defer src=\"/script.js\" data-website-id=\"{}\"></script>",
+				id
+			),
+			_ => "".into(),
+		};
 
 		HTML_TEMPLATE
 			.replace("{{title}}", &html_escape::encode_text(title))
 			.replace("{{content}}", &inner_html)
+			.replace("{{umami}}", &umami)
 	}
 
 	pub fn render_html_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String {

@@ -1,5 +1,6 @@
 use axum::{
 	Extension,
+	extract::State,
 	http::HeaderMap,
 	response::{Html, IntoResponse},
 };
@@ -9,10 +10,14 @@ use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::render::{Object, Page, Theme},
+	webserver::{
+		WebServerState,
+		render::{Object, Page, Theme},
+	},
 };
 
 pub async fn pgp(
+	State(state): State<WebServerState>,
 	headers: HeaderMap,
 	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
 ) -> impl IntoResponse {
@@ -37,7 +42,7 @@ pub async fn pgp(
 	let result = if is_cli {
 		page.render_ansi()
 	} else {
-		page.render_html_page("kybe - pgp")
+		page.render_html_page("kybe - pgp", &state.config.webserver.umami)
 	};
 
 	let mut trace = trace.lock().await;

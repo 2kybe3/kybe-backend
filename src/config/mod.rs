@@ -1,7 +1,8 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
 	Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, EmailConfig, GotifyConfig,
-	LoggerConfig, MaxMindConfig, NotificationConfig, TranslatorConfig, WebserverConfig,
+	LoggerConfig, MaxMindConfig, NotificationConfig, TranslatorConfig, UmamiConfig,
+	WebserverConfig,
 };
 use std::env;
 use std::time::Instant;
@@ -160,7 +161,11 @@ impl Default for Config {
 			},
 			webserver: WebserverConfig {
 				behind_proxy: false,
-				trust_proxy_header: "X-Forwarded-For".into(),
+				trust_proxy_header: Some("X-Forwarded-For".into()),
+				umami: UmamiConfig {
+					script_path: Some("https://kybe.xyz/script.js".into()),
+					id: Some("umami-id".into()),
+				},
 			},
 			email: EmailConfig {
 				enable: false,

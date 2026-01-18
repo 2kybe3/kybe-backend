@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::{
 	Extension,
-	extract::Query,
+	extract::{Query, State},
 	http::HeaderMap,
 	response::{Html, IntoResponse},
 };
@@ -12,9 +12,12 @@ use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::render::{
-		Color, Page, Style,
-		builders::{COLOR_MAPPING, CanvasBuilder, TextBlobBuilder},
+	webserver::{
+		WebServerState,
+		render::{
+			Color, Page, Style,
+			builders::{COLOR_MAPPING, CanvasBuilder, TextBlobBuilder},
+		},
 	},
 };
 
@@ -24,6 +27,7 @@ pub struct CanvasParamters {
 }
 
 pub async fn canvas(
+	State(state): State<WebServerState>,
 	headers: HeaderMap,
 	Query(parsed_query): Query<CanvasParamters>,
 	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
@@ -66,7 +70,7 @@ pub async fn canvas(
 	let result = if is_cli {
 		page.render_ansi()
 	} else {
-		page.render_html_page("kybe - canvas")
+		page.render_html_page("kybe - canvas", &state.config.webserver.umami)
 	};
 
 	let mut trace = trace.lock().await;

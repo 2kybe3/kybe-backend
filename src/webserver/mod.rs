@@ -39,7 +39,7 @@ struct WebServerState {
 
 pub trait IpExtractionConfig {
 	fn behind_proxy(&self) -> bool;
-	fn trust_proxy_header(&self) -> &str;
+	fn trust_proxy_header(&self) -> String;
 }
 
 impl IpExtractionConfig for Config {
@@ -47,8 +47,11 @@ impl IpExtractionConfig for Config {
 		self.webserver.behind_proxy
 	}
 
-	fn trust_proxy_header(&self) -> &str {
-		&self.webserver.trust_proxy_header
+	fn trust_proxy_header(&self) -> String {
+		self.webserver
+			.trust_proxy_header
+			.clone()
+			.unwrap_or("X-Forwarded-For".into())
 	}
 }
 
@@ -57,8 +60,8 @@ impl IpExtractionConfig for &ClientIpKeyExtractor {
 		self.behind_proxy
 	}
 
-	fn trust_proxy_header(&self) -> &str {
-		&self.trust_proxy_header
+	fn trust_proxy_header(&self) -> String {
+		self.trust_proxy_header.clone()
 	}
 }
 
@@ -200,7 +203,11 @@ pub fn make_limiter(
 			.burst_size(burst_size)
 			.key_extractor(ClientIpKeyExtractor::new(
 				config.webserver.behind_proxy,
-				config.webserver.trust_proxy_header.clone(),
+				config
+					.webserver
+					.trust_proxy_header
+					.clone()
+					.unwrap_or("X-Forwarded-For".into()),
 			))
 			.finish()
 			.ok_or(anyhow!("governor init failed"))?,
