@@ -105,14 +105,15 @@ async fn main() -> anyhow::Result<()> {
 		}))
 	}
 
-	// TODO: add maxmind command
 	if config.discord_bot.enable {
 		let notifications = Arc::clone(&notifications);
 		let config = Arc::clone(&config);
+		let mm = Arc::clone(&mm);
 		let database = database.clone();
 
 		handles.push(tokio::spawn(async move {
-			if let Err(e) = discord_bot::init_bot(notifications.clone(), config, database).await {
+			if let Err(e) = discord_bot::init_bot(notifications.clone(), config, database, mm).await
+			{
 				exit_error!(
 					notifications,
 					"Discord Bot",

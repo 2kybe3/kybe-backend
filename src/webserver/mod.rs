@@ -144,8 +144,8 @@ async fn user_contex_middleware(
 	let ctx = RequestContext {
 		user_agent,
 		ip,
-		mm_city: mm.0,
-		mm_asn: mm.1,
+		mm_city: mm.city,
+		mm_asn: mm.asn,
 	};
 
 	request.extensions_mut().insert(ctx);

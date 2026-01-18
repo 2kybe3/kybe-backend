@@ -74,8 +74,8 @@ impl Database {
 			if let Some(ip_str) = trace.ip_address
 				&& let Ok(ip) = ip_str.parse::<IpAddr>()
 				&& let Ok(lookup) = mm.lookup(ip)
-				&& let Some(mm_city) = lookup.0
-				&& let Some(mm_asn) = lookup.1
+				&& let Some(mm_city) = lookup.city
+				&& let Some(mm_asn) = lookup.asn
 			{
 				info!(
 					"updating {} to {:?} and {:?}",

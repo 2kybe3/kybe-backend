@@ -4,15 +4,23 @@ pub mod city;
 use std::net::IpAddr;
 
 use maxminddb::Reader;
+use serde::{Deserialize, Serialize};
 
 use crate::{
 	config::types::MaxMindConfig,
 	maxmind::{asn::AsnMin, city::CityMin},
 };
 
+#[derive(Debug)]
 pub struct MaxMind {
 	pub city: Option<Reader<Vec<u8>>>,
 	pub asn: Option<Reader<Vec<u8>>>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+pub struct LookupResponse {
+	pub city: Option<CityMin>,
+	pub asn: Option<AsnMin>,
 }
 
 impl MaxMind {
@@ -32,7 +40,7 @@ impl MaxMind {
 		Ok(Self { city, asn })
 	}
 
-	pub fn lookup(&self, ip: IpAddr) -> anyhow::Result<(Option<CityMin>, Option<AsnMin>)> {
+	pub fn lookup(&self, ip: IpAddr) -> anyhow::Result<LookupResponse> {
 		let city = match &self.city {
 			Some(city) => city.lookup(ip)?.decode::<CityMin>()?,
 			None => None,
@@ -43,6 +51,6 @@ impl MaxMind {
 			None => None,
 		};
 
-		Ok((city, asn))
+		Ok(LookupResponse { city, asn })
 	}
 }

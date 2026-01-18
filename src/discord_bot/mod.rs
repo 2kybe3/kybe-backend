@@ -1,5 +1,6 @@
 mod calculator;
 mod cataas;
+mod maxmind;
 mod traces;
 mod translator;
 mod version;
@@ -7,6 +8,7 @@ mod version;
 use crate::config::types::Config;
 use crate::db::Database;
 use crate::external::cataas::CATAAS;
+use crate::maxmind::MaxMind;
 use crate::notifications::{Notification, Notifications};
 use crate::translator::Translator;
 use poise::serenity_prelude as serenity;
@@ -27,6 +29,8 @@ pub struct Data {
 	pub config: Arc<Config>,
 	pub translator: Option<Arc<Translator>>,
 	pub database: Database,
+	pub mm: Arc<MaxMind>,
+
 	pub client: Arc<Client>,
 	pub cataas: CATAAS,
 }
@@ -35,6 +39,7 @@ pub async fn init_bot(
 	notifications: Arc<Notifications>,
 	config: Arc<Config>,
 	database: Database,
+	mm: Arc<MaxMind>,
 ) -> Result<(), Error> {
 	let token = config.discord_bot.token.clone();
 
@@ -48,6 +53,7 @@ pub async fn init_bot(
                 traces::get_trace(),
                 traces::get_latest_trace(),
 				version::version(),
+                maxmind::maxmind(),
 				cataas::cat(),
             ],
             on_error: |error: FrameworkError<'_, Data, Error>| Box::pin(async move {
@@ -110,6 +116,7 @@ pub async fn init_bot(
                     database,
 					client,
 					cataas,
+                    mm,
                 })
             })
         })
