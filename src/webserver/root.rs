@@ -49,7 +49,7 @@ pub async fn root(
 				vec![
 					theme
 						.link_colored(
-							"https://codeberg.org/kybe/nix-dotfiles",
+							"https://github.com/2kybe3/kybe-backend",
 							"https://github.com/2kybe3/kybe-backend",
 						)
 						.into(),
