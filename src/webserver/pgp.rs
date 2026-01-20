@@ -12,7 +12,10 @@ use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
 	webserver::{
 		WebServerState,
-		render::{Object, Page, Theme},
+		render::{
+			Page, Theme,
+			builders::{CodeBlockBuilder, TextBlobBuilder},
+		},
 	},
 };
 
@@ -32,9 +35,11 @@ pub async fn pgp(
 		theme
 			.text("Hello Stranger, and maybe PGP user :-)\n\n")
 			.into(),
-		Object::code(include_str!("../../assets/key.pgp"))
-			.title("kybe <kybe@kybe.xyz>")
-			.into(),
+		CodeBlockBuilder::new(vec![
+			TextBlobBuilder::new(include_str!("../../assets/key.pgp")).into(),
+		])
+		.title("kybe <kybe@kybe.xyz>")
+		.into(),
 	]);
 
 	let user_agent = user_agent.unwrap_or_default().to_lowercase();

@@ -9,21 +9,22 @@ pub struct NoLanguage;
 pub struct CodeBlockBuilder<T, L> {
 	title: Option<String>,
 	language: Option<String>,
-	code: String,
+	code: Vec<Object>,
 	_state: PhantomData<(T, L)>,
 }
 
 impl CodeBlockBuilder<NoTitle, NoLanguage> {
-	pub fn new(code: impl Into<String>) -> CodeBlockBuilder<NoTitle, NoLanguage> {
+	pub fn new(code: Vec<Object>) -> CodeBlockBuilder<NoTitle, NoLanguage> {
 		CodeBlockBuilder {
 			title: None,
 			language: None,
-			code: code.into(),
+			code: code.into_iter().collect(),
 			_state: PhantomData::<(NoTitle, NoLanguage)>,
 		}
 	}
 }
 
+#[allow(unused)]
 impl<T> CodeBlockBuilder<T, NoLanguage> {
 	pub fn language(self, language: impl Into<String>) -> CodeBlockBuilder<T, HasLanguage> {
 		CodeBlockBuilder {

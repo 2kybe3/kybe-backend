@@ -7,23 +7,61 @@
     <title>{{title}}</title>
     <style>
         body {
+            font-family: "DepartureMono", sans-serif;
+            font-size: 11px;
+
             font-family: monospace;
             background-color: #1e1e1e;
             color: #e5e5e5;
             white-space: pre-wrap;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
         }
         pre {
+            position: relative;
             padding: 0.5em;
             background-color: #1e1e1e;
             border: 1px solid #333;
             border-radius: 4px;
             overflow-x: auto;
+            margin-top: 1em;
+        }
+        pre {
+            style: margin-top: 4px;
+            border-color: #11a8cd;
         }
         code {
-            font-family: monospace;
+            padding: 0.2rem;
+            display: block;
         }
-        header, main {
-            padding: 1em;
+        .copy-btn {
+            position: absolute;
+            top: 0.3em;
+            right: 0.3em;
+            background-color: #11a8cd;
+            border: none;
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 6px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .copy-btn:active {
+            background-color: #29b8db;
+        }
+
+        @font-face {
+            font-family: "DepartureMono";
+            src: url("static/DepartureMono-1.500/DepartureMono-Regular.woff2") format("woff2").
+                 url("static/DepartureMono-1.500/DepartureMono-Regular.otf") format("opentype"),
+                 url("static/DepartureMono-1.500/DepartureMono-Regular.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
         }
     </style>
 </head>
@@ -31,6 +69,24 @@
 <main>
 {{content}}
 </main>
+<script>
+    document.querySelectorAll('pre').forEach(pre => {
+        const button = document.createElement('button');
+        button.innerText = "Copy";
+        button.className = "copy-btn";
+        pre.appendChild(button);
+
+        button.addEventListener('click', () => {
+            const copyText = Array.from(pre.querySelectorAll('.copyable'))
+                .map(el => el.innerText)
+                .join("");
+            navigator.clipboard.writeText(copyText).then(() => {
+                button.innerText = "Copied";
+                setTimeout(() => button.innerText = "Copy", 1000);
+            });
+        });
+    });
+</script>
 {{umami}}
 </body>
 </html>

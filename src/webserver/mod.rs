@@ -1,4 +1,5 @@
 mod canvas;
+mod fallback_404;
 mod ip;
 mod pgp;
 mod register;
@@ -28,6 +29,7 @@ use tokio::sync::Mutex;
 use tower_governor::governor::{GovernorConfig, GovernorConfigBuilder};
 use tower_governor::key_extractor::KeyExtractor;
 use tower_governor::{GovernorError, GovernorLayer};
+use tower_http::services::ServeDir;
 
 #[derive(Clone)]
 struct WebServerState {
@@ -234,7 +236,10 @@ pub async fn init_webserver(
 	let trace_layer = middleware::from_fn_with_state(webserver_state.clone(), trace_middleware);
 	let root_limiter_layer = GovernorLayer::new(root_limiter);
 
-	let health_route = Router::new().route("/health", get(|| async { "OK" }));
+	// TODO: figure out how i can make it also use fallback_404::fallback_404 for ServeDir#fallback
+	let unlogged_route = Router::new()
+		.route("/health", get(|| async { "OK" }))
+		.nest_service("/static", ServeDir::new("static"));
 
 	let api_routes = Router::new()
 		.route("/", get(root::root).layer(root_limiter_layer.clone()))
@@ -248,11 +253,13 @@ pub async fn init_webserver(
 			"/register",
 			post(register::register).layer(GovernorLayer::new(register_limiter)),
 		)
-		.layer(trace_layer)
-		.layer(ctx_layer)
-		.with_state(webserver_state);
+		.layer(trace_layer);
 
-	let app = health_route.merge(api_routes);
+	let app = unlogged_route
+		.merge(api_routes)
+		.fallback(fallback_404::fallback_404)
+		.with_state(webserver_state)
+		.layer(ctx_layer);
 
 	let listener = TcpListener::bind("0.0.0.0:3000").await?;
 	axum::serve(

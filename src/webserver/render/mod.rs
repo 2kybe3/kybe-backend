@@ -6,7 +6,6 @@ mod theme;
 
 use std::collections::HashMap;
 
-use crate::webserver::render::builders::{CodeBlockBuilder, NoLanguage, NoTitle};
 pub use color::{Color, Style};
 pub use theme::Theme;
 
@@ -23,22 +22,17 @@ pub enum Object {
 		text: String,
 		style: Style,
 		link_to: Option<LinkTo>,
+		copyable: bool,
 	},
 	CodeBlock {
 		title: Option<String>,
 		language: Option<String>,
-		code: String,
+		code: Vec<Object>,
 	},
 	Canvas {
 		data: String,
 		color_mapping: ColorMapping,
 	},
-}
-
-impl Object {
-	pub fn code(code: impl Into<String>) -> CodeBlockBuilder<NoTitle, NoLanguage> {
-		CodeBlockBuilder::new(code)
-	}
 }
 
 pub enum Objects {

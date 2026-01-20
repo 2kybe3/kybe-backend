@@ -3,7 +3,7 @@ use std::vec;
 use crate::{
 	config::types::UmamiConfig,
 	webserver::render::{
-		ColorMapping, LinkTo, Page,
+		ColorMapping, LinkTo, Object, Page,
 		color::{Color, Style},
 	},
 };
@@ -76,17 +76,27 @@ impl Page {
 			.replace("{{umami}}", &umami)
 	}
 
-	pub fn render_html_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String {
+	pub fn render_html_text_blob(
+		text: &str,
+		style: &Style,
+		link_to: &Option<LinkTo>,
+		copyable: bool,
+	) -> String {
 		let (start, end) = match link_to {
 			Some(link_to) => (
-				&*format!("<a style=\"[style]\" href={}>", link_to.link),
+				&*format!(
+					"<a class=\"[class]\" style=\"[style]\" href={}>",
+					link_to.link
+				),
 				"</a>",
 			),
-			None => ("<span style=\"[style]\">", "</span>"),
+			None => ("<span class=\"[class]\" style=\"[style]\">", "</span>"),
 		};
 		format!(
 			"{}{}{}",
-			&start.replace("[style]", &style.html_style()),
+			&start
+				.replace("[style]", &style.html_style())
+				.replace("[class]", if copyable { "copyable" } else { "" }),
 			&html_escape::encode_text(text),
 			end
 		)
@@ -95,24 +105,23 @@ impl Page {
 	pub fn render_html_code_block(
 		title: &Option<String>,
 		language: &Option<String>,
-		code: &str,
+		code: &[Object],
 	) -> String {
 		let mut output = String::new();
 		if title.is_some() || language.is_some() {
-			output.push_str("<pre><code>");
 			let mut parts = vec![];
+			let header_style = Style::new().fg(Color::Cyan);
 			if let Some(t) = title {
 				parts.push(format!(
 					"Title: {}{}",
-					html_escape::encode_text(t),
+					html_escape::encode_text(&t),
 					if language.is_some() { "," } else { "" }
 				));
 			}
 			if let Some(lang) = language {
-				parts.push(format!("Lang: {}", html_escape::encode_text(lang)));
+				parts.push(format!("Lang: {}", html_escape::encode_text(&lang)));
 			}
 
-			let header_style = Style::new().fg(Color::Cyan);
 			output.push_str(&format!(
 				"<div style=\"{}\">{}</div>",
 				header_style.html_style(),
@@ -121,12 +130,14 @@ impl Page {
 		}
 
 		output.push_str("<pre><code>");
-
-		output.push_str(&html_escape::encode_text(code));
+		output.push_str(
+			&code
+				.iter()
+				.map(Self::render_html_object)
+				.collect::<Vec<_>>()
+				.join(""),
+		);
 		output.push_str("</code></pre>");
-		if title.is_some() {
-			output.push_str("</code></pre>");
-		}
 		output
 	}
 
@@ -166,34 +177,38 @@ impl Page {
 		Some(output)
 	}
 
-	pub fn render_html(&self) -> String {
-		let mut output = String::new();
-
-		for obj in &self.objects {
-			match obj {
-				super::Object::TextBlob {
-					text,
-					style,
-					link_to,
-				} => output.push_str(&Self::render_html_text_blob(text, style, link_to)),
-				super::Object::CodeBlock {
-					title,
-					language,
-					code,
-				} => output.push_str(&Self::render_html_code_block(title, language, code)),
-				super::Object::Canvas {
-					data,
-					color_mapping,
-				} => output.push_str(&Self::render_html_canvas(data, color_mapping).unwrap_or(
-					Self::render_html_text_blob(
-						"Error rendering Canvas",
-						&Style::new().fg(Color::Red),
-						&None,
-					),
-				)),
-			}
+	pub fn render_html_object(obj: &Object) -> String {
+		match obj {
+			super::Object::TextBlob {
+				text,
+				style,
+				link_to,
+				copyable,
+			} => Self::render_html_text_blob(text, style, link_to, *copyable),
+			super::Object::CodeBlock {
+				title,
+				language,
+				code,
+			} => Self::render_html_code_block(title, language, code),
+			super::Object::Canvas {
+				data,
+				color_mapping,
+			} => Self::render_html_canvas(data, color_mapping).unwrap_or(
+				Self::render_html_text_blob(
+					"Error rendering Canvas",
+					&Style::new().fg(Color::Red),
+					&None,
+					true,
+				),
+			),
 		}
+	}
 
-		output
+	pub fn render_html(&self) -> String {
+		self.objects
+			.iter()
+			.map(Self::render_html_object)
+			.collect::<Vec<_>>()
+			.join("")
 	}
 }

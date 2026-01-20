@@ -1,5 +1,5 @@
 use crate::webserver::render::{
-	ColorMapping, LinkTo, Page,
+	ColorMapping, LinkTo, Object, Page,
 	color::{Color, Style},
 };
 
@@ -110,7 +110,7 @@ impl Page {
 	fn render_ansi_code_block(
 		title: &Option<String>,
 		language: &Option<String>,
-		code: &str,
+		code: &[Object],
 	) -> String {
 		let mut output = String::new();
 
@@ -135,10 +135,16 @@ impl Page {
 			output.push('\n');
 			output.push_str("--code---\n");
 		} else {
-			output.push_str("\n\n--code---\n");
+			output.push_str("\n--code---\n");
 		}
 
-		output.push_str(code);
+		output.push_str(
+			&code
+				.iter()
+				.map(Self::render_ansi_object)
+				.collect::<Vec<_>>()
+				.join(""),
+		);
 		output.push_str("\n---------\n\n");
 
 		output
@@ -182,34 +188,37 @@ impl Page {
 		Some(output)
 	}
 
-	pub fn render_ansi(&self) -> String {
-		let mut output = String::new();
-
-		for obj in &self.objects {
-			match obj {
-				super::Object::TextBlob {
-					text,
-					style,
-					link_to,
-				} => output.push_str(&Self::render_ansi_text_blob(text, style, link_to)),
-				super::Object::CodeBlock {
-					title,
-					language,
-					code,
-				} => output.push_str(&Self::render_ansi_code_block(title, language, code)),
-				super::Object::Canvas {
-					data,
-					color_mapping,
-				} => output.push_str(&Self::render_ansi_canvas(data, color_mapping).unwrap_or(
-					Self::render_ansi_text_blob(
-						"Error rendering Canvas",
-						&Style::new().fg(Color::Red),
-						&None,
-					),
-				)),
-			}
+	pub fn render_ansi_object(obj: &Object) -> String {
+		match obj {
+			super::Object::TextBlob {
+				text,
+				style,
+				link_to,
+				..
+			} => Self::render_ansi_text_blob(text, style, link_to),
+			super::Object::CodeBlock {
+				title,
+				language,
+				code,
+			} => Self::render_ansi_code_block(title, language, code),
+			super::Object::Canvas {
+				data,
+				color_mapping,
+			} => Self::render_ansi_canvas(data, color_mapping).unwrap_or(
+				Self::render_ansi_text_blob(
+					"Error rendering Canvas",
+					&Style::new().fg(Color::Red),
+					&None,
+				),
+			),
 		}
+	}
 
-		output
+	pub fn render_ansi(&self) -> String {
+		self.objects
+			.iter()
+			.map(Self::render_ansi_object)
+			.collect::<Vec<_>>()
+			.join("")
 	}
 }

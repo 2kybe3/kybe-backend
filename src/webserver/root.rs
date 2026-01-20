@@ -38,10 +38,11 @@ pub async fn root(
 		theme
 			.subtitle("This site is made to also look good on curl\n\n")
 			.into(),
-		CodeBlockBuilder::new("curl https://kybe.xyz")
-			.title("curl")
-			.language("bash")
-			.into(),
+		CodeBlockBuilder::new(vec![
+			TextBlobBuilder::new("$ ").copyable(false).into(),
+			TextBlobBuilder::new("curl https://kybe.xyz").into(),
+		])
+		.into(),
 		theme.title("Projects:\n\n").into(),
 		theme
 			.label(
@@ -74,7 +75,7 @@ pub async fn root(
 		theme.title("\nContact:\n\n").into(),
 		theme
 			.label(
-				"PGP:",
+				"PGP",
 				vec![
 					theme
 						.link_colored("https://kybe.xyz/pgp\n", "https://kybe.xyz/pgp")
