@@ -68,7 +68,35 @@ impl Default for User {
 }
 
 impl Database {
-	#[allow(unused)]
+	pub async fn verify_user(&self, id: Uuid) -> Result<(), sqlx::Error> {
+		sqlx::query!("UPDATE users SET email_verified = true WHERE id = $1", id)
+			.execute(self.pool())
+			.await?;
+		Ok(())
+	}
+
+	pub async fn get_user_by_id_and_email(
+		&self,
+		id: Uuid,
+		email: String,
+	) -> Result<Option<User>, sqlx::Error> {
+		sqlx::query_as!(
+			User,
+			r#"
+            SELECT
+                id, username, email, email_verified, password_hash, discord_id,
+                discord_linked, last_password_change, created_at, last_login,
+                role AS "role: UserRole"
+            FROM users
+            WHERE id = $1 AND email = $2
+            "#,
+			id,
+			email
+		)
+		.fetch_optional(self.pool())
+		.await
+	}
+
 	pub async fn get_user_by_id(&self, id: Uuid) -> Result<Option<User>, sqlx::Error> {
 		sqlx::query_as!(
 			User,

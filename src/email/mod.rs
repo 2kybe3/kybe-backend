@@ -1,9 +1,7 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use crate::config::types::EmailConfig;
 use crate::notifications::Notifications;
-use crate::notify_error;
 use anyhow::anyhow;
 use async_imap::Session;
 use async_imap::types::Fetch;
@@ -232,41 +230,36 @@ impl EmailService {
 		Ok(())
 	}
 
-	pub async fn run(self: Arc<EmailService>, notifications: Arc<Notifications>) {
+	pub async fn run_inner(&self) -> anyhow::Result<()> {
+		let mut imap_session = self.connect_and_login().await?;
+
+		Self::ensure_processed_mailbox(&mut imap_session).await?;
+
+		Self::process_messages(&mut imap_session, &self.tx).await?;
+
+		// Main Message Loop for new messages
 		loop {
-			let mut imap_session = match self.connect_and_login().await {
-				Ok(s) => s,
-				Err(e) => {
-					notify_error(&notifications, "IMAP", format!("init failed: {e}"), false).await;
-					tokio::time::sleep(Duration::from_secs(5)).await;
-					continue;
-				}
-			};
+			// Wait for IDLE to wake client up (new msg rarely smth else)
+			let mut idle = imap_session.idle();
+			idle.init().await?;
 
-			Self::ensure_processed_mailbox(&mut imap_session)
-				.await
-				.unwrap();
+			{
+				let wait_future = idle.wait();
+				wait_future.0.await?;
+			}
 
-			Self::process_messages(&mut imap_session, &self.tx)
-				.await
-				.unwrap();
+			imap_session = idle.done().await?;
 
-			// Main Message Loop for new messages
-			loop {
-				// Wait for IDLE to wake client up (new msg rarely smth else)
-				let mut idle = imap_session.idle();
-				idle.init().await.unwrap();
+			Self::process_messages(&mut imap_session, &self.tx).await?;
+		}
+	}
 
-				{
-					let wait_future = idle.wait();
-					wait_future.0.await.unwrap();
-				}
-
-				imap_session = idle.done().await.unwrap();
-
-				Self::process_messages(&mut imap_session, &self.tx)
-					.await
-					.unwrap();
+	pub async fn run(self: Arc<EmailService>, notifications: Arc<Notifications>) {
+		info!("EmailService started");
+		loop {
+			if let Err(e) = (*self).run_inner().await {
+				crate::notify_error(&notifications, "IMAP", format!("ERROR ocured: {e}"), false)
+					.await;
 			}
 		}
 	}

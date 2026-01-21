@@ -35,16 +35,31 @@ static NOTIFICATIONS_INSTANCE: OnceLock<Arc<Notifications>> = OnceLock::new();
 pub async fn notify_error(
 	notifications: &Notifications,
 	title: impl AsRef<str>,
-	msg: impl AsRef<str>,
+	msg: impl Into<String>,
 	exit: bool,
 ) {
-	tracing::error!("{}: {}", title.as_ref(), msg.as_ref());
+	let mut msg = msg.into();
+
+	let bt = Backtrace::force_capture();
+	let bt_str = format!("{bt:#?}").trim().to_owned();
+
+	let url = external::null_pointer::upload_to_0x0(&bt_str, Some(Duration::from_hours(1))).await;
 
 	if exit {
-		notifications
-			.notify(Notification::new(title.as_ref(), msg.as_ref()), exit)
-			.await;
+		match url {
+			Some(u) => msg.push_str(&format!("\nBacktrace: {}", u)),
+			None => msg.push_str("\nBacktrace (upload failed)"),
+		}
+	}
 
+	msg.push_str(&format!("\nVersion: {}", *GIT_SHA));
+
+	tracing::error!("{}: {}", title.as_ref(), &msg);
+	notifications
+		.notify(Notification::new(title.as_ref(), &msg), exit)
+		.await;
+
+	if exit {
 		std::process::exit(1)
 	}
 }
@@ -106,11 +121,11 @@ async fn main() -> anyhow::Result<()> {
 			notify_error(
 				&notifications,
 				"Database",
-				format!("init failed: {e}\nBacktrace: {}", Backtrace::capture()),
+				format!("init failed: {e}"),
 				true,
 			)
 			.await;
-			unreachable!() // compiler being stupid bleh (upper function exits the programm)
+			unreachable!()
 		}
 	};
 
@@ -119,17 +134,24 @@ async fn main() -> anyhow::Result<()> {
 		database.sync_maxmind(Arc::clone(&mm)).await?;
 	}
 
-	#[allow(unused)]
 	let mut email_service = None;
-	#[allow(unused)]
 	if config.email.enable {
 		email_service = Some(Arc::new(EmailService::new(&config.email)));
 
-		if let Some(email_service) = email_service {
+		if let Some(ref email_service) = email_service {
 			handles.push(tokio::spawn(
-				email_service.clone().run(Arc::clone(&notifications)),
+				Arc::clone(email_service).run(Arc::clone(&notifications)),
 			))
 		}
+	}
+
+	let auth = Arc::new(AuthService::new(database.clone()));
+	if let Some(ref email_service) = email_service {
+		handles.push(
+			Arc::clone(&auth)
+				.launch_email_checker_loop(email_service.subscribe())
+				.await,
+		);
 	}
 
 	if config.discord_bot.enable {
@@ -144,7 +166,7 @@ async fn main() -> anyhow::Result<()> {
 				notify_error(
 					&notifications,
 					"Discord Bot",
-					format!("init failed: {e}\nBacktrace: {}", Backtrace::capture()),
+					format!("init failed: {e}",),
 					true,
 				)
 				.await;
@@ -152,14 +174,13 @@ async fn main() -> anyhow::Result<()> {
 		}));
 	}
 
+	let auth_clone = Arc::clone(&auth);
 	handles.push(tokio::spawn(async move {
-		let auth = Arc::new(AuthService::new(database.clone()));
-
-		if let Err(e) = webserver::init_webserver(config, auth, database, mm).await {
+		if let Err(e) = webserver::init_webserver(config, auth_clone, database, mm).await {
 			notify_error(
 				&notifications,
 				"Discord Bot",
-				format!("init failed: {e}\nBacktrace: {}", Backtrace::capture()),
+				format!("init failed: {e}"),
 				true,
 			)
 			.await;
