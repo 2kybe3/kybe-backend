@@ -8,6 +8,7 @@ services:
     volumes:
       - ./backend/config.toml:/opt/backend/config.toml
       - ./backend/logs:/opt/backend/logs
+      - ./backend/gl:/opt/backend/gl
     environment:
       - KYBE_DATABASE_POSTGRES_URL=postgres://kybe:kybe@postgres:5432/kybe_db
     depends_on:
