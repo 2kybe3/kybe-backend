@@ -33,7 +33,7 @@ pub async fn pgp(
 
 	let page = Page::from_iter([
 		theme
-			.text("Hello Stranger, and maybe PGP user :-)\n\n")
+			.title("Hello Stranger, and maybe PGP user :-)\n\n")
 			.into(),
 		CodeBlockBuilder::new(vec![
 			TextBlobBuilder::new(include_str!("../../assets/key.pgp")).into(),
