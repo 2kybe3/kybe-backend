@@ -18,7 +18,7 @@ pub async fn fallback_404(
 
 	let page = Page::from_iter([
 		theme
-			.title("Look's like we couldn't server your request ")
+			.title("Look's like we couldn't serve your request ")
 			.into(),
 		TextBlobBuilder::new(":-(")
 			.style(theme.title.bold(true))
