@@ -272,7 +272,7 @@ pub async fn init_webserver(
 		.with_state(webserver_state)
 		.layer(ctx_layer);
 
-	let listener = TcpListener::bind("0.0.0.0:3001").await?;
+	let listener = TcpListener::bind("0.0.0.0:3000").await?;
 	axum::serve(
 		listener,
 		app.into_make_service_with_connect_info::<SocketAddr>(),
