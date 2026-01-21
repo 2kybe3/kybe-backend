@@ -5,7 +5,6 @@ mod pgp;
 mod register;
 mod render;
 mod root;
-
 use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
@@ -248,11 +247,18 @@ pub async fn init_webserver(
 		.layer(root_limiter_layer)
 		.layer(trace_layer.clone());
 
-	// TODO: figure out how i can make it also use fallback_404::fallback_404 for ServeDir#fallback
+	let fallback_router = Router::new()
+		.fallback(get(fallback_404::fallback_404))
+		.layer(ctx_layer.clone())
+		.with_state(webserver_state.clone());
+
 	let unlogged_route = Router::new()
 		.route("/health", get(|| async { "OK" }))
 		.nest_service("/favicon.ico", ServeFile::new("static/de.png"))
-		.nest_service("/static", ServeDir::new("static"))
+		.nest_service(
+			"/static",
+			ServeDir::new("static").fallback(fallback_router.into_service()),
+		)
 		.layer(asset_limiter_layer.clone());
 
 	let api_routes = Router::new()
