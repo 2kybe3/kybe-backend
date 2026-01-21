@@ -26,10 +26,11 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::Mutex;
+use tower::ServiceBuilder;
 use tower_governor::governor::{GovernorConfig, GovernorConfigBuilder};
 use tower_governor::key_extractor::KeyExtractor;
 use tower_governor::{GovernorError, GovernorLayer};
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 
 #[derive(Clone)]
 struct WebServerState {
@@ -223,7 +224,8 @@ pub async fn init_webserver(
 	mm: Arc<MaxMind>,
 ) -> anyhow::Result<()> {
 	let register_limiter = make_limiter(&config, 60, 10)?;
-	let root_limiter = make_limiter(&config, 1, 10)?;
+	let root_limiter = make_limiter(&config, 5, 10)?;
+	let asset_limiter = make_limiter(&config, 5, 20)?;
 
 	let webserver_state = WebServerState {
 		mm,
@@ -234,26 +236,35 @@ pub async fn init_webserver(
 
 	let ctx_layer = middleware::from_fn_with_state(webserver_state.clone(), user_contex_middleware);
 	let trace_layer = middleware::from_fn_with_state(webserver_state.clone(), trace_middleware);
+
+	let register_limiter_layer = GovernorLayer::new(register_limiter);
 	let root_limiter_layer = GovernorLayer::new(root_limiter);
+	let asset_limiter_layer = GovernorLayer::new(asset_limiter);
+
+	let register_route_service = ServiceBuilder::new()
+		.layer(register_limiter_layer)
+		.layer(trace_layer.clone());
+	let root_route_service = ServiceBuilder::new()
+		.layer(root_limiter_layer)
+		.layer(trace_layer.clone());
 
 	// TODO: figure out how i can make it also use fallback_404::fallback_404 for ServeDir#fallback
 	let unlogged_route = Router::new()
 		.route("/health", get(|| async { "OK" }))
-		.nest_service("/static", ServeDir::new("static"));
+		.nest_service("/favicon.ico", ServeFile::new("static/de.png"))
+		.nest_service("/static", ServeDir::new("static"))
+		.layer(asset_limiter_layer.clone());
 
 	let api_routes = Router::new()
-		.route("/", get(root::root).layer(root_limiter_layer.clone()))
-		.route("/ip", get(ip::ip).layer(root_limiter_layer.clone()))
-		.route("/pgp", get(pgp::pgp).layer(root_limiter_layer.clone()))
-		.route(
-			"/canvas",
-			get(canvas::canvas).layer(root_limiter_layer.clone()),
-		)
+		.route("/", get(root::root))
+		.route("/ip", get(ip::ip))
+		.route("/pgp", get(pgp::pgp))
+		.route("/canvas", get(canvas::canvas))
+		.layer(root_route_service)
 		.route(
 			"/register",
-			post(register::register).layer(GovernorLayer::new(register_limiter)),
-		)
-		.layer(trace_layer);
+			post(register::register).layer(register_route_service),
+		);
 
 	let app = unlogged_route
 		.merge(api_routes)
@@ -261,7 +272,7 @@ pub async fn init_webserver(
 		.with_state(webserver_state)
 		.layer(ctx_layer);
 
-	let listener = TcpListener::bind("0.0.0.0:3000").await?;
+	let listener = TcpListener::bind("0.0.0.0:3001").await?;
 	axum::serve(
 		listener,
 		app.into_make_service_with_connect_info::<SocketAddr>(),

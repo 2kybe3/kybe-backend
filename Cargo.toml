@@ -38,3 +38,4 @@ rsc = "3.0.0"
 once_cell = "1.21.3"
 maxminddb = { version="0.27.1", features = ["mmap"] }
 tower-http = { version="0.6.8", features = ["fs"] }
+tower = "0.5.3"
