@@ -5,7 +5,7 @@ use serde::Serialize;
 #[derive(Debug)]
 pub struct GotifyNotifier {
 	url: String,
-	client: Client,
+	client: reqwest::Client,
 }
 
 impl GotifyNotifier {

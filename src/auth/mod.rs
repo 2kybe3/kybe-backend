@@ -1,13 +1,18 @@
 use crate::db::Database;
 use crate::db::users::User;
+use crate::email::IncomingEmail;
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::{Error, SaltString};
-use argon2::{Argon2, PasswordHasher};
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use thiserror::Error;
+use tokio::sync::broadcast::Receiver;
 use uuid::Uuid;
 
 #[derive(Debug, Error)]
 pub enum AuthError {
+	#[error("invalid crendetials")]
+	InvalidCredentials,
+
 	#[error("password hashing failed")]
 	PasswordHashing(argon2::password_hash::Error),
 
@@ -36,6 +41,30 @@ impl AuthService {
 		Self { database }
 	}
 
+	pub async fn launch_email_checker_loop(_receiver: Receiver<IncomingEmail>) {
+		todo!();
+	}
+
+	pub async fn login(&self, username: String, password: String) -> Result<Uuid, AuthError> {
+		let user = match self.database.get_user_by_username(&username).await {
+			Ok(Some(u)) => u,
+			Ok(None) => return Err(AuthError::InvalidCredentials),
+			Err(e) => return Err(AuthError::DatabaseError(e)),
+		};
+
+		let parsed_hash =
+			PasswordHash::new(&user.password_hash).map_err(|_| AuthError::InvalidCredentials)?;
+
+		if Argon2::default()
+			.verify_password(password.as_bytes(), &parsed_hash)
+			.is_err()
+		{
+			return Err(AuthError::InvalidCredentials);
+		}
+
+		Ok(user.id)
+	}
+
 	pub async fn register(
 		&self,
 		username: String,
@@ -45,7 +74,8 @@ impl AuthService {
 		if self
 			.database
 			.get_user_by_username(&username)
-			.await?
+			.await
+			.map_err(AuthError::DatabaseError)?
 			.is_some()
 		{
 			return Err(AuthError::UsernameTaken);

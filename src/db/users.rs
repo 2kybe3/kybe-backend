@@ -86,7 +86,7 @@ impl Database {
 		.await
 	}
 
-	pub async fn get_user_by_username(&self, username: &str) -> Result<Option<User>, AuthError> {
+	pub async fn get_user_by_username(&self, username: &str) -> Result<Option<User>, sqlx::Error> {
 		sqlx::query_as!(
 			User,
 			r#"
@@ -101,7 +101,6 @@ impl Database {
 		)
 		.fetch_optional(self.pool())
 		.await
-		.map_err(AuthError::DatabaseError)
 	}
 
 	pub async fn get_user_by_email(&self, email: &str) -> Result<Option<User>, AuthError> {

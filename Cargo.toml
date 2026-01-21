@@ -9,7 +9,7 @@ path = "src/main.rs"
 [dependencies]
 async-trait = "0.1.89"
 futures = "0.3.31"
-reqwest = { version = "0.13.1", features = ["json", "rustls"] }
+reqwest = { version = "0.13.1", features = ["json", "rustls", "multipart"] }
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "2.0.18"
 tokio = { version = "1.49", features = ["full"] }

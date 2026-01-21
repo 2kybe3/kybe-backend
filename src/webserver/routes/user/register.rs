@@ -98,6 +98,9 @@ pub async fn register(
 					error!("Database error during registration: {auth_err:?}");
 					(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
 				}
+				crate::auth::AuthError::InvalidCredentials => {
+					unreachable!("register does never return InvalidCredentials")
+				}
 			};
 
 			let response = RegistrationResponse::error(error_msg.to_string(), trace.trace_id);

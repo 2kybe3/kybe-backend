@@ -36,7 +36,7 @@ pub async fn pgp(
 			.title("Hello Stranger, and maybe PGP user :-)\n\n")
 			.into(),
 		CodeBlockBuilder::new(vec![
-			TextBlobBuilder::new(include_str!("../../assets/key.pgp")).into(),
+			TextBlobBuilder::new(include_str!("../../../assets/key.pgp")).into(),
 		])
 		.title("kybe <kybe@kybe.xyz>")
 		.into(),

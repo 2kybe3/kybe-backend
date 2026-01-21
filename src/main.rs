@@ -20,31 +20,70 @@ use once_cell::sync::Lazy;
 use std::backtrace::Backtrace;
 use std::env;
 use std::io::stdout;
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
-use tracing::dispatcher::DefaultGuard;
-use tracing::{error, warn};
+use tracing::subscriber::DefaultGuard;
+use tracing::warn;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
 
 pub static GIT_SHA: Lazy<&str> = Lazy::new(|| include_str!("../assets/git.sha").trim());
+static PANIC_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
+static NOTIFICATIONS_INSTANCE: OnceLock<Arc<Notifications>> = OnceLock::new();
 
-/// Macro to log a error notify it via Notifications and exit
-#[macro_export]
-macro_rules! exit_error {
-	($notifications:expr, $title:expr, $msg:expr) => {{
-		tracing::error!("{}: {}", $title, $msg);
+pub async fn notify_error(
+	notifications: &Notifications,
+	title: impl AsRef<str>,
+	msg: impl AsRef<str>,
+	exit: bool,
+) {
+	tracing::error!("{}: {}", title.as_ref(), msg.as_ref());
 
-		$notifications
-			.notify($crate::notifications::Notification::new($title, $msg), true)
+	if exit {
+		notifications
+			.notify(Notification::new(title.as_ref(), msg.as_ref()), exit)
 			.await;
 
-		std::process::exit(1);
-	}};
+		std::process::exit(1)
+	}
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+	std::panic::set_hook(Box::new(|info| {
+		if PANIC_IN_PROGRESS.swap(true, Ordering::Relaxed) {
+			return;
+		}
+
+		let bt = Backtrace::force_capture();
+		let bt_str = format!("{bt:#?}").trim().to_owned();
+
+		eprintln!("panic occurred: {info}\nBacktrace: {bt_str}");
+
+		futures::executor::block_on(async move {
+			let url =
+				external::null_pointer::upload_to_0x0(&bt_str, Some(Duration::from_hours(1))).await;
+
+			let notification = match url {
+				Some(u) => Notification::new(
+					"Fatal panic",
+					format!("{}\nBacktrace: {}\nVersion: {}", info, u, *GIT_SHA),
+				),
+				None => Notification::new(
+					"Fatal panic",
+					format!("{}\nBacktrace (upload failed)\nVersion: {}", info, *GIT_SHA),
+				),
+			};
+
+			if let Some(notifications) = NOTIFICATIONS_INSTANCE.get() {
+				notifications.notify(notification, true).await;
+			} else {
+				eprintln!("panic before notifications ready: {notification:#?}");
+			}
+		});
+	}));
+
 	// Init logger in two phases:
 	// 1. without file logging to print info about loading the config
 	// 2. with file logging derived from the config persistent for the rest of the application
@@ -52,18 +91,27 @@ async fn main() -> anyhow::Result<()> {
 	let config = Arc::new(Config::init().await?);
 	init_logger(&config.logger, bootstrap_guard)?;
 
-	let mm = Arc::new(MaxMind::new(config.maxmind.clone())?);
-
 	let mut handles = Vec::new();
 
 	let notifications = Arc::new(Notifications::new(&config.notification));
+	NOTIFICATIONS_INSTANCE
+		.set(Arc::clone(&notifications))
+		.expect("Notifications already set");
+
+	let mm = Arc::new(MaxMind::new(config.maxmind.clone())?);
+
 	let database = match Database::init(Arc::clone(&config)).await {
 		Ok(db) => db,
-		Err(e) => exit_error!(
-			notifications,
-			"Database",
-			format!("init failed: {e}\nBacktrace: {}", Backtrace::capture())
-		),
+		Err(e) => {
+			notify_error(
+				&notifications,
+				"Database",
+				format!("init failed: {e}\nBacktrace: {}", Backtrace::capture()),
+				true,
+			)
+			.await;
+			unreachable!() // compiler being stupid bleh (upper function exits the programm)
+		}
 	};
 
 	let args: Vec<String> = env::args().collect();
@@ -75,34 +123,13 @@ async fn main() -> anyhow::Result<()> {
 	let mut email_service = None;
 	#[allow(unused)]
 	if config.email.enable {
-		let inner_email_service = Arc::new(EmailService::new(&config.email));
-		email_service = Some(Arc::clone(&inner_email_service));
+		email_service = Some(Arc::new(EmailService::new(&config.email)));
 
-		let notifications = Arc::clone(&notifications);
-
-		handles.push(tokio::spawn(async move {
-			loop {
-				if let Err(e) = inner_email_service.run().await {
-					error!(
-						"{}: {}",
-						"Email Service",
-						format!("failed: {e}\nBacktrace: {}", Backtrace::capture())
-					);
-
-					notifications
-						.notify(
-							Notification::new(
-								"Email Service",
-								format!("failed: {e}\nBacktrace: {}", Backtrace::capture()),
-							),
-							true,
-						)
-						.await;
-
-					tokio::time::sleep(Duration::from_secs(5));
-				}
-			}
-		}))
+		if let Some(email_service) = email_service {
+			handles.push(tokio::spawn(
+				email_service.clone().run(Arc::clone(&notifications)),
+			))
+		}
 	}
 
 	if config.discord_bot.enable {
@@ -114,11 +141,13 @@ async fn main() -> anyhow::Result<()> {
 		handles.push(tokio::spawn(async move {
 			if let Err(e) = discord_bot::init_bot(notifications.clone(), config, database, mm).await
 			{
-				exit_error!(
-					notifications,
+				notify_error(
+					&notifications,
 					"Discord Bot",
-					format!("init failed: {e}\nBacktrace: {}", Backtrace::capture())
-				);
+					format!("init failed: {e}\nBacktrace: {}", Backtrace::capture()),
+					true,
+				)
+				.await;
 			}
 		}));
 	}
@@ -127,11 +156,13 @@ async fn main() -> anyhow::Result<()> {
 		let auth = Arc::new(AuthService::new(database.clone()));
 
 		if let Err(e) = webserver::init_webserver(config, auth, database, mm).await {
-			exit_error!(
-				notifications,
+			notify_error(
+				&notifications,
 				"Discord Bot",
-				format!("init failed: {e}\nBacktrace: {}", Backtrace::capture())
-			);
+				format!("init failed: {e}\nBacktrace: {}", Backtrace::capture()),
+				true,
+			)
+			.await;
 		}
 	}));
 
