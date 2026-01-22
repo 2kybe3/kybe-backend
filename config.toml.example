@@ -43,4 +43,4 @@ enable = false
 email = "system@kybe.xyz"
 password = ""
 server = "mail.kybe.xyz"
-port = 993
+port = 587

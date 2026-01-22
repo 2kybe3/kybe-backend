@@ -64,6 +64,62 @@ pub async fn notify_error(
 	}
 }
 
+/// Creates a default tracing logger that is used as long as DefaultGuard is not dropped
+fn init_logger_bootstrap() -> anyhow::Result<DefaultGuard> {
+	let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+		EnvFilter::new("info").add_directive("kybe_backend=debug".parse().unwrap())
+	});
+
+	let subscriber = tracing_subscriber::fmt()
+		.with_max_level(tracing::Level::TRACE)
+		.with_thread_ids(true)
+		.with_file(true)
+		.with_line_number(true)
+		.with_target(true)
+		.with_env_filter(filter)
+		.finish();
+
+	Ok(tracing::subscriber::set_default(subscriber))
+}
+
+/// Takes a old_logger (from init_logger_bootstrap) and creates a new logger which includes file
+/// logging which location we should have from the config
+///
+/// Drops the old_logger before setting the new logger
+fn init_logger(config: &LoggerConfig, old_logger: DefaultGuard) -> anyhow::Result<()> {
+	let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+		EnvFilter::new("info").add_directive("kybe_backend=debug".parse().unwrap())
+	});
+
+	let writer: BoxMakeWriter = if config.file_logger_enabled {
+		match &config.file_logger_path {
+			Some(path) if !path.trim().is_empty() => BoxMakeWriter::new(
+				stdout.and(tracing_appender::rolling::daily(path, "kybe_backend.log")),
+			),
+			_ => {
+				warn!("file_logger_enabled but file_logger_path is empty or not set, disabling!");
+				BoxMakeWriter::new(stdout)
+			}
+		}
+	} else {
+		BoxMakeWriter::new(stdout)
+	};
+
+	let subscriber = tracing_subscriber::fmt()
+		.with_max_level(tracing::Level::TRACE)
+		.with_thread_ids(true)
+		.with_file(true)
+		.with_line_number(true)
+		.with_target(true)
+		.with_env_filter(filter)
+		.with_writer(writer)
+		.finish();
+
+	drop(old_logger);
+	tracing::subscriber::set_global_default(subscriber)?;
+	Ok(())
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
 	std::panic::set_hook(Box::new(|info| {
@@ -134,25 +190,14 @@ async fn main() -> anyhow::Result<()> {
 		database.sync_maxmind(Arc::clone(&mm)).await?;
 	}
 
+	#[allow(unused)]
 	let mut email_service = None;
+	#[allow(unused)]
 	if config.email.enable {
 		email_service = Some(Arc::new(EmailService::new(&config.email)));
-
-		if let Some(ref email_service) = email_service {
-			handles.push(tokio::spawn(
-				Arc::clone(email_service).run(Arc::clone(&notifications)),
-			))
-		}
 	}
 
 	let auth = Arc::new(AuthService::new(database.clone()));
-	if let Some(ref email_service) = email_service {
-		handles.push(
-			Arc::clone(&auth)
-				.launch_email_checker_loop(email_service.subscribe())
-				.await,
-		);
-	}
 
 	if config.discord_bot.enable {
 		let notifications = Arc::clone(&notifications);
@@ -188,61 +233,5 @@ async fn main() -> anyhow::Result<()> {
 	}));
 
 	try_join_all(handles).await?;
-	Ok(())
-}
-
-/// Creates a default tracing logger that is used as long as DefaultGuard is not dropped
-fn init_logger_bootstrap() -> anyhow::Result<DefaultGuard> {
-	let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-		EnvFilter::new("info").add_directive("kybe_backend=debug".parse().unwrap())
-	});
-
-	let subscriber = tracing_subscriber::fmt()
-		.with_max_level(tracing::Level::TRACE)
-		.with_thread_ids(true)
-		.with_file(true)
-		.with_line_number(true)
-		.with_target(true)
-		.with_env_filter(filter)
-		.finish();
-
-	Ok(tracing::subscriber::set_default(subscriber))
-}
-
-/// Takes a old_logger (from init_logger_bootstrap) and creates a new logger which includes file
-/// logging which location we should have from the config
-///
-/// Drops the old_logger before setting the new logger
-fn init_logger(config: &LoggerConfig, old_logger: DefaultGuard) -> anyhow::Result<()> {
-	let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-		EnvFilter::new("info").add_directive("kybe_backend=debug".parse().unwrap())
-	});
-
-	let writer: BoxMakeWriter = if config.file_logger_enabled {
-		match &config.file_logger_path {
-			Some(path) if !path.trim().is_empty() => BoxMakeWriter::new(
-				stdout.and(tracing_appender::rolling::daily(path, "kybe_backend.log")),
-			),
-			_ => {
-				warn!("file_logger_enabled but file_logger_path is empty or not set, disabling!");
-				BoxMakeWriter::new(stdout)
-			}
-		}
-	} else {
-		BoxMakeWriter::new(stdout)
-	};
-
-	let subscriber = tracing_subscriber::fmt()
-		.with_max_level(tracing::Level::TRACE)
-		.with_thread_ids(true)
-		.with_file(true)
-		.with_line_number(true)
-		.with_target(true)
-		.with_env_filter(filter)
-		.with_writer(writer)
-		.finish();
-
-	drop(old_logger);
-	tracing::subscriber::set_global_default(subscriber)?;
 	Ok(())
 }

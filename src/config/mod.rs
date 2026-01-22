@@ -170,7 +170,7 @@ impl Default for Config {
 			email: EmailConfig {
 				enable: false,
 				server: "mail.kybe.xyz".into(),
-				port: 993,
+				port: 587,
 				email: "system@kybe.xyz".into(),
 				password: "".into(),
 			},
