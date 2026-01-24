@@ -46,7 +46,7 @@ pub async fn root(
 		theme.title("Projects:\n\n").into(),
 		theme
 			.label(
-				"kybe backend",
+				"kybe-backend",
 				vec![
 					theme
 						.link_colored(
@@ -69,6 +69,20 @@ pub async fn root(
 						)
 						.into(),
 					theme.comment(" (i use nix btw)\n").into(),
+				],
+			)
+			.into(),
+		theme
+			.label(
+				"kybe-paste-manager",
+				vec![
+					theme
+						.link_colored(
+							"https://github.com/2kybe3/kybe-paste-manager",
+							"https://github.com/2kybe3/kybe-paste-manager",
+						)
+						.into(),
+					theme.comment(" (this site)\n").into(),
 				],
 			)
 			.into(),
