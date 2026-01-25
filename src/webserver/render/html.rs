@@ -25,7 +25,6 @@ impl Style {
 		styles.join("; ")
 	}
 }
-
 impl Color {
 	pub fn html_code(&self) -> &'static str {
 		match self {
@@ -97,7 +96,7 @@ impl Page {
 			&start
 				.replace("[style]", &style.html_style())
 				.replace("[class]", if copyable { "copyable" } else { "" }),
-			&html_escape::encode_text(text),
+			&html_escape::encode_text(text).replace("\n", "<br>"),
 			end
 		)
 	}
