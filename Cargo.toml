@@ -21,7 +21,7 @@ sqlx = { version = "0.8.6", features = ["runtime-tokio", "tls-rustls", "postgres
 poise = { git = "https://github.com/serenity-rs/poise", branch = "current" }
 chrono = "0.4.43"
 tracing-appender = "0.2.4"
-uuid = { version = "1.19.0", features = ["v7", "serde"] }
+uuid = { version = "1.20.0", features = ["v7", "serde"] }
 axum = { version = "0.8.8", features = ["macros"] }
 anyhow = "1.0.100"
 argon2 = "0.5.3"
