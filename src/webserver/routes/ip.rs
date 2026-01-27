@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Extension, response::IntoResponse};
+use axum::{Extension, Json, response::IntoResponse};
 use reqwest::StatusCode;
 use tokio::sync::Mutex;
 
@@ -17,5 +17,5 @@ pub async fn ip(
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
 
-	(StatusCode::OK, ctx.ip.to_string()).into_response()
+	(StatusCode::OK, Json(ctx)).into_response()
 }

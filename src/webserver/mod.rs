@@ -17,6 +17,7 @@ use axum::routing::{get, post};
 use axum::{Router, middleware};
 use governor::clock::QuantaInstant;
 use governor::middleware::NoOpMiddleware;
+use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -115,7 +116,7 @@ impl KeyExtractor for ClientIpKeyExtractor {
 	}
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct RequestContext {
 	pub user_agent: String,
 	pub ip: IpAddr,
