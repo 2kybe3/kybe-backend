@@ -1,4 +1,5 @@
 use crate::config::types::TranslatorConfig;
+use anyhow::bail;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -47,8 +48,15 @@ pub struct TranslateResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct ApiError {
-	#[allow(dead_code)]
 	error: String,
+}
+
+impl std::error::Error for ApiError {}
+
+impl std::fmt::Display for ApiError {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		self.error.fmt(f)
+	}
 }
 
 impl Translator {
@@ -60,10 +68,10 @@ impl Translator {
 		}
 	}
 
-	pub async fn languages(&self) -> Result<Vec<LanguagesResponse>, ApiError> {
+	pub async fn languages(&self) -> anyhow::Result<Vec<LanguagesResponse>> {
 		let resp = self
 			.client
-			.get(self.url.join("/languages").unwrap())
+			.get(self.url.join("/languages")?)
 			.send()
 			.await
 			.map_err(|e| ApiError {
@@ -81,7 +89,7 @@ impl Translator {
 		Ok(body)
 	}
 
-	pub async fn detect<S: Into<String>>(&self, query: S) -> Result<Vec<DetectResponse>, ApiError> {
+	pub async fn detect<S: Into<String>>(&self, query: S) -> anyhow::Result<Vec<DetectResponse>> {
 		let query = query.into();
 		let query = query.trim();
 
@@ -93,7 +101,7 @@ impl Translator {
 
 		let resp = self
 			.client
-			.post(self.url.join("/detect").unwrap())
+			.post(self.url.join("/detect")?)
 			.json(&payload)
 			.send()
 			.await
@@ -111,7 +119,7 @@ impl Translator {
 
 		match body {
 			DetectApiResponse::Ok(data) => Ok(data),
-			DetectApiResponse::Error(err) => Err(err),
+			DetectApiResponse::Error(err) => Err(err.into()),
 		}
 	}
 
@@ -120,7 +128,7 @@ impl Translator {
 		source: S,
 		target: S,
 		query: S,
-	) -> Result<TranslateResponse, ApiError> {
+	) -> anyhow::Result<TranslateResponse> {
 		let query = query.into();
 
 		let source = source.into();
@@ -144,7 +152,7 @@ impl Translator {
 
 		let resp = self
 			.client
-			.post(self.url.join("/translate").unwrap())
+			.post(self.url.join("/translate")?)
 			.json(&payload)
 			.send()
 			.await
@@ -158,9 +166,7 @@ impl Translator {
 				.text()
 				.await
 				.unwrap_or_else(|_| "<failed to read body>".into());
-			return Err(ApiError {
-				error: format!("HTTP {}: {}", status, err_text.trim()),
-			});
+			bail!(format!("HTTP {}: {}", status, err_text.trim()));
 		}
 
 		let body: TranslateApiResponse = resp.json().await.map_err(|e| ApiError {
@@ -169,7 +175,7 @@ impl Translator {
 
 		match body {
 			TranslateApiResponse::Ok(data) => Ok(data),
-			TranslateApiResponse::Error(err) => Err(err),
+			TranslateApiResponse::Error(err) => Err(err.into()),
 		}
 	}
 }

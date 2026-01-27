@@ -12,11 +12,12 @@ use anyhow::anyhow;
 use axum::extract::{ConnectInfo, Request, State};
 use axum::http::HeaderMap;
 use axum::middleware::Next;
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Router, middleware};
 use governor::clock::QuantaInstant;
 use governor::middleware::NoOpMiddleware;
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
@@ -27,6 +28,7 @@ use tower_governor::governor::{GovernorConfig, GovernorConfigBuilder};
 use tower_governor::key_extractor::KeyExtractor;
 use tower_governor::{GovernorError, GovernorLayer};
 use tower_http::services::{ServeDir, ServeFile};
+use tracing::{error, warn};
 
 #[derive(Clone)]
 struct WebServerState {
@@ -108,9 +110,10 @@ impl KeyExtractor for ClientIpKeyExtractor {
 			.extensions()
 			.get::<ConnectInfo<SocketAddr>>()
 			.map(|ci| ci.0)
-			.unwrap();
+			.ok_or_else(|| GovernorError::UnableToExtractKey)?;
 
-		let ip = client_ip(headers, connect_info, &self).unwrap();
+		let ip = client_ip(headers, connect_info, &self)
+			.ok_or_else(|| GovernorError::UnableToExtractKey)?;
 
 		Ok(ip)
 	}
@@ -139,15 +142,37 @@ async fn user_contex_middleware(
 		.map(|s| s.to_string())
 		.unwrap_or_default();
 
-	let ip = client_ip(&headers, remote_addr, &*state.config).unwrap();
+	let ip = match client_ip(&headers, remote_addr, &*state.config) {
+		Some(ip) => ip,
+		None => {
+			error!("error getting client_ip in middleware (most likely header missing)");
+			return (
+				StatusCode::INTERNAL_SERVER_ERROR,
+				"something bad happened lol",
+			)
+				.into_response();
+		}
+	};
 
-	let mm = state.mm.lookup(ip).unwrap();
+	let mm = state.mm.lookup(ip);
 
-	let ctx = RequestContext {
-		user_agent,
-		ip,
-		mm_city: mm.city,
-		mm_asn: mm.asn,
+	if let Err(ref e) = mm {
+		warn!("MaxMind lookup failed for {ip} {e:?}");
+	}
+
+	let ctx = match mm {
+		Ok(s) => RequestContext {
+			user_agent,
+			ip,
+			mm_city: s.city,
+			mm_asn: s.asn,
+		},
+		Err(_) => RequestContext {
+			user_agent,
+			ip,
+			mm_city: None,
+			mm_asn: None,
+		},
 	};
 
 	request.extensions_mut().insert(ctx);
