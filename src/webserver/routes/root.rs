@@ -82,7 +82,7 @@ pub async fn root(
 							"https://github.com/2kybe3/kybe-paste-manager",
 						)
 						.into(),
-					theme.comment(" (this site)\n").into(),
+					theme.comment(" (WIP)\n").into(),
 				],
 			)
 			.into(),
