@@ -18,10 +18,14 @@ pkgs.callPackage (
     strictDeps = true;
     nativeBuildInputs = [
       rust-toolchain
-      pkgs.openssl
-      pkgs.gcc
       pkgs.pkg-config
+      pkgs.openssl
       pkgs.sqlx-cli
+      pkgs.gcc
     ];
+
+    shellHook = ''
+      export PKG_CONFIG_PATH=${pkgs.openssl.dev}/lib/pkgconfig;
+    '';
   }
 ) { }

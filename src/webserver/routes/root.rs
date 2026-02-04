@@ -12,9 +12,9 @@ use tokio::sync::Mutex;
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
 	webserver::{
-		WebServerState,
+		WebServerState, common,
 		render::{
-			Color, Page, Style, Theme,
+			Page, Theme,
 			builders::{CodeBlockBuilder, TextBlobBuilder},
 		},
 	},
@@ -33,7 +33,7 @@ pub async fn root(
 	let mut trace = trace.lock().await;
 	let theme = Theme::default();
 
-	let page = Page::from_iter([
+	let mut page = vec![
 		theme.title("Hello Stranger\n").into(),
 		theme
 			.subtitle("This site is made to also look good on curl\n\n")
@@ -46,15 +46,15 @@ pub async fn root(
 		theme.title("Projects:\n\n").into(),
 		theme
 			.label(
-				"kybe-backend",
+				"kybe-paste-manager",
 				vec![
 					theme
 						.link_colored(
-							"https://github.com/2kybe3/kybe-backend",
-							"https://github.com/2kybe3/kybe-backend",
+							"https://github.com/2kybe3/kybe-paste-manager",
+							"https://github.com/2kybe3/kybe-paste-manager",
 						)
 						.into(),
-					theme.comment(" (this site)\n").into(),
+					theme.comment(" (WIP)\n").into(),
 				],
 			)
 			.into(),
@@ -74,15 +74,15 @@ pub async fn root(
 			.into(),
 		theme
 			.label(
-				"kybe-paste-manager",
+				"kybe-backend",
 				vec![
 					theme
 						.link_colored(
-							"https://github.com/2kybe3/kybe-paste-manager",
-							"https://github.com/2kybe3/kybe-paste-manager",
+							"https://github.com/2kybe3/kybe-backend",
+							"https://github.com/2kybe3/kybe-backend",
 						)
 						.into(),
-					theme.comment(" (WIP)\n").into(),
+					theme.comment(" (this site)\n").into(),
 				],
 			)
 			.into(),
@@ -99,16 +99,6 @@ pub async fn root(
 			.into(),
 		theme
 			.label(
-				"Email",
-				vec![
-					theme
-						.link_colored("kybe@kybe.xyz\n", "mailto:kybe@kybe.xyz")
-						.into(),
-				],
-			)
-			.into(),
-		theme
-			.label(
 				"Matrix",
 				vec![
 					theme
@@ -117,17 +107,17 @@ pub async fn root(
 				],
 			)
 			.into(),
-		theme.title("\nOther Endpoints:\n\n").into(),
 		theme
 			.label(
-				"IP",
+				"Email",
 				vec![
 					theme
-						.link_colored("https://kybe.xyz/ip\n", "https://kybe.xyz/ip")
+						.link_colored("kybe@kybe.xyz\n", "mailto:kybe@kybe.xyz")
 						.into(),
 				],
 			)
 			.into(),
+		theme.title("\nOther Endpoints:\n\n").into(),
 		theme
 			.label(
 				"Canvas",
@@ -138,30 +128,20 @@ pub async fn root(
 				],
 			)
 			.into(),
-		// DE flag
-		TextBlobBuilder::new("\n\n").into(),
-		TextBlobBuilder::new("           ")
-			.style(Style::new().fg(Color::Black).bg(Color::Black))
+		theme
+			.label(
+				"IP",
+				vec![
+					theme
+						.link_colored("https://kybe.xyz/ip\n", "https://kybe.xyz/ip")
+						.into(),
+				],
+			)
 			.into(),
-		TextBlobBuilder::new(" Trace ID: ")
-			.style(Style::new().fg(Color::BrightBlack))
-			.into(),
-		TextBlobBuilder::new(format!("{}\n", trace.trace_id)).into(),
-		TextBlobBuilder::new("           ")
-			.style(Style::new().fg(Color::BrightRed).bg(Color::BrightRed))
-			.into(),
-		TextBlobBuilder::new(" Version: ")
-			.style(Style::new().fg(Color::BrightRed))
-			.into(),
-		TextBlobBuilder::new(format!("{}\n", crate::GIT_SHA.to_owned())).into(),
-		TextBlobBuilder::new("           ")
-			.style(Style::new().fg(Color::Yellow).bg(Color::Yellow))
-			.into(),
-		TextBlobBuilder::new(" Made By: ")
-			.style(Style::new().fg(Color::Yellow))
-			.into(),
-		TextBlobBuilder::new("2kybe3\n").into(),
-	]);
+	];
+	page.append(&mut common::footer::footer(trace.trace_id));
+
+	let page = Page::from_iter(page);
 
 	let user_agent = user_agent.unwrap_or_default().to_lowercase();
 	let is_cli = user_agent.contains("curl") || user_agent.contains("lynx");

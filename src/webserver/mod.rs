@@ -1,5 +1,7 @@
+pub mod common;
 pub mod render;
 mod routes;
+
 use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
