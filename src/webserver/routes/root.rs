@@ -46,20 +46,6 @@ pub async fn root(
 		theme.title("Projects:\n\n").into(),
 		theme
 			.label(
-				"kybe-paste-manager",
-				vec![
-					theme
-						.link_colored(
-							"https://github.com/2kybe3/kybe-paste-manager",
-							"https://github.com/2kybe3/kybe-paste-manager",
-						)
-						.into(),
-					theme.comment(" (WIP)\n").into(),
-				],
-			)
-			.into(),
-		theme
-			.label(
 				"nix-dotfiles",
 				vec![
 					theme
@@ -83,6 +69,20 @@ pub async fn root(
 						)
 						.into(),
 					theme.comment(" (this site)\n").into(),
+				],
+			)
+			.into(),
+		theme
+			.label(
+				"cheat-sh",
+				vec![
+					theme
+						.link_colored(
+							"https://github.com/2kybe3/cheat-sh",
+							"https://github.com/2kybe3/cheat-sh",
+						)
+						.into(),
+					theme.comment(" (a tiny wrapper for cheat.sh)\n").into(),
 				],
 			)
 			.into(),

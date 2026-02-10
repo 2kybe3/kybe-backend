@@ -115,7 +115,7 @@ impl Page {
 		let mut output = String::new();
 
 		if title.is_some() || language.is_some() {
-			output.push_str("--title--\n");
+			output.push_str("---title---\n");
 			output.push_str(&Style::new().fg(Color::Cyan).ansi_code());
 			if let Some(title) = title {
 				output.push_str(&format!(
@@ -133,9 +133,9 @@ impl Page {
 
 			output.push_str(&Style::default().ansi_code());
 			output.push('\n');
-			output.push_str("--code---\n");
+			output.push_str("---code----\n");
 		} else {
-			output.push_str("\n--code---\n");
+			output.push_str("\n---code----\n");
 		}
 
 		output.push_str(
@@ -145,7 +145,7 @@ impl Page {
 				.collect::<Vec<_>>()
 				.join(""),
 		);
-		output.push_str("\n---------\n\n");
+		output.push_str("\n-----------\n\n");
 
 		output
 	}
