@@ -10,20 +10,13 @@
     { nixpkgs, rust-overlay, ... }:
     let
       system = "x86_64-linux";
-      toolchainFile =
-        if builtins.pathExists ./rust-toolchain.toml then
-          ./rust-toolchain.toml
-        else if builtins.pathExists ./toolchain.toml then
-          ./toolchain.toml
-        else
-          throw "No rust toolchain file found";
 
       pkgs = import nixpkgs {
         inherit system;
         overlays = [
           rust-overlay.overlays.default
           (_: prev: {
-            rust-toolchain = prev.rust-bin.fromRustupToolchainFile toolchainFile;
+            rust-toolchain = prev.rust-bin.fromRustupToolchainFile ./toolchain.toml;
           })
         ];
       };
