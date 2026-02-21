@@ -108,7 +108,12 @@ pub async fn cat(
 	let res = ctx
 		.data()
 		.cataas
-		.get_cat_url(&request, tag.as_deref(), says.as_deref())
+		.get_cat_url(
+			&request,
+			tag.as_deref(),
+			says.as_deref(),
+			Some(&mut trace.data),
+		)
 		.await;
 
 	match res {
@@ -153,7 +158,7 @@ pub async fn cat(
 					if verbose {
 						let res = format!("{:#?}", res);
 						trace.output = Some(res.clone());
-						reply_or_attach(&ctx, res, "verbose.txt").await;
+						reply_or_attach(&ctx, format!("```\n{}```", res), "verbose.txt").await;
 					} else {
 						trace.output = Some(res.url.clone());
 						ctx.reply(res.url).await?;
@@ -168,8 +173,15 @@ pub async fn cat(
 		Err(e) => {
 			trace.status = CommandStatus::Error;
 			trace.error = Some(format!("{:?}", e));
-			trace.output = Some("Error evaluating expression".into());
-			ctx.reply("Error evaluating expression").await?;
+
+			if verbose {
+				let res = format!("{:#?}", e);
+				trace.output = Some(res.clone());
+				reply_or_attach(&ctx, format!("```\n{}```", res), "error.txt").await;
+			} else {
+				trace.output = Some("Error evaluating expression".into());
+				ctx.reply("Error evaluating expression").await?;
+			}
 		}
 	}
 

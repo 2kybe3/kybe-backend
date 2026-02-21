@@ -45,7 +45,7 @@ pub async fn maxmind(
 		Ok(res) => {
 			let res = serde_json::to_string_pretty(&res)?;
 			trace.output = Some(res.clone());
-			reply_or_attach(&ctx, res, "res.json").await;
+			reply_or_attach(&ctx, format!("```json\n{}\n```", res), "res.json").await;
 
 			finalize_command_trace!(ctx, trace);
 		}

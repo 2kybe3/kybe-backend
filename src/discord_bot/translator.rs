@@ -92,7 +92,12 @@ pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
 			Ok(res) => {
 				let output = serde_json::to_string_pretty(&res)?;
 				trace.output = Some(format!("{} languages supported", res.len()));
-				reply_or_attach(&ctx, output, "languages_supported.json").await;
+				reply_or_attach(
+					&ctx,
+					format!("```\n{}```", output),
+					"languages_supported.json",
+				)
+				.await;
 			}
 			Err(e) => {
 				trace.status = CommandStatus::Error;
@@ -161,7 +166,12 @@ pub async fn translate(
 				if verbose {
 					let output = serde_json::to_string_pretty(&res)?;
 					trace.output = Some(output.clone());
-					reply_or_attach(&ctx, output, "translation.json").await;
+					reply_or_attach(
+						&ctx,
+						format!("```json\n{}\n```", output),
+						"translation.json",
+					)
+					.await;
 				} else {
 					if let Some(det) = &res.detected_language {
 						source = det.language.clone();

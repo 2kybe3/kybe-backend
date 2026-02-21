@@ -68,20 +68,35 @@ pub enum Position {
 #[derive(Debug, Serialize)]
 pub struct CATAASCatRequest {
 	#[serde(rename = "type")]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub cat_type: Option<Type>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub filter: Option<Filter>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub fit: Option<Fit>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub position: Option<Position>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub width: Option<i32>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub height: Option<i32>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub blur: Option<i32>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub r: Option<i32>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub g: Option<i32>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub b: Option<i32>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub brightness: Option<i32>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub saturation: Option<i32>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub hue: Option<i32>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub lightness: Option<i32>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub json: Option<bool>,
 }
 
@@ -134,6 +149,7 @@ impl CATAAS {
 		req: &CATAASCatRequest,
 		tag: Option<&str>,
 		says: Option<&str>,
+		debug_store: Option<&mut serde_json::Value>,
 	) -> anyhow::Result<Option<CATAASCatResponse>> {
 		let mut url = "https://cataas.com/cat".to_string();
 
@@ -150,12 +166,48 @@ impl CATAAS {
 		let query = serde_qs::to_string(req)?;
 		url.set_query(Some(&query));
 
-		let resp = self.client.get(url).send().await?;
+		let mut debug_entry = serde_json::json!({
+			"url": url.as_str(),
+		});
 
-		if resp.status() == StatusCode::NOT_FOUND {
-			Ok(None)
-		} else {
-			Ok(Some(resp.json::<CATAASCatResponse>().await?))
+		let result = async {
+			let resp = self.client.get(url).send().await?;
+
+			let status = resp.status();
+			debug_entry["response_code"] = serde_json::json!(status.as_u16());
+
+			if status == StatusCode::NOT_FOUND {
+				return Ok(None);
+			}
+
+			let raw_text = resp.text().await?;
+			debug_entry["response"] = serde_json::json!(raw_text);
+
+			let parsed: CATAASCatResponse = serde_json::from_str(&raw_text)?;
+
+			debug_entry["parsed_response"] = serde_json::to_value(&parsed)?;
+
+			Ok(Some(parsed))
 		}
+		.await;
+
+		if let Some(store) = debug_store {
+			let obj = store.as_object_mut().expect("debug_store must be a object");
+
+			let entry = obj
+				.entry("cataas")
+				.or_insert_with(|| serde_json::Value::Array(Vec::new()));
+
+			if let Some(arr) = entry.as_array_mut() {
+				if result.is_err() {
+					debug_entry["error"] =
+						serde_json::json!(format!("{:?}", result.as_ref().err()));
+				}
+
+				arr.push(debug_entry);
+			}
+		}
+
+		result
 	}
 }

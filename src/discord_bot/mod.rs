@@ -133,6 +133,17 @@ pub async fn init_bot(
 	Ok(())
 }
 
+pub async fn attach(ctx: &Context<'_>, text: String, filename: impl Into<String>) {
+	let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, filename);
+	let reply = CreateReply::default().attachment(attachment);
+	if let Err(e) = ctx.send(reply).await {
+		error!("Failed to send response: {:?}", e);
+		let _ = ctx
+			.say("Failed to send the full response due to an error.")
+			.await;
+	}
+}
+
 pub async fn reply_or_attach(ctx: &Context<'_>, text: String, filename: impl Into<String>) {
 	let result = if text.chars().count() <= MAX_MSG_LENGTH {
 		ctx.reply(&text).await
