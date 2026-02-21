@@ -1,11 +1,10 @@
 use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error, reply_or_attach};
+use crate::discord_bot::{Context, Error, attach};
 use crate::external::cataas::{CATAASCatRequest, Filter, Fit, Position, Type};
 use crate::finalize_command_trace;
 use futures::{Stream, StreamExt};
 use poise::CreateReply;
 use poise::serenity_prelude::CreateAttachment;
-use serde_json::Value;
 use tracing::error;
 
 async fn autocomplete_tag<'a>(
@@ -38,6 +37,10 @@ pub async fn cat(
 	#[description = "Get cat with a specific tag"]
 	#[autocomplete = autocomplete_tag]
 	tag: Option<String>,
+	#[description = "Amount of cat's to send"]
+	#[min = 1]
+	#[max = 6]
+	amount: Option<u8>,
 	#[description = "Adds a text to the image"] says: Option<String>,
 	#[description = "Cat Type"] cat_type: Option<Type>,
 	#[description = "Filter"] filter: Option<Filter>,
@@ -57,8 +60,16 @@ pub async fn cat(
 ) -> anyhow::Result<(), Error> {
 	let mut trace = CommandTrace::start(&ctx, "cat");
 
+	if let Some(amount) = amount
+		&& !(1..=10).contains(&amount)
+	{
+		ctx.say("Amount must be between 1 and 10").await?;
+		return Ok(());
+	}
+
 	trace.input = serde_json::json!({
 		"tag": tag,
+		"amount": amount,
 		"says": says,
 		"cat_type": cat_type,
 		"filter": filter,
@@ -78,6 +89,7 @@ pub async fn cat(
 	});
 
 	let verbose = verbose.unwrap_or(false);
+	let amount = amount.unwrap_or(1);
 
 	if let Err(e) = ctx.defer().await {
 		trace.status = CommandStatus::Error;
@@ -105,24 +117,20 @@ pub async fn cat(
 		json: Some(true),
 	};
 
-	let res = ctx
-		.data()
-		.cataas
-		.get_cat_url(
-			&request,
-			tag.as_deref(),
-			says.as_deref(),
-			Some(&mut trace.data),
-		)
-		.await;
+	for _ in 0..amount {
+		let res = ctx
+			.data()
+			.cataas
+			.get_cat_url(
+				&request,
+				tag.as_deref(),
+				says.as_deref(),
+				Some(&mut trace.data),
+			)
+			.await;
 
-	match res {
-		Ok(Some(res)) => {
-			if let Value::Object(map) = &mut trace.data {
-				map.insert("cataas".to_string(), serde_json::to_value(res.clone())?);
-			}
-
-			match ctx.data().cataas.get_image(&res.url).await {
+		match res {
+			Ok(Some(res)) => match ctx.data().cataas.get_image(&res.url).await {
 				Ok(bytes) => {
 					let ext = match res.mimetype.as_str() {
 						"image/png" => "png",
@@ -149,7 +157,7 @@ pub async fn cat(
 							.say("Failed to send the full response due to an error.")
 							.await;
 					}
-					trace.output = Some("Image".into());
+					trace.output = Some(format!("Image: {}", res.url));
 				}
 				Err(e) => {
 					trace.error = Some(format!("{:?}", e));
@@ -158,29 +166,30 @@ pub async fn cat(
 					if verbose {
 						let res = format!("{:#?}", res);
 						trace.output = Some(res.clone());
-						reply_or_attach(&ctx, format!("```\n{}```", res), "verbose.txt").await;
+						attach(&ctx, res, "error.txt").await;
 					} else {
 						trace.output = Some(res.url.clone());
 						ctx.reply(res.url).await?;
 					}
 				}
+			},
+			Ok(None) => {
+				trace.output = Some("No cat found".into());
+				ctx.reply("No cat found").await?;
 			}
-		}
-		Ok(None) => {
-			trace.output = Some("No cat found".into());
-			ctx.reply("No cat found").await?;
-		}
-		Err(e) => {
-			trace.status = CommandStatus::Error;
-			trace.error = Some(format!("{:?}", e));
+			Err(e) => {
+				trace.status = CommandStatus::Error;
+				trace.error = Some(format!("{:?}", e));
 
-			if verbose {
-				let res = format!("{:#?}", e);
-				trace.output = Some(res.clone());
-				reply_or_attach(&ctx, format!("```\n{}```", res), "error.txt").await;
-			} else {
-				trace.output = Some("Error evaluating expression".into());
-				ctx.reply("Error evaluating expression").await?;
+				if verbose {
+					let res = format!("{:#?}", e);
+					trace.output = Some(res.clone());
+					attach(&ctx, res, "error.txt").await;
+				} else {
+					trace.output = Some("Error evaluating expression".into());
+					ctx.reply("Error evaluating expression").await?;
+				}
+				break;
 			}
 		}
 	}
