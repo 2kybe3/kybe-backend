@@ -72,7 +72,6 @@ impl Page {
 		if let Some(link_to) = link_to
 			&& link_to.link.starts_with("http")
 			&& !text.contains(&link_to.link)
-			&& let Some(http_index) = text.find("http")
 		{
 			let mut colored = String::new();
 			if let Some(style) = link_to.seperator_style {
@@ -86,18 +85,17 @@ impl Page {
 				colored.push_str(&style.ansi_code());
 			}
 
-			let trimmed = text.trim_start();
-			let newline_index = trimmed[http_index..].find("\n").map(|i| i + http_index);
+			let index = text.find("\n");
 
-			if let Some(index) = newline_index {
-				let rest = text.split_off(index);
-				text.push_str(&colored);
-				text.push_str(&link_to.link);
-				text.push_str(&rest);
-			} else {
-				text.push_str(&colored);
-				text.push_str(&link_to.link);
-			}
+			match index {
+				Some(index) => {
+					text.insert_str(index, &format!("{}{}", &colored, &link_to.link));
+				}
+				None => {
+					text.push_str(&colored);
+					text.push_str(&link_to.link);
+				}
+			};
 		}
 
 		output.push_str(&text);
