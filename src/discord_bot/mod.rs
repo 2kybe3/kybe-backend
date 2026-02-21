@@ -7,6 +7,7 @@ mod version;
 
 use crate::config::types::Config;
 use crate::db::Database;
+use crate::db::command_traces::{CommandStatus, CommandTrace};
 use crate::external::cataas::CATAAS;
 use crate::maxmind::MaxMind;
 use crate::notifications::{Notification, Notifications};
@@ -133,6 +134,17 @@ pub async fn init_bot(
 	Ok(())
 }
 
+pub async fn defer(ctx: &Context<'_>, trace: &mut CommandTrace) -> anyhow::Result<()> {
+	if let Err(e) = ctx.defer().await {
+		trace.status = CommandStatus::Error;
+		trace.error = Some(format!("Defer failed: {:?}", e));
+
+		finalize_command_trace(ctx, trace).await?;
+		return Err(e.into());
+	}
+	Ok(())
+}
+
 pub async fn attach(ctx: &Context<'_>, text: String, filename: impl Into<String>) {
 	let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, filename);
 	let reply = CreateReply::default().attachment(attachment);
@@ -161,16 +173,19 @@ pub async fn reply_or_attach(ctx: &Context<'_>, text: String, filename: impl Int
 	}
 }
 
-#[macro_export]
-macro_rules! finalize_command_trace {
-    ($ctx:expr, $trace:expr) => {
-        $trace.duration_ms = chrono::Utc::now().signed_duration_since($trace.started_at).num_milliseconds();
-        $ctx.data().database.save_command_trace(&$trace).await?;
+pub async fn finalize_command_trace(
+	ctx: &Context<'_>,
+	trace: &mut CommandTrace,
+) -> anyhow::Result<()> {
+	trace.duration_ms = chrono::Utc::now()
+		.signed_duration_since(trace.started_at)
+		.num_milliseconds();
+	ctx.data().database.save_command_trace(trace).await?;
 
-        if $trace.status == CommandStatus::Error {
-            tracing::error!(trace = ?$trace, "command finished with error");
-        } else {
-            tracing::debug!(trace = ?$trace, "command finished");
-        }
-    };
+	if trace.status == CommandStatus::Error {
+		tracing::error!(trace = ?trace, "command finished with error");
+	} else {
+		tracing::debug!(trace = ?trace, "command finished");
+	}
+	Ok(())
 }

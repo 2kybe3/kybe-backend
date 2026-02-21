@@ -2,8 +2,7 @@ use anyhow::anyhow;
 use rsc::Interpreter;
 
 use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error};
-use crate::finalize_command_trace;
+use crate::discord_bot::{Context, Error, defer, finalize_command_trace};
 
 #[poise::command(
 	slash_command,
@@ -21,13 +20,7 @@ pub async fn calculate(
 		"expression": expression,
 	});
 
-	if let Err(e) = ctx.defer().await {
-		trace.status = CommandStatus::Error;
-		trace.error = Some(format!("Defer failed: {:?}", e));
-
-		finalize_command_trace!(ctx, trace);
-		return Err(e.into());
-	}
+	defer(&ctx, &mut trace).await?;
 
 	match evaluate(&expression, &mut rsc::Interpreter::default()) {
 		Ok(result) => {
@@ -44,7 +37,7 @@ pub async fn calculate(
 		}
 	}
 
-	finalize_command_trace!(ctx, trace);
+	finalize_command_trace(&ctx, &mut trace).await?;
 
 	Ok(())
 }

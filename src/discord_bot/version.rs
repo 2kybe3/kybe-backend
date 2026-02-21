@@ -1,6 +1,5 @@
-use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error};
-use crate::finalize_command_trace;
+use crate::db::command_traces::CommandTrace;
+use crate::discord_bot::{Context, Error, finalize_command_trace};
 
 #[poise::command(
 	slash_command,
@@ -10,19 +9,11 @@ use crate::finalize_command_trace;
 pub async fn version(ctx: Context<'_>) -> Result<(), Error> {
 	let mut trace = CommandTrace::start(&ctx, "version");
 
-	if let Err(e) = ctx.defer().await {
-		trace.status = CommandStatus::Error;
-		trace.error = Some(format!("Defer failed: {:?}", e));
-
-		finalize_command_trace!(ctx, trace);
-		return Err(e.into());
-	}
-
 	let response = format!("version: `{}`", crate::GIT_SHA.to_owned());
 	ctx.reply(response.clone()).await?;
 	trace.output = Some(response);
 
-	finalize_command_trace!(ctx, trace);
+	finalize_command_trace(&ctx, &mut trace).await?;
 
 	Ok(())
 }

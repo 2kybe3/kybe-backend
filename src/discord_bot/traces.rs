@@ -1,6 +1,5 @@
 use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error, attach, reply_or_attach};
-use crate::finalize_command_trace;
+use crate::discord_bot::{Context, Error, attach, defer, finalize_command_trace, reply_or_attach};
 use std::time::Instant;
 use uuid::Uuid;
 
@@ -17,13 +16,7 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
 		"trace_id": trace_id,
 	});
 
-	if let Err(e) = ctx.defer().await {
-		trace.status = CommandStatus::Error;
-		trace.error = Some(format!("Defer failed: {:?}", e));
-
-		finalize_command_trace!(ctx, trace);
-		return Err(e.into());
-	}
+	defer(&ctx, &mut trace).await?;
 
 	if ctx.author().id.to_string() != ctx.data().config.discord_bot.admin_id {
 		trace.status = CommandStatus::Disabled;
@@ -31,7 +24,8 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
 
 		ctx.reply("You are not allowed to use this command!")
 			.await?;
-		finalize_command_trace!(ctx, trace);
+
+		finalize_command_trace(&ctx, &mut trace).await?;
 		return Ok(());
 	}
 
@@ -44,7 +38,7 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
 			ctx.reply("Invalid trace ID format (must be a valid UUID)")
 				.await?;
 
-			finalize_command_trace!(ctx, trace);
+			finalize_command_trace(&ctx, &mut trace).await?;
 			return Ok(());
 		}
 	};
@@ -70,11 +64,11 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
 		}
 	}
 
-	finalize_command_trace!(ctx, trace);
-
+	finalize_command_trace(&ctx, &mut trace).await?;
 	Ok(())
 }
 
+// TODO: refactor using scope
 #[poise::command(
 	slash_command,
 	install_context = "Guild|User",
@@ -83,19 +77,13 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
 pub async fn get_latest_trace(ctx: Context<'_>) -> Result<(), Error> {
 	let start = Instant::now();
 	let mut trace = CommandTrace::start(&ctx, "get_latest_trace");
-
-	if let Err(e) = ctx.defer().await {
-		trace.status = CommandStatus::Error;
-		trace.error = Some(format!("Defer failed: {:?}", e));
-		finalize_command_trace!(ctx, trace);
-		return Err(e.into());
-	}
+	defer(&ctx, &mut trace).await?;
 
 	if ctx.author().id.to_string() != ctx.data().config.discord_bot.admin_id {
 		trace.status = CommandStatus::Disabled;
 		trace.output = Some("Not allowed".into());
 		ctx.reply("You are not allowed to use this command").await?;
-		finalize_command_trace!(ctx, trace);
+		finalize_command_trace(&ctx, &mut trace).await?;
 		return Ok(());
 	}
 
@@ -118,6 +106,6 @@ pub async fn get_latest_trace(ctx: Context<'_>) -> Result<(), Error> {
 		}
 	}
 
-	finalize_command_trace!(ctx, trace);
+	finalize_command_trace(&ctx, &mut trace).await?;
 	Ok(())
 }

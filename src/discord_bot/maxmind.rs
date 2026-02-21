@@ -1,8 +1,7 @@
 use std::net::IpAddr;
 
 use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error, reply_or_attach};
-use crate::finalize_command_trace;
+use crate::discord_bot::{Context, Error, attach, defer, finalize_command_trace};
 
 #[poise::command(
 	slash_command,
@@ -14,14 +13,7 @@ pub async fn maxmind(
 	#[description = "The Ip To get Info for"] ip: String,
 ) -> Result<(), Error> {
 	let mut trace = CommandTrace::start(&ctx, "maxmind");
-
-	if let Err(e) = ctx.defer().await {
-		trace.status = CommandStatus::Error;
-		trace.error = Some(format!("Defer failed: {:?}", e));
-
-		finalize_command_trace!(ctx, trace);
-		return Err(e.into());
-	}
+	defer(&ctx, &mut trace).await?;
 
 	trace.input = serde_json::json!({
 		"ip": ip,
@@ -35,7 +27,7 @@ pub async fn maxmind(
 			trace.output = Some("Invalid IP format".into());
 			ctx.reply("Invalid IP format").await?;
 
-			finalize_command_trace!(ctx, trace);
+			finalize_command_trace(&ctx, &mut trace).await?;
 			return Ok(());
 		}
 	};
@@ -45,9 +37,9 @@ pub async fn maxmind(
 		Ok(res) => {
 			let res = serde_json::to_string_pretty(&res)?;
 			trace.output = Some(res.clone());
-			reply_or_attach(&ctx, format!("```json\n{}\n```", res), "res.json").await;
+			attach(&ctx, res, "res.json").await;
 
-			finalize_command_trace!(ctx, trace);
+			finalize_command_trace(&ctx, &mut trace).await?;
 		}
 		Err(e) => {
 			trace.status = CommandStatus::Error;
@@ -55,7 +47,7 @@ pub async fn maxmind(
 			trace.output = Some("Maxmind Error".into());
 			ctx.reply("MaxMind Error").await?;
 
-			finalize_command_trace!(ctx, trace);
+			finalize_command_trace(&ctx, &mut trace).await?;
 		}
 	}
 

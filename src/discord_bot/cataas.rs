@@ -1,7 +1,6 @@
 use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error, attach};
+use crate::discord_bot::{Context, Error, attach, defer, finalize_command_trace};
 use crate::external::cataas::{CATAASCatRequest, Filter, Fit, Position, Type};
-use crate::finalize_command_trace;
 use futures::{Stream, StreamExt};
 use poise::CreateReply;
 use poise::serenity_prelude::CreateAttachment;
@@ -91,13 +90,7 @@ pub async fn cat(
 	let verbose = verbose.unwrap_or(false);
 	let amount = amount.unwrap_or(1);
 
-	if let Err(e) = ctx.defer().await {
-		trace.status = CommandStatus::Error;
-		trace.error = Some(format!("Defer failed: {:?}", e));
-
-		finalize_command_trace!(ctx, trace);
-		return Err(e.into());
-	}
+	defer(&ctx, &mut trace).await?;
 
 	let request = CATAASCatRequest {
 		cat_type,
@@ -194,7 +187,7 @@ pub async fn cat(
 		}
 	}
 
-	finalize_command_trace!(ctx, trace);
+	finalize_command_trace(&ctx, &mut trace).await?;
 
 	Ok(())
 }

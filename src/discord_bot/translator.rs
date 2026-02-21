@@ -1,6 +1,5 @@
 use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error, reply_or_attach};
-use crate::finalize_command_trace;
+use crate::discord_bot::{Context, Error, defer, finalize_command_trace, reply_or_attach};
 
 #[poise::command(
 	slash_command,
@@ -18,14 +17,7 @@ pub async fn detect(
 		"text": text,
 		"verbose": verbose.unwrap_or(false),
 	});
-
-	if let Err(e) = ctx.defer().await {
-		trace.status = CommandStatus::Error;
-		trace.error = Some(format!("Defer failed: {:?}", e));
-
-		finalize_command_trace!(ctx, trace);
-		return Err(e.into());
-	}
+	defer(&ctx, &mut trace).await?;
 
 	if let Some(translator) = ctx.data().translator.as_ref() {
 		match translator.detect(text).await {
@@ -66,7 +58,7 @@ pub async fn detect(
 		ctx.reply("Translation is not enabled!").await?;
 	}
 
-	finalize_command_trace!(ctx, trace);
+	finalize_command_trace(&ctx, &mut trace).await?;
 
 	Ok(())
 }
@@ -78,14 +70,7 @@ pub async fn detect(
 )]
 pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
 	let mut trace = CommandTrace::start(&ctx, "languages");
-
-	if let Err(e) = ctx.defer().await {
-		trace.status = CommandStatus::Error;
-		trace.error = Some(format!("Defer failed: {:?}", e));
-
-		finalize_command_trace!(ctx, trace);
-		return Err(e.into());
-	}
+	defer(&ctx, &mut trace).await?;
 
 	if let Some(translator) = ctx.data().translator.as_ref() {
 		match translator.languages().await {
@@ -119,7 +104,7 @@ pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
 		ctx.reply("Translation is not enabled!").await?;
 	}
 
-	finalize_command_trace!(ctx, trace);
+	finalize_command_trace(&ctx, &mut trace).await?;
 
 	Ok(())
 }
@@ -147,14 +132,7 @@ pub async fn translate(
 		"text": text,
 		"verbose": verbose.unwrap_or(false),
 	});
-
-	if let Err(e) = ctx.defer().await {
-		trace.status = CommandStatus::Error;
-		trace.error = Some(format!("Defer failed: {:?}", e));
-
-		finalize_command_trace!(ctx, trace);
-		return Err(e.into());
-	}
+	defer(&ctx, &mut trace).await?;
 
 	if let Some(translator) = ctx.data().translator.as_ref() {
 		let mut source = source.unwrap_or("auto".to_string());
@@ -195,7 +173,6 @@ pub async fn translate(
 		ctx.reply("Translation is not enabled!").await?;
 	}
 
-	finalize_command_trace!(ctx, trace);
-
+	finalize_command_trace(&ctx, &mut trace).await?;
 	Ok(())
 }
