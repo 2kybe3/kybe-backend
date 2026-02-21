@@ -68,14 +68,12 @@ pub async fn get_trace(ctx: Context<'_>, trace_id: String) -> Result<(), Error> 
 	Ok(())
 }
 
-// TODO: refactor using scope
 #[poise::command(
 	slash_command,
 	install_context = "Guild|User",
 	interaction_context = "Guild|BotDm|PrivateChannel"
 )]
 pub async fn get_latest_trace(ctx: Context<'_>) -> Result<(), Error> {
-	let start = Instant::now();
 	let mut trace = CommandTrace::start(&ctx, "get_latest_trace");
 	defer(&ctx, &mut trace).await?;
 
@@ -90,8 +88,7 @@ pub async fn get_latest_trace(ctx: Context<'_>) -> Result<(), Error> {
 	match ctx.data().database.get_latest_command_trace().await {
 		Ok(Some(db_trace)) => {
 			let output = serde_json::to_string_pretty(&db_trace)?;
-			let duration = start.elapsed();
-			trace.output = Some(format!("Latest Trace fetched in {:?}", duration));
+			trace.output = Some("Latest Trace fetched".to_string());
 			attach(&ctx, output, "latest_trace.json").await;
 		}
 		Ok(None) => {
