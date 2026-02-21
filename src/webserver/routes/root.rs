@@ -43,7 +43,7 @@ pub async fn root(
 			TextBlobBuilder::new("curl https://kybe.xyz").into(),
 		])
 		.into(),
-		theme.title("Projects:\n\n").into(),
+		theme.title("\nProjects:\n\n").into(),
 		theme
 			.label(
 				"nix-dotfiles",
@@ -113,6 +113,31 @@ pub async fn root(
 				vec![
 					theme
 						.link_colored("kybe@kybe.xyz\n", "mailto:kybe@kybe.xyz")
+						.into(),
+				],
+			)
+			.into(),
+		theme.title("\nOther Platforms:\n\n").into(),
+		theme
+			.label(
+				"Github",
+				vec![
+					theme
+						.link_colored("https://github.com/kybe236", "https://github.com/kybe236")
+						.into(),
+					theme.text(" ").into(),
+					theme
+						.link_colored("https://github.com/2kybe3\n", "https://github.com/2kybe3")
+						.into(),
+				],
+			)
+			.into(),
+		theme
+			.label(
+				"Codeberg",
+				vec![
+					theme
+						.link_colored("https://codeberg.org/kybe\n", "https://codeberg.org/kybe")
 						.into(),
 				],
 			)

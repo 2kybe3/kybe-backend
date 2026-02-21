@@ -1,6 +1,9 @@
 use uuid::Uuid;
 
-use crate::webserver::render::{Color, Objects, Style, builders::TextBlobBuilder};
+use crate::webserver::render::{
+	Color, Objects, Style,
+	builders::{LinkToBuilder, TextBlobBuilder},
+};
 
 pub fn footer(trace_id: Uuid) -> Vec<Objects> {
 	vec![
@@ -18,7 +21,15 @@ pub fn footer(trace_id: Uuid) -> Vec<Objects> {
 		TextBlobBuilder::new(" Version: ")
 			.style(Style::new().fg(Color::BrightRed))
 			.into(),
-		TextBlobBuilder::new(format!("{}\n", crate::GIT_SHA.to_owned())).into(),
+		TextBlobBuilder::new(format!("{}\n", crate::GIT_SHA.to_owned()))
+			.link_to(
+				LinkToBuilder::new(format!(
+					"https://github.com/2kybe3/kybe-backend/tree/{}",
+					crate::GIT_SHA.to_owned()
+				))
+				.into(),
+			)
+			.into(),
 		TextBlobBuilder::new("           ")
 			.style(Style::new().fg(Color::Yellow).bg(Color::Yellow))
 			.into(),

@@ -48,7 +48,6 @@ impl Theme {
 		text.into().style(self.subtitle)
 	}
 
-	#[allow(unused)]
 	pub fn text<L>(
 		&self,
 		text: impl Into<TextBlobBuilder<NoStyle, L>>,
