@@ -43,10 +43,16 @@ pub async fn root(
 		theme
 			.subtitle("This site is made to also look good on curl\n\n")
 			.into(),
+		CodeBlockBuilder::new(vec![
+			TextBlobBuilder::new("$ ").copyable(false).into(),
+			TextBlobBuilder::new("curl https://kybe.xyz").into(),
+		])
+		.into(),
 	];
 
 	if let Some(playing) = playing {
 		page.append(&mut vec![
+			theme.text("\n").into(),
 			theme
 				.label(
 					"Currently Listening",
@@ -60,15 +66,11 @@ pub async fn root(
 					],
 				)
 				.into(),
+			theme.text("\n").into(),
 		])
 	};
 
 	page.append(&mut vec![
-		CodeBlockBuilder::new(vec![
-			TextBlobBuilder::new("$ ").copyable(false).into(),
-			TextBlobBuilder::new("curl https://kybe.xyz").into(),
-		])
-		.into(),
 		theme.title("\nProjects:\n\n").into(),
 		theme
 			.label(

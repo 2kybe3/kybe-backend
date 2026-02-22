@@ -1,7 +1,4 @@
-use std::{
-	sync::Arc,
-	time::{Duration, Instant},
-};
+use std::{sync::Arc, time::Duration};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
@@ -23,7 +20,6 @@ pub struct LastFM {
 
 #[derive(Debug)]
 struct Cache {
-	last_time: Instant,
 	last_result: Option<Response>,
 }
 
@@ -61,7 +57,7 @@ impl LastFM {
 		if let (Some(username), Some(token)) = (lastfm.username.to_owned(), lastfm.token.to_owned())
 		{
 			let client = reqwest::Client::builder()
-				.timeout(Duration::from_secs(2))
+				.timeout(Duration::from_secs(10))
 				.build();
 			if let Err(ref e) = client {
 				error!("Error building client {:?} using default client", e);
@@ -72,10 +68,7 @@ impl LastFM {
 				interval_secs: lastfm.interval_secs.unwrap_or(INTERVAL_DEFAULT),
 				username,
 				token,
-				cache: Arc::new(Mutex::new(Cache {
-					last_time: Instant::now() - Duration::from_secs(INTERVAL_DEFAULT.into()),
-					last_result: None,
-				})),
+				cache: Arc::new(Mutex::new(Cache { last_result: None })),
 			});
 		}
 
@@ -117,7 +110,6 @@ impl LastFM {
 
 		let mut cache = self.cache.lock().await;
 		cache.last_result = result;
-		cache.last_time = Instant::now();
 
 		Ok(())
 	}
