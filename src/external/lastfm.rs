@@ -5,7 +5,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-use tracing::{error, warn};
+use tracing::{error, info, warn};
 
 use crate::config::types::LastFMConfig;
 
@@ -34,6 +34,8 @@ pub struct Response {
 	pub url: String,
 }
 
+const INTERVAL_DEFAULT: u8 = 10;
+
 impl LastFM {
 	pub fn new(lastfm: &LastFMConfig) -> Option<Self> {
 		if lastfm.username.as_deref().unwrap_or("").is_empty() {
@@ -44,6 +46,16 @@ impl LastFM {
 		if lastfm.token.as_deref().unwrap_or("").is_empty() {
 			warn!("lastfm enabled but token empty disabling");
 			return None;
+		}
+
+		if lastfm.interval_secs.is_none() {
+			info!(
+				"{}",
+				format!(
+					"lastfm interval_secs not set using default ({} seconds)",
+					INTERVAL_DEFAULT
+				)
+			)
 		}
 
 		if let (Some(username), Some(token)) = (lastfm.username.to_owned(), lastfm.token.to_owned())
@@ -57,11 +69,11 @@ impl LastFM {
 
 			return Some(Self {
 				client: client.unwrap_or_default(),
-				interval_secs: lastfm.interval_secs.unwrap_or(10),
+				interval_secs: lastfm.interval_secs.unwrap_or(INTERVAL_DEFAULT),
 				username,
 				token,
 				cache: Arc::new(Mutex::new(Cache {
-					last_time: Instant::now() - Duration::from_secs(10),
+					last_time: Instant::now() - Duration::from_secs(INTERVAL_DEFAULT.into()),
 					last_result: None,
 				})),
 			});
