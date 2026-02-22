@@ -16,6 +16,7 @@ use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
 use crate::email::EmailService;
+use crate::external::lastfm::LastFM;
 use crate::maxmind::MaxMind;
 use crate::notifications::{Notification, Notifications};
 use futures::future::try_join_all;
@@ -113,6 +114,15 @@ async fn main() -> anyhow::Result<()> {
 		.expect("Notifications already set");
 
 	let mm = Arc::new(MaxMind::new(config.maxmind.clone())?);
+	let lastfm = if config.lastfm.enable {
+		let lastfm = LastFM::new(&config.lastfm).map(Arc::new);
+		if let Some(ref lastfm) = lastfm {
+			Arc::clone(lastfm).run_cacher().await;
+		}
+		lastfm
+	} else {
+		None
+	};
 
 	let database = match Database::init(Arc::clone(&config)).await {
 		Ok(db) => db,
@@ -164,7 +174,7 @@ async fn main() -> anyhow::Result<()> {
 
 	let auth_clone = Arc::clone(&auth);
 	handles.push(tokio::spawn(async move {
-		if let Err(e) = webserver::init_webserver(config, auth_clone, database, mm).await {
+		if let Err(e) = webserver::init_webserver(config, auth_clone, database, mm, lastfm).await {
 			notify_error(
 				&notifications,
 				"Discord Bot",

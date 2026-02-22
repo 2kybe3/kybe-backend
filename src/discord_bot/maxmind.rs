@@ -38,18 +38,16 @@ pub async fn maxmind(
 			let res = serde_json::to_string_pretty(&res)?;
 			trace.output = Some(res.clone());
 			attach(&ctx, res, "res.json").await;
-
-			finalize_command_trace(&ctx, &mut trace).await?;
 		}
 		Err(e) => {
 			trace.status = CommandStatus::Error;
 			trace.error = Some(format!("MaxMind error: {:?}", e));
 			trace.output = Some("Maxmind Error".into());
 			ctx.reply("MaxMind Error").await?;
-
-			finalize_command_trace(&ctx, &mut trace).await?;
 		}
 	}
+
+	finalize_command_trace(&ctx, &mut trace).await?;
 
 	Ok(())
 }

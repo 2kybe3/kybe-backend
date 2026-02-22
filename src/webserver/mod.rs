@@ -6,6 +6,7 @@ use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
 use crate::db::website_traces::WebsiteTrace;
+use crate::external::lastfm::LastFM;
 use crate::maxmind::MaxMind;
 use crate::maxmind::asn::AsnMin;
 use crate::maxmind::city::CityMin;
@@ -35,9 +36,10 @@ use tracing::{error, warn};
 #[derive(Clone)]
 struct WebServerState {
 	mm: Arc<MaxMind>,
+	database: Database,
 	config: Arc<Config>,
 	auth: Arc<AuthService>,
-	database: Database,
+	lastfm: Option<Arc<LastFM>>,
 }
 
 pub trait IpExtractionConfig {
@@ -245,6 +247,7 @@ pub async fn init_webserver(
 	auth: Arc<AuthService>,
 	database: Database,
 	mm: Arc<MaxMind>,
+	lastfm: Option<Arc<LastFM>>,
 ) -> anyhow::Result<()> {
 	let register_limiter = make_limiter(&config, 60, 10)?;
 	let root_limiter = make_limiter(&config, 5, 10)?;
@@ -253,6 +256,7 @@ pub async fn init_webserver(
 	let webserver_state = WebServerState {
 		mm,
 		auth,
+		lastfm,
 		config,
 		database,
 	};

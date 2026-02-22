@@ -7,6 +7,7 @@ pub struct Config {
 	pub webserver: WebserverConfig,
 	pub database: DatabaseConfig,
 	pub maxmind: MaxMindConfig,
+	pub lastfm: LastFMConfig,
 	pub logger: LoggerConfig,
 	pub email: EmailConfig,
 }
@@ -59,6 +60,14 @@ pub struct MaxMindConfig {
 	// Use ASN DB and Path to it
 	pub asn_enable: bool,
 	pub asn: String,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct LastFMConfig {
+	pub enable: bool,
+	pub token: Option<String>,
+	pub username: Option<String>,
+	pub interval_secs: Option<u8>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

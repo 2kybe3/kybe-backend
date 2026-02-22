@@ -1,7 +1,7 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
 	Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, EmailConfig, GotifyConfig,
-	LoggerConfig, MaxMindConfig, NotificationConfig, TranslatorConfig, UmamiConfig,
+	LastFMConfig, LoggerConfig, MaxMindConfig, NotificationConfig, TranslatorConfig, UmamiConfig,
 	WebserverConfig,
 };
 use std::env;
@@ -154,6 +154,12 @@ impl Default for Config {
 				city: "".into(),
 				asn_enable: false,
 				asn: "".into(),
+			},
+			lastfm: LastFMConfig {
+				enable: false,
+				token: Some("".into()),
+				username: Some("".into()),
+				interval_secs: Some(10),
 			},
 			logger: LoggerConfig {
 				file_logger_enabled: true,

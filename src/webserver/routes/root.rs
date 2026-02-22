@@ -14,7 +14,7 @@ use crate::{
 	webserver::{
 		WebServerState, common,
 		render::{
-			Page, Theme,
+			Objects, Page, Theme,
 			builders::{CodeBlockBuilder, TextBlobBuilder},
 		},
 	},
@@ -33,11 +33,37 @@ pub async fn root(
 	let mut trace = trace.lock().await;
 	let theme = Theme::default();
 
-	let mut page = vec![
+	let mut playing = None;
+	if let Some(lastfm) = state.lastfm {
+		playing = lastfm.get_playing().await;
+	}
+
+	let mut page: Vec<Objects> = vec![
 		theme.title("Hello Stranger\n").into(),
 		theme
 			.subtitle("This site is made to also look good on curl\n\n")
 			.into(),
+	];
+
+	if let Some(playing) = playing {
+		page.append(&mut vec![
+			theme
+				.label(
+					"Currently Listening",
+					vec![
+						theme
+							.link_colored(
+								format!("{} - {}", playing.artist, playing.name).as_str(),
+								&playing.url,
+							)
+							.into(),
+					],
+				)
+				.into(),
+		])
+	};
+
+	page.append(&mut vec![
 		CodeBlockBuilder::new(vec![
 			TextBlobBuilder::new("$ ").copyable(false).into(),
 			TextBlobBuilder::new("curl https://kybe.xyz").into(),
@@ -163,7 +189,7 @@ pub async fn root(
 				],
 			)
 			.into(),
-	];
+	]);
 	page.append(&mut common::footer::footer(trace.trace_id));
 
 	let page = Page::from_iter(page);

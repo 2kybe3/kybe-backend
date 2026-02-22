@@ -34,6 +34,12 @@ city = ""
 asn_enable = false
 asn = ""
 
+[lastfm]
+enable = false
+token = ""
+username = ""
+interval_secs = 10
+
 [logger]
 file_logger_enabled = true
 file_logger_path = "./log"

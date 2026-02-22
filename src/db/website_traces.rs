@@ -1,5 +1,6 @@
 use crate::db::Database;
 use chrono::{DateTime, Utc};
+use serde_json::Map;
 use tracing::{debug, error};
 use uuid::Uuid;
 
@@ -58,8 +59,8 @@ impl WebsiteTrace {
 			started_at: Utc::now(),
 			duration_ms: 0,
 			status_code: 0,
-			data: serde_json::json!({}),
-			request_headers: serde_json::json!({}),
+			data: serde_json::Value::Object(Map::new()),
+			request_headers: serde_json::Value::Object(Map::new()),
 			mm_asn: mm_asn.into(),
 			mm_city: mm_city.into(),
 			request_status: RequestStatus::Success,
