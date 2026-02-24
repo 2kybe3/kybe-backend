@@ -19,7 +19,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde_json = "1.0.149"
 sqlx = { version = "0.8.6", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "derive"] }
 poise = { git = "https://github.com/serenity-rs/poise", branch = "current" }
-chrono = "0.4.43"
+chrono = "0.4.44"
 tracing-appender = "0.2.4"
 uuid = { version = "1.21.0", features = ["v7", "serde"] }
 axum = { version = "0.8.8", features = ["macros"] }
