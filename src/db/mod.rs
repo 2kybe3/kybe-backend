@@ -1,5 +1,4 @@
 pub mod command_traces;
-pub mod users;
 pub mod website_traces;
 
 use crate::config::types::Config;
@@ -53,8 +52,6 @@ impl Database {
 		info!("Migrations applied successfully");
 
 		let db = Self::new(pool);
-
-		db.delete_old_unverified_users_loop().await;
 
 		Ok(db)
 	}

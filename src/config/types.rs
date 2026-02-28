@@ -79,6 +79,7 @@ pub struct LoggerConfig {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct WebserverConfig {
 	pub behind_proxy: bool,
+	pub api_token: String,
 	pub trust_proxy_header: Option<String>,
 	pub umami: UmamiConfig,
 }

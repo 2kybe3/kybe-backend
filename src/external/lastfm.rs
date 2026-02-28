@@ -1,4 +1,7 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+	sync::Arc,
+	time::{Duration, Instant},
+};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
@@ -78,9 +81,12 @@ impl LastFM {
 	pub async fn run_cacher(self: Arc<Self>) {
 		tokio::spawn(async move {
 			loop {
+				let now = Instant::now();
 				if let Err(e) = self.refresh_cache().await {
 					error!("Failed to refresh Last.fm cache: {:?}", e);
 				}
+				let elapsed_ms = now.elapsed().as_millis();
+				crate::prometheus::update_lastfm_fetch_duration(elapsed_ms);
 				tokio::time::sleep(Duration::from_secs(self.interval_secs.into())).await;
 			}
 		});
@@ -93,6 +99,7 @@ impl LastFM {
 		);
 
 		let resp = self.client.get(url).send().await?;
+		crate::prometheus::update_lastfm_fetch_status(resp.status().as_u16());
 		let raw_text = resp.text().await?;
 		let parsed: UserGetRecentTracksResponse = serde_json::from_str(&raw_text)?;
 

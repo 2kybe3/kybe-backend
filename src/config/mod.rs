@@ -167,6 +167,7 @@ impl Default for Config {
 			},
 			webserver: WebserverConfig {
 				behind_proxy: false,
+				api_token: "CHANGE_ME".into(),
 				trust_proxy_header: Some("X-Forwarded-For".into()),
 				umami: UmamiConfig {
 					script_path: Some("https://kybe.xyz/script.js".into()),

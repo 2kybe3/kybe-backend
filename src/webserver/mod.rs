@@ -2,7 +2,6 @@ pub mod common;
 pub mod render;
 mod routes;
 
-use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
 use crate::db::website_traces::WebsiteTrace;
@@ -10,13 +9,14 @@ use crate::external::lastfm::LastFM;
 use crate::maxmind::MaxMind;
 use crate::maxmind::asn::AsnMin;
 use crate::maxmind::city::CityMin;
-use crate::webserver::routes::{canvas, fallback_404, ip, pgp, root, user::register};
+use crate::webserver::routes::metrics;
+use crate::webserver::routes::{canvas, fallback_404, ip, pgp, root};
 use anyhow::anyhow;
 use axum::extract::{ConnectInfo, Request, State};
 use axum::http::HeaderMap;
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post};
+use axum::routing::get;
 use axum::{Router, middleware};
 use governor::clock::QuantaInstant;
 use governor::middleware::NoOpMiddleware;
@@ -38,7 +38,6 @@ struct WebServerState {
 	mm: Arc<MaxMind>,
 	database: Database,
 	config: Arc<Config>,
-	auth: Arc<AuthService>,
 	lastfm: Option<Arc<LastFM>>,
 }
 
@@ -120,6 +119,31 @@ impl KeyExtractor for ClientIpKeyExtractor {
 			.ok_or_else(|| GovernorError::UnableToExtractKey)?;
 
 		Ok(ip)
+	}
+}
+
+async fn api_auth_middleware(
+	State(state): State<WebServerState>,
+
+	headers: HeaderMap,
+
+	request: Request,
+	next: Next,
+) -> Response {
+	let token = headers
+		.get("Authorization")
+		.and_then(|value| value.to_str().ok());
+
+	match token {
+		Some(token_value)
+			if token_value == format!("Bearer {}", state.config.webserver.api_token) =>
+		{
+			next.run(request).await
+		}
+		_ => Response::builder()
+			.status(StatusCode::UNAUTHORIZED)
+			.body("Unauthorized".into())
+			.expect("Failed to build Response"),
 	}
 }
 
@@ -244,33 +268,28 @@ pub fn make_limiter(
 
 pub async fn init_webserver(
 	config: Arc<Config>,
-	auth: Arc<AuthService>,
 	database: Database,
 	mm: Arc<MaxMind>,
 	lastfm: Option<Arc<LastFM>>,
 ) -> anyhow::Result<()> {
-	let register_limiter = make_limiter(&config, 60, 10)?;
 	let root_limiter = make_limiter(&config, 5, 10)?;
 	let asset_limiter = make_limiter(&config, 5, 20)?;
 
 	let webserver_state = WebServerState {
 		mm,
-		auth,
 		lastfm,
 		config,
 		database,
 	};
 
+	let api_auth_layer =
+		middleware::from_fn_with_state(webserver_state.clone(), api_auth_middleware);
 	let ctx_layer = middleware::from_fn_with_state(webserver_state.clone(), user_contex_middleware);
 	let trace_layer = middleware::from_fn_with_state(webserver_state.clone(), trace_middleware);
 
-	let register_limiter_layer = GovernorLayer::new(register_limiter);
 	let root_limiter_layer = GovernorLayer::new(root_limiter);
 	let asset_limiter_layer = GovernorLayer::new(asset_limiter);
 
-	let register_route_service = ServiceBuilder::new()
-		.layer(register_limiter_layer)
-		.layer(trace_layer.clone());
 	let root_route_service = ServiceBuilder::new()
 		.layer(root_limiter_layer)
 		.layer(trace_layer.clone());
@@ -278,6 +297,11 @@ pub async fn init_webserver(
 	let fallback_router = Router::new()
 		.fallback(get(fallback_404::fallback_404))
 		.layer(ctx_layer.clone())
+		.with_state(webserver_state.clone());
+
+	let unlogged_route2 = Router::new()
+		.route("/metrics", get(metrics::metrics))
+		.layer(api_auth_layer)
 		.with_state(webserver_state.clone());
 
 	let unlogged_route = Router::new()
@@ -294,13 +318,10 @@ pub async fn init_webserver(
 		.route("/ip", get(ip::ip))
 		.route("/pgp", get(pgp::pgp))
 		.route("/canvas", get(canvas::canvas))
-		.layer(root_route_service)
-		.route(
-			"/register",
-			post(register::register).layer(register_route_service),
-		);
+		.layer(root_route_service);
 
 	let app = unlogged_route
+		.merge(unlogged_route2)
 		.merge(api_routes)
 		.fallback(fallback_404::fallback_404)
 		.with_state(webserver_state)

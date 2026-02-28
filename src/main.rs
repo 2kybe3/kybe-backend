@@ -1,6 +1,5 @@
 #![warn(clippy::unwrap_used)]
 
-pub mod auth;
 mod config;
 mod db;
 mod discord_bot;
@@ -9,10 +8,10 @@ pub mod external;
 mod logger;
 pub mod maxmind;
 mod notifications;
+pub mod prometheus;
 pub mod translator;
 mod webserver;
 
-use crate::auth::AuthService;
 use crate::config::types::Config;
 use crate::db::Database;
 use crate::email::EmailService;
@@ -106,6 +105,8 @@ async fn main() -> anyhow::Result<()> {
 	let config = Arc::new(Config::init().await?);
 	logger::init_logger(&config.logger, bootstrap_guard)?;
 
+	prometheus::register_custom_metrics();
+
 	let mut handles = Vec::new();
 
 	let notifications = Arc::new(Notifications::new(&config.notification));
@@ -150,8 +151,6 @@ async fn main() -> anyhow::Result<()> {
 		email_service = Some(Arc::new(EmailService::new(&config.email)));
 	}
 
-	let auth = Arc::new(AuthService::new(database.clone()));
-
 	if config.discord_bot.enable {
 		let notifications = Arc::clone(&notifications);
 		let config = Arc::clone(&config);
@@ -172,9 +171,8 @@ async fn main() -> anyhow::Result<()> {
 		}));
 	}
 
-	let auth_clone = Arc::clone(&auth);
 	handles.push(tokio::spawn(async move {
-		if let Err(e) = webserver::init_webserver(config, auth_clone, database, mm, lastfm).await {
+		if let Err(e) = webserver::init_webserver(config, database, mm, lastfm).await {
 			notify_error(
 				&notifications,
 				"Discord Bot",

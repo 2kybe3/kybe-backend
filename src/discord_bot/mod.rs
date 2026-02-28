@@ -32,7 +32,6 @@ pub struct Data {
 	pub database: Database,
 	pub mm: Arc<MaxMind>,
 
-	pub client: Arc<Client>,
 	pub cataas: CATAAS,
 }
 
@@ -115,7 +114,6 @@ pub async fn init_bot(
                     config,
                     translator,
                     database,
-					client,
 					cataas,
                     mm,
                 })
