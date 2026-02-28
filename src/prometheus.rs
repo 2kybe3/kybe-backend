@@ -3,17 +3,26 @@ use prometheus::{
 	Encoder, HistogramOpts, HistogramVec, IntCounterVec, Opts, Registry, TextEncoder,
 };
 
+const BASE: &str = "kybe_backend_";
+
 lazy_static! {
 	pub static ref REGISTRY: Registry = Registry::new();
 	pub static ref LASTFM_FETCH_DURATION: HistogramVec = HistogramVec::new(
-		HistogramOpts::new("lastfm_fetch_duration", "Last.fm Fetch Duration").buckets(vec![
+		HistogramOpts::new(
+			format!("{}lastfm_fetch_duration", BASE),
+			"Last.fm Fetch Duration"
+		)
+		.buckets(vec![
 			0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 2.0, 5.0,
 		]),
 		&["duration_range"],
 	)
 	.expect("Error creating Prometheus histogram");
 	pub static ref LASTFM_FETCH_STATUS: IntCounterVec = IntCounterVec::new(
-		Opts::new("lastfm_fetch_status", "Last.fm Fetch Status Code"),
+		Opts::new(
+			format!("{}lastfm_fetch_status", BASE),
+			"Last.fm Fetch Status Code"
+		),
 		&["Status"],
 	)
 	.expect("Error creating Prometheus counter");
