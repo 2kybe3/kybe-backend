@@ -23,7 +23,7 @@ lazy_static! {
 			format!("{}lastfm_fetch_status", BASE),
 			"Last.fm Fetch Status Code"
 		),
-		&["Status"],
+		&["status"],
 	)
 	.expect("Error creating Prometheus counter");
 }
