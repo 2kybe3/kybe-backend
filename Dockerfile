@@ -12,6 +12,7 @@ COPY src ./src
 COPY assets ./assets
 COPY migrations ./migrations
 COPY .sqlx ./.sqlx
+COPY static/pgp.txt ./static/pgp.txt
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/kybe-backend/target \
