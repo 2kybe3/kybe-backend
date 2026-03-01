@@ -1,4 +1,13 @@
+IDENTITY
+
+handle:         kybe,2kybe3,kybe236
+matrix:         @kybe:kybe.xyz
+github:         github.com/kybe236
+sites:          kybe.xyz
+
 -----BEGIN PGP PUBLIC KEY BLOCK-----
+Comment: 4B20 67C3 BD6D 410F 13E5  36A3 43CE 4393 8A3C 7A8F
+Comment: kybe <kybe@kybe.xyz>
 
 mDMEaVDdehYJKwYBBAHaRw8BAQdAxuB4lxxpg3kkX3lO+SSGNkVZvFwjDkXVkxXs
 G0jnIcW0FGt5YmUgPGt5YmVAa3liZS54eXo+iJAEExYKADgWIQRLIGfDvW1BDxPl

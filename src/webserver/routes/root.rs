@@ -74,6 +74,20 @@ pub async fn root(
 		theme.title("\nProjects:\n\n").into(),
 		theme
 			.label(
+				"cheat-sh",
+				vec![
+					theme
+						.link_colored(
+							"https://github.com/2kybe3/cheat-sh",
+							"https://github.com/2kybe3/cheat-sh",
+						)
+						.into(),
+					theme.comment(" (a tiny wrapper for cheat.sh)\n").into(),
+				],
+			)
+			.into(),
+		theme
+			.label(
 				"nix-dotfiles",
 				vec![
 					theme
@@ -97,20 +111,6 @@ pub async fn root(
 						)
 						.into(),
 					theme.comment(" (this site)\n").into(),
-				],
-			)
-			.into(),
-		theme
-			.label(
-				"cheat-sh",
-				vec![
-					theme
-						.link_colored(
-							"https://github.com/2kybe3/cheat-sh",
-							"https://github.com/2kybe3/cheat-sh",
-						)
-						.into(),
-					theme.comment(" (a tiny wrapper for cheat.sh)\n").into(),
 				],
 			)
 			.into(),
@@ -171,6 +171,16 @@ pub async fn root(
 			)
 			.into(),
 		theme.title("\nOther Endpoints:\n\n").into(),
+		theme
+			.label(
+				"Identity",
+				vec![
+					theme
+						.link_colored("https://kybe.xyz/ident.txt\n", "https://kybe.xyz/ident.txt")
+						.into(),
+				],
+			)
+			.into(),
 		theme
 			.label(
 				"Canvas",
