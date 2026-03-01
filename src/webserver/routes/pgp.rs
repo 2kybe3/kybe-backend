@@ -44,6 +44,10 @@ pub async fn pgp(
 			TextBlobBuilder::new("curl https://kybe.xyz/pgp.txt | gpg --import").into(),
 		])
 		.into(),
+		CodeBlockBuilder::new(vec![
+			TextBlobBuilder::new("ssh kybe@ssh.kybe.xyz pgp | gpg --import").into(),
+		])
+		.into(),
 	];
 	page.append(&mut common::footer::footer(trace.lock().await.trace_id));
 
