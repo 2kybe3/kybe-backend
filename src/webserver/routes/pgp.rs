@@ -45,8 +45,9 @@ pub async fn pgp(
 		])
 		.into(),
 		CodeBlockBuilder::new(vec![
-			TextBlobBuilder::new("ssh kybe@ssh.kybe.xyz pgp | gpg --import").into(),
+			TextBlobBuilder::new("ssh ssh.kybe.xyz pgp | gpg --import").into(),
 		])
+		.title("IPv6 required")
 		.into(),
 	];
 	page.append(&mut common::footer::footer(trace.lock().await.trace_id));
