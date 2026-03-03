@@ -155,7 +155,7 @@ pub struct RequestContext {
 	pub mm_city: Option<CityMin>,
 }
 
-async fn user_contex_middleware(
+async fn user_context_middleware(
 	State(state): State<WebServerState>,
 
 	headers: HeaderMap,
@@ -284,7 +284,8 @@ pub async fn init_webserver(
 
 	let api_auth_layer =
 		middleware::from_fn_with_state(webserver_state.clone(), api_auth_middleware);
-	let ctx_layer = middleware::from_fn_with_state(webserver_state.clone(), user_contex_middleware);
+	let ctx_layer =
+		middleware::from_fn_with_state(webserver_state.clone(), user_context_middleware);
 	let trace_layer = middleware::from_fn_with_state(webserver_state.clone(), trace_middleware);
 
 	let root_limiter_layer = GovernorLayer::new(root_limiter);
