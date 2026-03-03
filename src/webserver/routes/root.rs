@@ -40,9 +40,7 @@ pub async fn root(
 
 	let mut page: Vec<Objects> = vec![
 		theme.title("Hello Stranger\n").into(),
-		theme
-			.subtitle("This site is made to also look good on curl\n\n")
-			.into(),
+		theme.subtitle("kybe – /dev/urandom stuff\n\n").into(),
 		CodeBlockBuilder::new(vec![
 			TextBlobBuilder::new("$ ").copyable(false).into(),
 			TextBlobBuilder::new("curl https://kybe.xyz").into(),
