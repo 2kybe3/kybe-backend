@@ -122,8 +122,7 @@ impl LastFM {
 	}
 
 	pub async fn get_playing(&self) -> Option<Response> {
-		let cache = self.cache.lock().await;
-		cache.last_result.clone()
+		self.cache.lock().await.last_result.clone()
 	}
 }
 
