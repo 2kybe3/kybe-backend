@@ -25,32 +25,32 @@ pub struct LookupResponse {
 
 impl MaxMind {
 	pub fn new(config: MaxMindConfig) -> anyhow::Result<Self> {
-		let city = if config.city_enable {
-			Some(Reader::open_readfile(config.city)?)
-		} else {
-			None
-		};
-
-		let asn = if config.asn_enable {
-			Some(Reader::open_readfile(config.asn)?)
-		} else {
-			None
-		};
-
-		Ok(Self { city, asn })
+		Ok(Self {
+			city: config
+				.city_enable
+				.then(|| Reader::open_readfile(config.city))
+				.transpose()?,
+			asn: config
+				.asn_enable
+				.then(|| Reader::open_readfile(config.asn))
+				.transpose()?,
+		})
 	}
 
 	pub fn lookup(&self, ip: IpAddr) -> anyhow::Result<LookupResponse> {
-		let city = match &self.city {
-			Some(city) => city.lookup(ip)?.decode::<CityMin>()?,
-			None => None,
-		};
-
-		let asn = match &self.asn {
-			Some(asn) => asn.lookup(ip)?.decode::<AsnMin>()?,
-			None => None,
-		};
-
-		Ok(LookupResponse { city, asn })
+		Ok(LookupResponse {
+			city: self
+				.city
+				.as_ref()
+				.map(|c| c.lookup(ip)?.decode::<CityMin>())
+				.transpose()?
+				.flatten(),
+			asn: self
+				.asn
+				.as_ref()
+				.map(|a| a.lookup(ip)?.decode::<AsnMin>())
+				.transpose()?
+				.flatten(),
+		})
 	}
 }
