@@ -11,6 +11,7 @@ use tokio::sync::Mutex;
 
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
+	external::lastfm,
 	webserver::{
 		WebServerState, common,
 		render::{
@@ -50,21 +51,33 @@ pub async fn root(
 
 	if let Some(playing) = playing {
 		page.append(&mut vec![
-			theme.text("\n").into(),
+			theme.title("\nCurrently Listening:\n\n").into(),
 			theme
 				.label(
-					"Currently Listening",
+					"Artist",
 					vec![
 						theme
 							.link_colored(
-								format!("{} - {}", playing.artist, playing.name).as_str(),
+								format!("{}\n", playing.artist.as_str()).as_str(),
+								&lastfm::artist_url(&playing.artist),
+							)
+							.into(),
+					],
+				)
+				.into(),
+			theme
+				.label(
+					"Name",
+					vec![
+						theme
+							.link_colored(
+								format!("{}\n", playing.name.as_str()).as_str(),
 								&playing.url,
 							)
 							.into(),
 					],
 				)
 				.into(),
-			theme.text("\n").into(),
 		])
 	};
 

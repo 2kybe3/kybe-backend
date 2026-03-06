@@ -10,6 +10,7 @@ use tracing::{error, info, warn};
 use crate::config::types::LastFMConfig;
 
 const BASE_URL: &str = "http://ws.audioscrobbler.com/2.0/";
+pub const ARITST_BASE: &str = "https://www.last.fm/music/";
 
 #[derive(Debug, Clone)]
 pub struct LastFM {
@@ -124,6 +125,11 @@ impl LastFM {
 	pub async fn get_playing(&self) -> Option<Response> {
 		self.cache.lock().await.last_result.clone()
 	}
+}
+
+pub fn artist_url(artist: &str) -> String {
+	let encoded = artist.replace(' ', "+");
+	format!("{}{}", ARITST_BASE, encoded)
 }
 
 fn string_to_bool<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
