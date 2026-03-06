@@ -24,7 +24,6 @@ pub struct WebsiteTrace {
 	pub query: Option<String>,
 	pub ip_address: String,
 	pub user_agent: String,
-	pub user_id: Option<Uuid>,
 	pub started_at: DateTime<Utc>,
 	pub duration_ms: i64,
 	pub status_code: u16,
@@ -55,7 +54,6 @@ impl WebsiteTrace {
 			query: query.map(Into::into),
 			ip_address: ip.into(),
 			user_agent: user_agent.into(),
-			user_id: None,
 			started_at: Utc::now(),
 			duration_ms: 0,
 			status_code: 0,
@@ -70,10 +68,9 @@ impl WebsiteTrace {
 		}
 	}
 
-	fn complete(&mut self, duration_ms: i64, status_code: u16, user_id: Option<Uuid>) {
+	fn complete(&mut self, duration_ms: i64, status_code: u16) {
 		self.duration_ms = duration_ms;
 		self.status_code = status_code;
-		self.user_id = user_id;
 
 		self.request_status = match status_code {
 			200..=299 => RequestStatus::Success,
@@ -85,12 +82,12 @@ impl WebsiteTrace {
 		};
 	}
 
-	pub async fn finish(&mut self, status_code: u16, user_id: Option<Uuid>, database: &Database) {
+	pub async fn finish(&mut self, status_code: u16, database: &Database) {
 		let duration = chrono::Utc::now()
 			.signed_duration_since(self.started_at)
 			.num_milliseconds();
 
-		self.complete(duration, status_code, user_id);
+		self.complete(duration, status_code);
 
 		if let Err(e) = database.save_website_trace(self).await {
 			error!("Failed to save website trace: {e:?}");
@@ -105,14 +102,14 @@ impl Database {
 		sqlx::query!(
 			r#"
             INSERT INTO website_traces (
-                trace_id, method, path, query, ip_address, user_agent, user_id, started_at,
-                duration_ms, status_code, data, mm_asn, mm_city, request_headers, request_status,
-                request_body, response_body, error
+                trace_id, method, path, query, ip_address, user_agent, started_at, duration_ms,
+                status_code, data, mm_asn, mm_city, request_headers, request_status,request_body,
+                response_body, error
             )
             VALUES (
                 $1, $2, $3, $4, $5, $6, $7, $8,
                 $9, $10, $11, $12, $13, $14,
-                $15, $16, $17, $18
+                $15, $16, $17
             )
             "#,
 			trace.trace_id,
@@ -121,7 +118,6 @@ impl Database {
 			trace.query,
 			trace.ip_address,
 			trace.user_agent,
-			trace.user_id,
 			trace.started_at,
 			trace.duration_ms,
 			trace.status_code as i32,

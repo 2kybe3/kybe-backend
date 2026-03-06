@@ -238,7 +238,7 @@ async fn trace_middleware(
 	let db = state.database.clone();
 	tokio::spawn(async move {
 		let mut t = trace.lock().await;
-		t.finish(status, None, &db).await
+		t.finish(status, &db).await
 	});
 
 	response
