@@ -1,71 +1,52 @@
-use std::marker::PhantomData;
-
 use crate::webserver::render::{LinkTo, Object, Style};
 
-pub struct NoStyle;
-pub struct HasStyle;
-
-pub struct NoLink;
-pub struct HasLink;
-
-pub struct TextBlobBuilder<S, L> {
+pub struct TextBlobBuilder {
 	text: String,
 	copyable: bool,
 	style: Option<Style>,
 	link_to: Option<LinkTo>,
-	_state: PhantomData<(S, L)>,
 }
 
-impl TextBlobBuilder<NoStyle, NoLink> {
+impl TextBlobBuilder {
 	pub fn new(text: impl Into<String>) -> Self {
 		Self {
 			text: text.into(),
 			copyable: true,
 			style: None,
 			link_to: None,
-			_state: PhantomData::<(NoStyle, NoLink)>,
 		}
 	}
-}
 
-impl<L> TextBlobBuilder<NoStyle, L> {
-	pub fn style(self, style: Style) -> TextBlobBuilder<HasStyle, L> {
+	pub fn style(self, style: Style) -> TextBlobBuilder {
 		TextBlobBuilder {
 			text: self.text,
 			copyable: false,
 			style: Some(style),
 			link_to: self.link_to,
-			_state: PhantomData::<(HasStyle, L)>,
 		}
 	}
-}
 
-impl<S> TextBlobBuilder<S, NoLink> {
-	pub fn link_to(self, link_to: LinkTo) -> TextBlobBuilder<S, HasLink> {
+	pub fn link_to(self, link_to: LinkTo) -> TextBlobBuilder {
 		TextBlobBuilder {
 			text: self.text,
 			copyable: self.copyable,
 			style: self.style,
 			link_to: Some(link_to),
-			_state: PhantomData::<(S, HasLink)>,
 		}
 	}
-}
 
-impl<S, L> TextBlobBuilder<S, L> {
-	pub fn copyable(self, copyable: bool) -> TextBlobBuilder<S, L> {
+	pub fn copyable(self, copyable: bool) -> TextBlobBuilder {
 		TextBlobBuilder {
 			text: self.text,
 			copyable,
 			style: self.style,
 			link_to: self.link_to,
-			_state: PhantomData::<(S, L)>,
 		}
 	}
 }
 
-impl<S, L> From<TextBlobBuilder<S, L>> for Object {
-	fn from(t: TextBlobBuilder<S, L>) -> Self {
+impl From<TextBlobBuilder> for Object {
+	fn from(t: TextBlobBuilder) -> Self {
 		Object::TextBlob {
 			text: t.text,
 			copyable: t.copyable,
@@ -75,7 +56,7 @@ impl<S, L> From<TextBlobBuilder<S, L>> for Object {
 	}
 }
 
-impl From<&str> for TextBlobBuilder<NoStyle, NoLink> {
+impl From<&str> for TextBlobBuilder {
 	fn from(text: &str) -> Self {
 		Self::new(text)
 	}

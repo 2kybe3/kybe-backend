@@ -1,6 +1,6 @@
 use crate::webserver::render::{
 	Color, Object, Style,
-	builders::{HasLink, HasStyle, LinkToBuilder, NoLink, NoStyle, TextBlobBuilder},
+	builders::{LinkToBuilder, TextBlobBuilder},
 };
 
 pub struct Theme {
@@ -30,43 +30,27 @@ impl Default for Theme {
 
 impl Theme {
 	#[allow(unused)]
-	pub fn raw<S, L>(&self, text: impl Into<TextBlobBuilder<S, L>>) -> TextBlobBuilder<S, L> {
+	pub fn raw(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
 		text.into()
 	}
 
-	pub fn title<L>(
-		&self,
-		text: impl Into<TextBlobBuilder<NoStyle, L>>,
-	) -> TextBlobBuilder<HasStyle, L> {
+	pub fn title(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
 		text.into().style(self.title)
 	}
 
-	pub fn subtitle<L>(
-		&self,
-		text: impl Into<TextBlobBuilder<NoStyle, L>>,
-	) -> TextBlobBuilder<HasStyle, L> {
+	pub fn subtitle(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
 		text.into().style(self.subtitle)
 	}
 
-	pub fn text<L>(
-		&self,
-		text: impl Into<TextBlobBuilder<NoStyle, L>>,
-	) -> TextBlobBuilder<HasStyle, L> {
+	pub fn text(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
 		text.into().style(self.text)
 	}
 
-	pub fn comment<L>(
-		&self,
-		text: impl Into<TextBlobBuilder<NoStyle, L>>,
-	) -> TextBlobBuilder<HasStyle, L> {
+	pub fn comment(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
 		text.into().style(self.comment)
 	}
 
-	pub fn link_colored(
-		&self,
-		text: impl Into<TextBlobBuilder<NoStyle, NoLink>>,
-		link: &str,
-	) -> TextBlobBuilder<HasStyle, HasLink> {
+	pub fn link_colored(&self, text: impl Into<TextBlobBuilder>, link: &str) -> TextBlobBuilder {
 		text.into().style(self.link).link_to(
 			LinkToBuilder::new(link)
 				.link_style(self.link)
@@ -76,11 +60,7 @@ impl Theme {
 	}
 
 	#[allow(unused)]
-	pub fn link<S>(
-		&self,
-		text: impl Into<TextBlobBuilder<S, NoLink>>,
-		link: &str,
-	) -> TextBlobBuilder<S, HasLink> {
+	pub fn link(&self, text: impl Into<TextBlobBuilder>, link: &str) -> TextBlobBuilder {
 		text.into().link_to(
 			LinkToBuilder::new(link)
 				.link_style(self.link)
