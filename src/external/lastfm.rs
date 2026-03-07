@@ -3,6 +3,7 @@ use std::{
 	time::{Duration, Instant},
 };
 
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
@@ -102,7 +103,8 @@ impl LastFM {
 		let resp = self.client.get(url).send().await?;
 		crate::prometheus::update_lastfm_fetch_status(resp.status().as_u16());
 		let raw_text = resp.text().await?;
-		let parsed: UserGetRecentTracksResponse = serde_json::from_str(&raw_text)?;
+		let parsed: UserGetRecentTracksResponse = serde_json::from_str(&raw_text)
+			.with_context(|| format!("failed to parse response json. RAW: {raw_text}"))?;
 
 		let track = parsed
 			.recenttracks
