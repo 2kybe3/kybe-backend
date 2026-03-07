@@ -25,9 +25,10 @@ pub struct LastFM {
 	cache: Arc<Mutex<Cache>>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Cache {
 	pub result: Option<Response>,
+	#[serde(skip)]
 	pub sync_instant: Instant,
 	pub sync_age: u128,
 	pub sync: DateTime<Utc>,
@@ -128,12 +129,8 @@ impl LastFM {
 
 		let mut cache = self.cache.lock().await;
 
-		let now_instant = Instant::now();
-		let now_utc = Utc::now();
-
-		cache.sync_age = now_instant.duration_since(cache.sync_instant).as_millis();
-		cache.sync_instant = now_instant;
-		cache.sync = now_utc;
+		cache.sync_instant = Instant::now();
+		cache.sync = Utc::now();
 
 		cache.result = result;
 
@@ -141,7 +138,9 @@ impl LastFM {
 	}
 
 	pub async fn get_playing(&self, debug_store: Option<&mut serde_json::Value>) -> Cache {
-		let cache = self.cache.lock().await.clone();
+		let mut cache = self.cache.lock().await.clone();
+
+		cache.sync_age = cache.sync_instant.elapsed().as_millis();
 
 		let debug_entry = serde_json::json!({
 			"result": cache.result,

@@ -9,8 +9,8 @@ use crate::external::lastfm::LastFM;
 use crate::maxmind::MaxMind;
 use crate::maxmind::asn::AsnMin;
 use crate::maxmind::city::CityMin;
-use crate::webserver::routes::metrics;
 use crate::webserver::routes::{canvas, fallback_404, ip, pgp, root};
+use crate::webserver::routes::{metrics, now_playing};
 use anyhow::anyhow;
 use axum::extract::{ConnectInfo, Request, State};
 use axum::http::HeaderMap;
@@ -246,12 +246,12 @@ async fn trace_middleware(
 
 pub fn make_limiter(
 	config: &Config,
-	per_second: u64,
+	replentish_after_ms: u64,
 	burst_size: u32,
 ) -> anyhow::Result<Arc<GovernorConfig<ClientIpKeyExtractor, NoOpMiddleware<QuantaInstant>>>> {
 	Ok(Arc::new(
 		GovernorConfigBuilder::default()
-			.per_second(per_second)
+			.per_millisecond(replentish_after_ms)
 			.burst_size(burst_size)
 			.key_extractor(ClientIpKeyExtractor::new(
 				config.webserver.behind_proxy,
@@ -272,8 +272,8 @@ pub async fn init_webserver(
 	mm: Arc<MaxMind>,
 	lastfm: Option<Arc<LastFM>>,
 ) -> anyhow::Result<()> {
-	let root_limiter = make_limiter(&config, 5, 10)?;
-	let asset_limiter = make_limiter(&config, 5, 20)?;
+	let root_limiter = make_limiter(&config, 500, 10)?;
+	let asset_limiter = make_limiter(&config, 500, 20)?;
 
 	let webserver_state = WebServerState {
 		mm,
@@ -319,6 +319,7 @@ pub async fn init_webserver(
 	let api_routes = Router::new()
 		.route("/", get(root::root))
 		.route("/ip", get(ip::ip))
+		.route("/now", get(now_playing::now_playing))
 		.route("/pgp", get(pgp::pgp))
 		.route("/canvas", get(canvas::canvas))
 		.layer(root_route_service);
