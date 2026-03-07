@@ -10,6 +10,7 @@ use tracing::{error, info, warn};
 
 use crate::config::types::LastFMConfig;
 
+const INTERVAL_DEFAULT: u8 = 10;
 const BASE_URL: &str = "http://ws.audioscrobbler.com/2.0/";
 pub const ARITST_BASE: &str = "https://www.last.fm/music/";
 
@@ -34,8 +35,6 @@ pub struct Response {
 	pub name: String,
 	pub url: String,
 }
-
-const INTERVAL_DEFAULT: u8 = 10;
 
 impl LastFM {
 	pub fn new(lastfm: &LastFMConfig) -> Option<Self> {
