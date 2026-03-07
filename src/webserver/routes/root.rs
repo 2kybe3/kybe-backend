@@ -181,6 +181,16 @@ pub async fn root(
 				],
 			)
 			.into(),
+		theme
+			.label(
+				"cgit",
+				vec![
+					theme
+						.link_colored("https://git.kybe.xyz/\n", "https://git.kybe.xyz/")
+						.into(),
+				],
+			)
+			.into(),
 		theme.title("\nOther Endpoints:\n\n").into(),
 		theme
 			.label(
