@@ -4,6 +4,7 @@ use std::{
 };
 
 use anyhow::Context;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
@@ -24,9 +25,12 @@ pub struct LastFM {
 	cache: Arc<Mutex<Cache>>,
 }
 
-#[derive(Debug)]
-struct Cache {
-	last_result: Option<Response>,
+#[derive(Clone, Debug)]
+pub struct Cache {
+	pub result: Option<Response>,
+	pub sync_instant: Instant,
+	pub sync_age: u128,
+	pub sync: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -72,7 +76,12 @@ impl LastFM {
 				interval_secs: lastfm.interval_secs.unwrap_or(INTERVAL_DEFAULT),
 				username,
 				token,
-				cache: Arc::new(Mutex::new(Cache { last_result: None })),
+				cache: Arc::new(Mutex::new(Cache {
+					result: None,
+					sync: Utc::now(),
+					sync_instant: Instant::now(),
+					sync_age: 0,
+				})),
 			});
 		}
 
@@ -118,13 +127,41 @@ impl LastFM {
 		});
 
 		let mut cache = self.cache.lock().await;
-		cache.last_result = result;
+
+		let now_instant = Instant::now();
+		let now_utc = Utc::now();
+
+		cache.sync_age = now_instant.duration_since(cache.sync_instant).as_millis();
+		cache.sync_instant = now_instant;
+		cache.sync = now_utc;
+
+		cache.result = result;
 
 		Ok(())
 	}
 
-	pub async fn get_playing(&self) -> Option<Response> {
-		self.cache.lock().await.last_result.clone()
+	pub async fn get_playing(&self, debug_store: Option<&mut serde_json::Value>) -> Cache {
+		let cache = self.cache.lock().await.clone();
+
+		let debug_entry = serde_json::json!({
+			"result": cache.result,
+			"sync": cache.sync.timestamp_millis(),
+			"sync_age": cache.sync_instant.elapsed().as_millis(),
+		});
+
+		if let Some(store) = debug_store {
+			let obj = store.as_object_mut().expect("debug_store must be a object");
+
+			let entry = obj
+				.entry("lastfm")
+				.or_insert_with(|| serde_json::Value::Array(Vec::new()));
+
+			if let Some(arr) = entry.as_array_mut() {
+				arr.push(debug_entry);
+			}
+		}
+
+		cache
 	}
 }
 

@@ -34,10 +34,11 @@ pub async fn root(
 	let mut trace = trace.lock().await;
 	let theme = Theme::default();
 
-	let mut playing = None;
-	if let Some(lastfm) = state.lastfm {
-		playing = lastfm.get_playing().await;
-	}
+	let playing = if let Some(lastfm) = state.lastfm {
+		lastfm.get_playing(Some(&mut trace.data)).await.result
+	} else {
+		None
+	};
 
 	let mut page: Vec<Objects> = vec![
 		theme.title("Hello Stranger\n").into(),
