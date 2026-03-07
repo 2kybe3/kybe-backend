@@ -25,7 +25,7 @@ WORKDIR /opt/backend
 
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/kybe-backend/kybe-backend /usr/bin/
+COPY --from=builder /usr/src/kybe-backend/target/release/kybe-backend /usr/bin/
 COPY static ./static
 
 EXPOSE 3000
