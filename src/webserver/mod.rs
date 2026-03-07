@@ -308,7 +308,7 @@ pub async fn init_webserver(
 	let unlogged_route = Router::new()
 		.route("/health", get(|| async { "OK" }))
 		.nest_service("/ident.txt", ServeFile::new("static/ident.txt"))
-        .nest_service("/favicon.ico", ServeFile::new("static/de.png"))
+		.nest_service("/favicon.ico", ServeFile::new("static/de.png"))
 		.nest_service("/pgp.txt", ServeFile::new("static/pgp.txt"))
 		.nest_service(
 			"/static",
