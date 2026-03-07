@@ -1,5 +1,9 @@
 # kybe-backend (https://kybe.xyz)
 
+## Info
+
+this project is mostly for personal use (contains hard coded stuff about me lel)
+
 ## Setup
 
 Download the docker-compose.yml
