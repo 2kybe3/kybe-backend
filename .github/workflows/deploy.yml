@@ -45,9 +45,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Remove .git (Cargo fingerprint workaround)
-        run: rm -rf .git
-
       - name: Write git SHA to file
         run: |
           mkdir -p assets
@@ -72,8 +69,6 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:${{ env.TAG }}
             ${{ env.IMAGE }}:latest
-          cache-from: type=local,src=/mnt/buildkit-cache
-          cache-to: type=local,dest=/mnt/buildkit-cache,mode=max
           build-args: |
             GIT_SHA=${{ github.sha }}
 

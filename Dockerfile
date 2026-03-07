@@ -1,22 +1,24 @@
-FROM rust:latest AS builder
+FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
 WORKDIR /usr/src/kybe-backend
 
-COPY Cargo.toml Cargo.lock ./
-RUN mkdir -p src && echo 'fn main() { }' > src/main.rs
+FROM chef AS planner
 
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/src/kybe-backend/target \
-    cargo build --release
+COPY Cargo.toml Cargo.lock ./
+
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /usr/src/kybe-backend/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 
 COPY src ./src
+COPY .sqlx ./.sqlx
 COPY assets ./assets
 COPY migrations ./migrations
-COPY .sqlx ./.sqlx
+COPY Cargo.toml Cargo.lock ./
 COPY static/pgp.txt ./static/pgp.txt
 
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/src/kybe-backend/target \
-    touch ./src/main.rs && cargo build --release && cp target/release/kybe-backend /usr/src/kybe-backend/kybe-backend
+RUN cargo build --release
 
 FROM debian:trixie-slim
 WORKDIR /opt/backend
