@@ -223,6 +223,16 @@ pub async fn root(
 				],
 			)
 			.into(),
+		theme
+			.label(
+				"Now Listening",
+				vec![
+					theme
+						.link_colored("https://kybe.xyz/now\n", "https://kybe.xyz/now")
+						.into(),
+				],
+			)
+			.into(),
 	]);
 	page.append(&mut common::footer::footer(trace.trace_id));
 
