@@ -41,10 +41,12 @@ pub async fn pgp(
 		.title("kybe <kybe@kybe.xyz> | 4B2067C3BD6D410F13E536A343CE43938A3C7A8F")
 		.into(),
 		CodeBlockBuilder::new(vec![
+			TextBlobBuilder::new("$ ").copyable(false).into(),
 			TextBlobBuilder::new("curl https://kybe.xyz/pgp.txt | gpg --import").into(),
 		])
 		.into(),
 		CodeBlockBuilder::new(vec![
+			TextBlobBuilder::new("$ ").copyable(false).into(),
 			TextBlobBuilder::new("ssh ssh.kybe.xyz pgp | gpg --import").into(),
 		])
 		.title("IPv6 required")
