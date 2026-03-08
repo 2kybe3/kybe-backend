@@ -1,6 +1,6 @@
 /target
 /.idea
-/config.toml
+/config/gl
+/config/log
+/config/config.toml
 /backend
-/log
-/gl

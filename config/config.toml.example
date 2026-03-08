@@ -31,9 +31,11 @@ max_connections = 5
 
 [maxmind]
 city_enable = false
-city = ""
+city_db_check = false
+city = "./config/GeoLite2-City.mmdb"
 asn_enable = false
-asn = ""
+asn_db_check = false
+asn = "./config/GeoLite2-ASN.mmdb"
 
 [lastfm]
 enable = false
@@ -43,7 +45,6 @@ interval_secs = 10
 
 [logger]
 file_logger_enabled = true
-file_logger_path = "./log"
 
 [email]
 enable = false

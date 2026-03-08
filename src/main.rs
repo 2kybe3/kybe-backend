@@ -1,15 +1,17 @@
 #![warn(clippy::unwrap_used)]
 
+pub mod email;
+pub mod external;
+pub mod maxmind;
+pub mod prometheus;
+pub mod translator;
+
 mod config;
 mod db;
 mod discord_bot;
-pub mod email;
-pub mod external;
 mod logger;
-pub mod maxmind;
 mod notifications;
-pub mod prometheus;
-pub mod translator;
+mod ssh;
 mod webserver;
 
 use crate::config::types::Config;
@@ -135,7 +137,7 @@ async fn main() -> anyhow::Result<()> {
 				true,
 			)
 			.await;
-			unreachable!()
+			unreachable!("the upper function has already exited")
 		}
 	};
 
@@ -168,6 +170,16 @@ async fn main() -> anyhow::Result<()> {
 				)
 				.await;
 			}
+		}));
+	}
+
+	{
+		let notifications = Arc::clone(&notifications);
+		let config = Arc::clone(&config);
+		handles.push(tokio::spawn(async move {
+			if let Err(e) = ssh::init(Arc::clone(&config)).await {
+				notify_error(&notifications, "SSH", format!("init failed: {e}"), true).await;
+			};
 		}));
 	}
 

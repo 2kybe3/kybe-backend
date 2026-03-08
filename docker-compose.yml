@@ -6,9 +6,9 @@ services:
       - "3000:3000"
     restart: unless-stopped
     volumes:
-      - ./backend/config.toml:/opt/backend/config.toml
       - ./backend/logs:/opt/backend/logs
       - ./backend/gl:/opt/backend/gl
+      - ./backend/config:/opt/backend/config
     environment:
       - KYBE_DATABASE_POSTGRES_URL=postgres://kybe:kybe@postgres:5432/kybe_db
     depends_on:

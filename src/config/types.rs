@@ -56,9 +56,11 @@ pub struct DatabaseConfig {
 pub struct MaxMindConfig {
 	// Use City DB and Path to it
 	pub city_enable: bool,
+	pub city_db_check: bool,
 	pub city: String,
 	// Use ASN DB and Path to it
 	pub asn_enable: bool,
+	pub asn_db_check: bool,
 	pub asn: String,
 }
 
@@ -73,7 +75,6 @@ pub struct LastFMConfig {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct LoggerConfig {
 	pub file_logger_enabled: bool,
-	pub file_logger_path: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

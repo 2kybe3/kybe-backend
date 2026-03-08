@@ -12,18 +12,17 @@ use tracing::{error, info, warn};
 pub mod error;
 pub mod types;
 
-const DEFAULT_CONFIG_URL: &str =
-	"https://raw.githubusercontent.com/2kybe3/kybe-backend/refs/heads/main/config.toml.example";
+const DEFAULT_CONFIG_URL: &str = "https://raw.githubusercontent.com/2kybe3/kybe-backend/refs/heads/main/config/config.toml.example";
 
 impl Config {
 	pub async fn init() -> Result<Self, ConfigError> {
 		let args: Vec<String> = env::args().collect();
 		if args.iter().any(|arg| arg == "--generate-example") {
 			let time = Instant::now();
-			info!("Generating config.toml.example");
+			info!("Generating config/config.toml.example");
 			Self::create_local_default().await?;
 			info!(
-				"Generated config.toml.example in {} MS",
+				"Generated config/config.toml.example in {} MS",
 				time.elapsed().as_millis()
 			);
 			std::process::exit(0)
@@ -47,7 +46,7 @@ impl Config {
 			}
 
 			Err(ConfigError::ReadFile(e)) if e.kind() == std::io::ErrorKind::NotFound => {
-				info!("creating default config.toml");
+				info!("creating default config/config.toml");
 				Self::create_default().await?;
 				info!("config created in {} ms", start.elapsed().as_millis());
 				if let Err(e) = Self::load().await {
@@ -57,7 +56,7 @@ impl Config {
 					);
 					std::process::exit(1);
 				} else {
-					info!("Default config.toml created! Please edit");
+					info!("Default config/config.toml created! Please edit");
 					std::process::exit(0);
 				}
 			}
@@ -84,7 +83,7 @@ impl Config {
 	pub async fn load() -> Result<Self, ConfigError> {
 		let path = env::current_dir()
 			.map_err(ConfigError::CurrentDir)?
-			.join("config.toml");
+			.join("config/config.toml");
 		let contents = fs::read_to_string(&path)
 			.await
 			.map_err(ConfigError::ReadFile)?;
@@ -94,11 +93,14 @@ impl Config {
 	pub async fn create_default() -> Result<(), ConfigError> {
 		let path = env::current_dir()
 			.map_err(ConfigError::CurrentDir)?
-			.join("config.toml");
+			.join("config/config.toml");
 
 		let resp = reqwest::get(DEFAULT_CONFIG_URL).await?;
 		let content = resp.text().await?;
 
+		fs::create_dir_all("config")
+			.await
+			.map_err(ConfigError::CreateDir)?;
 		fs::write(path, content)
 			.await
 			.map_err(ConfigError::WriteFile)?;
@@ -108,13 +110,16 @@ impl Config {
 	pub async fn create_local_default() -> Result<(), ConfigError> {
 		let path = env::current_dir()
 			.map_err(ConfigError::CurrentDir)?
-			.join("config.toml.example");
+			.join("config/config.toml.example");
 
 		let default_config = Config::default();
 		let content = toml::to_string_pretty(&default_config).map_err(ConfigError::Serialize)?;
 
 		toml::from_str::<Config>(&content)?;
 
+		fs::create_dir_all("config")
+			.await
+			.map_err(ConfigError::CreateDir)?;
 		fs::write(path, content)
 			.await
 			.map_err(ConfigError::WriteFile)?;
@@ -151,9 +156,11 @@ impl Default for Config {
 			},
 			maxmind: MaxMindConfig {
 				city_enable: false,
-				city: "".into(),
+				city_db_check: false,
+				city: "./config/GeoLite2-City.mmdb".into(),
 				asn_enable: false,
-				asn: "".into(),
+				asn_db_check: false,
+				asn: "./config/GeoLite2-ASN.mmdb".into(),
 			},
 			lastfm: LastFMConfig {
 				enable: false,
@@ -163,7 +170,6 @@ impl Default for Config {
 			},
 			logger: LoggerConfig {
 				file_logger_enabled: true,
-				file_logger_path: Some("./log".into()),
 			},
 			webserver: WebserverConfig {
 				behind_proxy: false,

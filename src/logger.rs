@@ -1,6 +1,6 @@
 use std::io::stdout;
+use tracing::error;
 use tracing::subscriber::DefaultGuard;
-use tracing::{error, warn};
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::fmt::writer::{BoxMakeWriter, MakeWriterExt};
@@ -30,15 +30,10 @@ pub fn init_logger(config: &LoggerConfig, old_logger: DefaultGuard) -> anyhow::R
 	let filter = get_logger_filter();
 
 	let writer: BoxMakeWriter = if config.file_logger_enabled {
-		match &config.file_logger_path {
-			Some(path) if !path.trim().is_empty() => BoxMakeWriter::new(
-				stdout.and(tracing_appender::rolling::daily(path, "kybe_backend.log")),
-			),
-			_ => {
-				warn!("file_logger_enabled but file_logger_path is empty or not set, disabling!");
-				BoxMakeWriter::new(stdout)
-			}
-		}
+		BoxMakeWriter::new(stdout.and(tracing_appender::rolling::daily(
+			"./config/log",
+			"kybe_backend.log",
+		)))
 	} else {
 		BoxMakeWriter::new(stdout)
 	};

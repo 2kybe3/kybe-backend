@@ -11,6 +11,9 @@ pub enum ConfigError {
 	#[error("failed to write default config.toml: {0}")]
 	WriteFile(#[source] std::io::Error),
 
+	#[error("failed to create config dir: {0}")]
+	CreateDir(#[source] std::io::Error),
+
 	#[error("invalid config.toml: {0}")]
 	Parse(#[from] toml::de::Error),
 
