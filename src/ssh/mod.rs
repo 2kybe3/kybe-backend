@@ -359,7 +359,7 @@ fn load_or_generate_key(path: &str) -> anyhow::Result<PrivateKey> {
 	}
 }
 
-const KEY_PATH: &str = "./ssh_host_ed25519";
+const KEY_PATH: &str = "./config/ssh_host_ed25519";
 
 pub async fn init(_config: Arc<config::types::Config>) -> anyhow::Result<()> {
 	let key = load_or_generate_key(KEY_PATH)?;
