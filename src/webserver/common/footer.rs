@@ -11,15 +11,8 @@ pub fn footer(trace_id: Uuid) -> Vec<Objects> {
 		TextBlobBuilder::new("           ")
 			.style(Style::new().fg(Color::Black).bg(Color::Black))
 			.into(),
-		TextBlobBuilder::new(" Trace ID: ")
-			.style(Style::new().fg(Color::BrightBlack))
-			.into(),
-		TextBlobBuilder::new(format!("{}\n", trace_id)).into(),
-		TextBlobBuilder::new("           ")
-			.style(Style::new().fg(Color::BrightRed).bg(Color::BrightRed))
-			.into(),
 		TextBlobBuilder::new(" Version: ")
-			.style(Style::new().fg(Color::BrightRed))
+			.style(Style::new().fg(Color::BrightBlack))
 			.into(),
 		TextBlobBuilder::new(format!("{}\n", crate::GIT_SHA.to_owned()))
 			.link_to(
@@ -30,6 +23,13 @@ pub fn footer(trace_id: Uuid) -> Vec<Objects> {
 				.into(),
 			)
 			.into(),
+		TextBlobBuilder::new("           ")
+			.style(Style::new().fg(Color::BrightRed).bg(Color::BrightRed))
+			.into(),
+		TextBlobBuilder::new(" Trace ID: ")
+			.style(Style::new().fg(Color::BrightRed))
+			.into(),
+		TextBlobBuilder::new(format!("{}\n", trace_id)).into(),
 		TextBlobBuilder::new("           ")
 			.style(Style::new().fg(Color::Yellow).bg(Color::Yellow))
 			.into(),
