@@ -4,6 +4,7 @@ services:
     container_name: kybe-backend
     ports:
       - "3000:3000"
+      - "2222:2222"
     restart: unless-stopped
     volumes:
       - ./backend/logs:/opt/backend/logs
