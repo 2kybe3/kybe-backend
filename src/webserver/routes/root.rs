@@ -3,7 +3,6 @@ use std::sync::Arc;
 use axum::{
 	Extension,
 	extract::State,
-	http::HeaderMap,
 	response::{Html, IntoResponse},
 };
 use reqwest::StatusCode;
@@ -13,7 +12,7 @@ use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
 	external::lastfm,
 	webserver::{
-		WebServerState, common,
+		RequestContext, WebServerState, common,
 		render::{
 			Objects, Page, Theme,
 			builders::{CodeBlockBuilder, TextBlobBuilder},
@@ -23,14 +22,9 @@ use crate::{
 
 pub async fn root(
 	State(state): State<WebServerState>,
-	headers: HeaderMap,
 	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
+	Extension(ctx): Extension<RequestContext>,
 ) -> impl IntoResponse {
-	let user_agent = headers
-		.get(axum::http::header::USER_AGENT)
-		.and_then(|v| v.to_str().ok())
-		.map(|s| s.to_string());
-
 	let mut trace = trace.lock().await;
 	let theme = Theme::default();
 
@@ -238,20 +232,14 @@ pub async fn root(
 
 	let page = Page::from_iter(page);
 
-	let user_agent = user_agent.unwrap_or_default().to_lowercase();
-	let is_cli = user_agent.contains("curl");
-	let result = if is_cli {
-		page.render_ansi()
-	} else {
-		page.render_html_page("kybe - root", &state.config.webserver.umami)
-	};
+	let (is_html, result) = page.render(&ctx.user_agent, "/", &state.config.webserver.umami);
 
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
 
-	if is_cli {
-		(StatusCode::OK, result).into_response()
-	} else {
+	if is_html {
 		(StatusCode::OK, Html(result)).into_response()
+	} else {
+		(StatusCode::OK, result).into_response()
 	}
 }

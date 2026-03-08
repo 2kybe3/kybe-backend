@@ -25,16 +25,12 @@ pub async fn fallback_404(
 			.into(),
 	]);
 
-	let is_cli = ctx.user_agent.contains("curl");
-	let result = if is_cli {
-		page.render_ansi()
-	} else {
-		page.render_html_page("kybe - 404", &state.config.webserver.umami)
-	};
+	let (is_html, result) =
+		page.render(&ctx.user_agent, "/dev/null", &state.config.webserver.umami);
 
-	if is_cli {
-		(StatusCode::NOT_FOUND, result).into_response()
-	} else {
+	if is_html {
 		(StatusCode::NOT_FOUND, Html(result)).into_response()
+	} else {
+		(StatusCode::NOT_FOUND, result).into_response()
 	}
 }

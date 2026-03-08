@@ -3,4 +3,5 @@
 /config/gl
 /config/log
 /config/config.toml
+/config/ssh_host_ed25519
 /backend

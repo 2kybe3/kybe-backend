@@ -1,7 +1,6 @@
 use axum::{
 	Extension,
 	extract::State,
-	http::HeaderMap,
 	response::{Html, IntoResponse},
 };
 use reqwest::StatusCode;
@@ -11,7 +10,7 @@ use tokio::sync::Mutex;
 use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
 	webserver::{
-		WebServerState, common,
+		RequestContext, WebServerState, common,
 		render::{
 			Page, Theme,
 			builders::{CodeBlockBuilder, TextBlobBuilder},
@@ -21,14 +20,9 @@ use crate::{
 
 pub async fn pgp(
 	State(state): State<WebServerState>,
-	headers: HeaderMap,
 	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
+	Extension(ctx): Extension<RequestContext>,
 ) -> impl IntoResponse {
-	let user_agent = headers
-		.get(axum::http::header::USER_AGENT)
-		.and_then(|v| v.to_str().ok())
-		.map(|s| s.to_string());
-
 	let theme = Theme::default();
 
 	let mut page = vec![
@@ -56,21 +50,15 @@ pub async fn pgp(
 
 	let page = Page::from_iter(page);
 
-	let user_agent = user_agent.unwrap_or_default().to_lowercase();
-	let is_cli = user_agent.contains("curl");
-	let result = if is_cli {
-		page.render_ansi()
-	} else {
-		page.render_html_page("kybe - pgp", &state.config.webserver.umami)
-	};
+	let (is_html, result) = page.render(&ctx.user_agent, "/pgp", &state.config.webserver.umami);
 
 	let mut trace = trace.lock().await;
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
 
-	if is_cli {
-		(StatusCode::OK, result).into_response()
-	} else {
+	if is_html {
 		(StatusCode::OK, Html(result)).into_response()
+	} else {
+		(StatusCode::OK, result).into_response()
 	}
 }

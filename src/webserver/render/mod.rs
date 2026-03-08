@@ -9,6 +9,8 @@ use std::collections::HashMap;
 pub use color::{Color, Style};
 pub use theme::Theme;
 
+use crate::config::types::UmamiConfig;
+
 pub struct LinkTo {
 	link: String,
 	seperator_style: Option<Style>,
@@ -71,6 +73,15 @@ pub struct Page {
 impl Page {
 	pub fn new(objects: Vec<Object>) -> Page {
 		Page { objects }
+	}
+
+	// (is_html, data)
+	pub fn render(self, user_agent: &str, title: &str, umami: &UmamiConfig) -> (bool, String) {
+		if user_agent.contains("curl") {
+			(false, self.render_ansi())
+		} else {
+			(true, self.render_html_page(title, umami))
+		}
 	}
 }
 
