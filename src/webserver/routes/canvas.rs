@@ -66,7 +66,7 @@ pub async fn canvas(
 	};
 
 	let user_agent = user_agent.unwrap_or_default().to_lowercase();
-	let is_cli = user_agent.contains("curl") || user_agent.contains("lynx");
+	let is_cli = user_agent.contains("curl");
 	let result = if is_cli {
 		page.render_ansi()
 	} else {

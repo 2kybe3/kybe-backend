@@ -25,7 +25,7 @@ pub async fn fallback_404(
 			.into(),
 	]);
 
-	let is_cli = ctx.user_agent.contains("curl") || ctx.user_agent.contains("lynx");
+	let is_cli = ctx.user_agent.contains("curl");
 	let result = if is_cli {
 		page.render_ansi()
 	} else {
