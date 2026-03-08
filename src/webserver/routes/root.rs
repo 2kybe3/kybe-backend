@@ -205,6 +205,16 @@ pub async fn root(
 			.into(),
 		theme
 			.label(
+				"Now Listening",
+				vec![
+					theme
+						.link_colored("https://kybe.xyz/now\n", "https://kybe.xyz/now")
+						.into(),
+				],
+			)
+			.into(),
+		theme
+			.label(
 				"Canvas",
 				vec![
 					theme
@@ -219,16 +229,6 @@ pub async fn root(
 				vec![
 					theme
 						.link_colored("https://kybe.xyz/ip\n", "https://kybe.xyz/ip")
-						.into(),
-				],
-			)
-			.into(),
-		theme
-			.label(
-				"Now Listening",
-				vec![
-					theme
-						.link_colored("https://kybe.xyz/now\n", "https://kybe.xyz/now")
 						.into(),
 				],
 			)
