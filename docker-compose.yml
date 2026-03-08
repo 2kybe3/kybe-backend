@@ -7,8 +7,6 @@ services:
       - "2222:2222"
     restart: unless-stopped
     volumes:
-      - ./backend/logs:/opt/backend/logs
-      - ./backend/gl:/opt/backend/gl
       - ./backend/config:/opt/backend/config
     environment:
       - KYBE_DATABASE_POSTGRES_URL=postgres://kybe:kybe@postgres:5432/kybe_db

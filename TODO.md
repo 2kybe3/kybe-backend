@@ -1,1 +1,2 @@
 - allow code titles to have newlines
+- improve errors if the mm db file is missing
