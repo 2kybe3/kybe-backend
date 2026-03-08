@@ -17,6 +17,7 @@ COPY assets ./assets
 COPY migrations ./migrations
 COPY Cargo.toml Cargo.lock ./
 COPY static/pgp.txt ./static/pgp.txt
+COPY static/ident.txt ./static/ident.txt
 
 RUN cargo build --release
 
