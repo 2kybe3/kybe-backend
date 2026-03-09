@@ -45,6 +45,13 @@ pub async fn pgp(
 		])
 		.title("IPv6 required")
 		.into(),
+		CodeBlockBuilder::new(vec![
+			TextBlobBuilder::new("$ ").copyable(false).into(),
+			TextBlobBuilder::new("resolvectl openpgp kybe@kybe.xyz --raw=payload | gpg --import")
+				.into(),
+		])
+		.title("RFC7929")
+		.into(),
 	];
 	page.append(&mut common::footer::footer(trace.lock().await.trace_id));
 
