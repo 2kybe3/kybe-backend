@@ -173,8 +173,12 @@ impl Default for Config {
 			},
 			webserver: WebserverConfig {
 				behind_proxy: false,
+				proxy_ip: Some("10.0.4.2".into()),
 				api_token: "CHANGE_ME".into(),
-				trust_proxy_header: Some("X-Forwarded-For".into()),
+				proxy_header: Some("X-Forwarded-For".into()),
+				behind_i2p: false,
+				i2p_ip: Some("".into()),
+				i2p_header: Some("X-I2P-DestHash".into()),
 				umami: UmamiConfig {
 					script_path: Some("https://kybe.xyz/script.js".into()),
 					id: Some("umami-id".into()),

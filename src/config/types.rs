@@ -80,8 +80,12 @@ pub struct LoggerConfig {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct WebserverConfig {
 	pub behind_proxy: bool,
+	pub proxy_ip: Option<String>,
 	pub api_token: String,
-	pub trust_proxy_header: Option<String>,
+	pub proxy_header: Option<String>,
+	pub behind_i2p: bool,
+	pub i2p_ip: Option<String>,
+	pub i2p_header: Option<String>,
 	pub umami: UmamiConfig,
 }
 

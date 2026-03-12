@@ -2,7 +2,7 @@ pub mod common;
 pub mod render;
 mod routes;
 
-use crate::config::types::Config;
+use crate::config::types::{Config, WebserverConfig};
 use crate::db::Database;
 use crate::db::website_traces::WebsiteTrace;
 use crate::external::lastfm::LastFM;
@@ -41,71 +41,84 @@ struct WebServerState {
 	lastfm: Option<Arc<LastFM>>,
 }
 
-pub trait IpExtractionConfig {
-	fn behind_proxy(&self) -> bool;
-	fn trust_proxy_header(&self) -> String;
+#[derive(Clone, Debug, Hash, PartialEq, PartialOrd, Eq, Serialize, Deserialize)]
+pub struct Ident {
+	pub i2p: bool,
+	pub data: String,
+	pub ipaddr: Option<IpAddr>,
 }
 
-impl IpExtractionConfig for Config {
-	fn behind_proxy(&self) -> bool {
-		self.webserver.behind_proxy
-	}
-
-	fn trust_proxy_header(&self) -> String {
-		self.webserver
-			.trust_proxy_header
-			.clone()
-			.unwrap_or("X-Forwarded-For".into())
-	}
-}
-
-impl IpExtractionConfig for &ClientIpKeyExtractor {
-	fn behind_proxy(&self) -> bool {
-		self.behind_proxy
-	}
-
-	fn trust_proxy_header(&self) -> String {
-		self.trust_proxy_header.clone()
-	}
-}
-
-fn client_ip<T: IpExtractionConfig>(
+// TODO: this config mess could be cleaned up
+fn client_ip(
 	headers: &HeaderMap,
 	remote_addr: SocketAddr,
-	config: &T,
-) -> Option<IpAddr> {
-	if config.behind_proxy() {
+	config: &ClientIpKeyExtractor,
+) -> Option<Ident> {
+	if config.behind_proxy && remote_addr.ip() == config.proxy_ip.expect("proxy_ip not set") {
 		headers
-			.get(config.trust_proxy_header())
-			.and_then(|v| v.to_str().ok())
-			.and_then(|s| {
-				s.split(',')
-					.next()
-					.map(str::trim)
-					.and_then(|ip| ip.parse::<IpAddr>().ok())
+			.get(
+				config
+					.proxy_header
+					.clone()
+					.expect("trust_proxy_header not set"),
+			)
+			.and_then(|v| {
+				v.to_str().ok().map(String::from).map(|s| Ident {
+					i2p: false,
+					data: s.clone(),
+					ipaddr: s.parse().ok(),
+				})
+			})
+	} else if config.behind_i2p && remote_addr.ip() == config.i2p_ip.expect("i2p_ip not set") {
+		headers
+			.get(config.i2p_header.clone().expect("i2p_header not set"))
+			.and_then(|v| {
+				v.to_str().ok().map(String::from).map(|s| Ident {
+					i2p: true,
+					data: s,
+					ipaddr: None,
+				})
 			})
 	} else {
-		Some(remote_addr.ip())
+		Some(Ident {
+			i2p: false,
+			data: remote_addr.to_string(),
+			ipaddr: Some(remote_addr.ip()),
+		})
 	}
 }
 
 #[derive(Clone)]
 pub struct ClientIpKeyExtractor {
-	behind_proxy: bool,
-	trust_proxy_header: String,
+	pub behind_proxy: bool,
+	pub proxy_ip: Option<IpAddr>,
+	pub proxy_header: Option<String>,
+	pub behind_i2p: bool,
+	pub i2p_ip: Option<IpAddr>,
+	pub i2p_header: Option<String>,
 }
 
 impl ClientIpKeyExtractor {
-	pub fn new(behind_proxy: bool, trust_proxy_header: String) -> Self {
+	pub fn new(config: &WebserverConfig) -> Self {
 		Self {
-			behind_proxy,
-			trust_proxy_header,
+			behind_proxy: config.behind_proxy,
+			proxy_ip: config
+				.proxy_ip
+				.clone()
+				.map(|p| p.parse().expect("invalid proxy IP")),
+			proxy_header: config.proxy_header.clone(),
+			behind_i2p: config.behind_i2p,
+			i2p_ip: config
+				.i2p_ip
+				.clone()
+				.map(|p| p.parse().expect("invalid I2P IP")),
+			i2p_header: config.i2p_header.clone(),
 		}
 	}
 }
 
 impl KeyExtractor for ClientIpKeyExtractor {
-	type Key = IpAddr;
+	type Key = Ident;
 
 	fn extract<T>(&self, req: &Request<T>) -> Result<Self::Key, GovernorError> {
 		let headers = req.headers();
@@ -115,10 +128,10 @@ impl KeyExtractor for ClientIpKeyExtractor {
 			.map(|ci| ci.0)
 			.ok_or_else(|| GovernorError::UnableToExtractKey)?;
 
-		let ip = client_ip(headers, connect_info, &self)
+		let ident = client_ip(headers, connect_info, self)
 			.ok_or_else(|| GovernorError::UnableToExtractKey)?;
 
-		Ok(ip)
+		Ok(ident)
 	}
 }
 
@@ -150,7 +163,7 @@ async fn api_auth_middleware(
 #[derive(Clone, Serialize, Deserialize)]
 pub struct RequestContext {
 	pub user_agent: String,
-	pub ip: IpAddr,
+	pub ident: Ident,
 	pub mm_asn: Option<AsnMin>,
 	pub mm_city: Option<CityMin>,
 }
@@ -170,7 +183,11 @@ async fn user_context_middleware(
 		.map(|s| s.to_string())
 		.unwrap_or_default();
 
-	let ip = match client_ip(&headers, remote_addr, &*state.config) {
+	let ident = match client_ip(
+		&headers,
+		remote_addr,
+		&ClientIpKeyExtractor::new(&state.config.webserver),
+	) {
 		Some(ip) => ip,
 		None => {
 			error!("error getting client_ip in middleware (most likely header missing)");
@@ -182,25 +199,36 @@ async fn user_context_middleware(
 		}
 	};
 
-	let mm = state.mm.lookup(ip);
+	let ctx = if !ident.i2p
+		&& let Some(ip) = ident.ipaddr
+	{
+		let mm = state.mm.lookup(ip);
 
-	if let Err(ref e) = mm {
-		warn!("MaxMind lookup failed for {ip} {e:?}");
-	}
+		if let Err(ref e) = mm {
+			warn!("MaxMind lookup failed for {ip} {e:?}");
+		}
 
-	let ctx = match mm {
-		Ok(s) => RequestContext {
+		match mm {
+			Ok(s) => RequestContext {
+				user_agent,
+				ident,
+				mm_city: s.city,
+				mm_asn: s.asn,
+			},
+			Err(_) => RequestContext {
+				user_agent,
+				ident,
+				mm_city: None,
+				mm_asn: None,
+			},
+		}
+	} else {
+		RequestContext {
 			user_agent,
-			ip,
-			mm_city: s.city,
-			mm_asn: s.asn,
-		},
-		Err(_) => RequestContext {
-			user_agent,
-			ip,
+			ident,
 			mm_city: None,
 			mm_asn: None,
-		},
+		}
 	};
 
 	request.extensions_mut().insert(ctx);
@@ -224,7 +252,10 @@ async fn trace_middleware(
 		request.uri().path(),
 		request.uri().query(),
 		ctx.user_agent.clone(),
-		ctx.ip.to_string(),
+		ctx.ident
+			.ipaddr
+			.map(|ip| ip.to_string())
+			.unwrap_or_default(),
 		serde_json::json!(ctx.mm_asn),
 		serde_json::json!(ctx.mm_city),
 	)));
@@ -253,14 +284,7 @@ pub fn make_limiter(
 		GovernorConfigBuilder::default()
 			.per_millisecond(replentish_after_ms)
 			.burst_size(burst_size)
-			.key_extractor(ClientIpKeyExtractor::new(
-				config.webserver.behind_proxy,
-				config
-					.webserver
-					.trust_proxy_header
-					.clone()
-					.unwrap_or("X-Forwarded-For".into()),
-			))
+			.key_extractor(ClientIpKeyExtractor::new(&config.webserver))
 			.finish()
 			.ok_or(anyhow!("governor init failed"))?,
 	))
