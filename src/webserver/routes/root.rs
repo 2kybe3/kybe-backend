@@ -124,11 +124,7 @@ pub async fn root(
 		theme
 			.label(
 				"PGP",
-				vec![
-					theme
-						.link_colored("https://kybe.xyz/pgp\n", "https://kybe.xyz/pgp")
-						.into(),
-				],
+				vec![theme.link_colored("https://kybe.xyz/pgp\n", "/pgp").into()],
 			)
 			.into(),
 		theme
@@ -192,7 +188,7 @@ pub async fn root(
 				"Identity",
 				vec![
 					theme
-						.link_colored("https://kybe.xyz/ident.txt\n", "https://kybe.xyz/ident.txt")
+						.link_colored("https://kybe.xyz/ident.txt\n", "/ident.txt")
 						.into(),
 				],
 			)
@@ -200,11 +196,7 @@ pub async fn root(
 		theme
 			.label(
 				"Now Listening",
-				vec![
-					theme
-						.link_colored("https://kybe.xyz/now\n", "https://kybe.xyz/now")
-						.into(),
-				],
+				vec![theme.link_colored("https://kybe.xyz/now\n", "/now").into()],
 			)
 			.into(),
 		theme
@@ -212,7 +204,7 @@ pub async fn root(
 				"Canvas",
 				vec![
 					theme
-						.link_colored("https://kybe.xyz/canvas\n", "https://kybe.xyz/canvas")
+						.link_colored("https://kybe.xyz/canvas\n", "/canvas")
 						.into(),
 				],
 			)
@@ -220,11 +212,7 @@ pub async fn root(
 		theme
 			.label(
 				"IP",
-				vec![
-					theme
-						.link_colored("https://kybe.xyz/ip\n", "https://kybe.xyz/ip")
-						.into(),
-				],
+				vec![theme.link_colored("https://kybe.xyz/ip\n", "/ip").into()],
 			)
 			.into(),
 	]);
