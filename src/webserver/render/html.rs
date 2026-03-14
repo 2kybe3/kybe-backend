@@ -140,6 +140,16 @@ impl Page {
 		output
 	}
 
+	fn render_html_image(url: &str, alt: &str, width: i64, height: i64) -> String {
+		format!(
+			"<img src=\"{}\" alt=\"{}\" width=\"{}\" height=\"{}\">",
+			url,
+			html_escape::encode_text(&alt),
+			width,
+			height,
+		)
+	}
+
 	fn render_html_canvas(data: &str, color_mapping: &ColorMapping) -> Option<String> {
 		let mut output = String::new();
 		let mut buffer = String::new();
@@ -200,6 +210,12 @@ impl Page {
 					true,
 				),
 			),
+			super::Object::Image {
+				url,
+				alt,
+				width,
+				height,
+			} => Self::render_html_image(url, alt, *width, *height),
 		}
 	}
 

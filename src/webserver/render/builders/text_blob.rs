@@ -56,6 +56,12 @@ impl From<TextBlobBuilder> for Object {
 	}
 }
 
+impl From<String> for TextBlobBuilder {
+	fn from(text: String) -> Self {
+		Self::new(text)
+	}
+}
+
 impl From<&str> for TextBlobBuilder {
 	fn from(text: &str) -> Self {
 		Self::new(text)

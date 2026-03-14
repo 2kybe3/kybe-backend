@@ -9,7 +9,7 @@ use crate::external::lastfm::LastFM;
 use crate::maxmind::MaxMind;
 use crate::maxmind::asn::AsnMin;
 use crate::maxmind::city::CityMin;
-use crate::webserver::routes::{canvas, fallback_404, ip, pgp, root};
+use crate::webserver::routes::{canvas, fallback_404, ip, nix, pgp, root};
 use crate::webserver::routes::{metrics, now_playing};
 use anyhow::anyhow;
 use axum::extract::{ConnectInfo, Request, State};
@@ -162,10 +162,23 @@ async fn api_auth_middleware(
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct RequestContext {
+	pub hostname: String,
+	pub https: bool,
 	pub user_agent: String,
 	pub ident: Ident,
 	pub mm_asn: Option<AsnMin>,
 	pub mm_city: Option<CityMin>,
+}
+
+impl RequestContext {
+	pub fn url(&self, url: &str) -> String {
+		format!(
+			"{}://{}{}",
+			if self.https { "https" } else { "http" },
+			self.hostname,
+			url
+		)
+	}
 }
 
 async fn user_context_middleware(
@@ -181,6 +194,18 @@ async fn user_context_middleware(
 		.get(axum::http::header::USER_AGENT)
 		.and_then(|v| v.to_str().ok())
 		.map(|s| s.to_string())
+		.unwrap_or_default();
+
+	let hostname = headers
+		.get(axum::http::header::HOST)
+		.and_then(|v| v.to_str().ok())
+		.map(|s| s.to_string())
+		.unwrap_or_default();
+
+	let https = headers
+		.get("X-Forwarded-Proto")
+		.and_then(|v| v.to_str().ok())
+		.map(|s| s == "https")
 		.unwrap_or_default();
 
 	let ident = match client_ip(
@@ -199,7 +224,7 @@ async fn user_context_middleware(
 		}
 	};
 
-	let ctx = if !ident.i2p
+	let (mm_city, mm_asn) = if !ident.i2p
 		&& let Some(ip) = ident.ipaddr
 	{
 		let mm = state.mm.lookup(ip);
@@ -208,27 +233,18 @@ async fn user_context_middleware(
 			warn!("MaxMind lookup failed for {ip} {e:?}");
 		}
 
-		match mm {
-			Ok(s) => RequestContext {
-				user_agent,
-				ident,
-				mm_city: s.city,
-				mm_asn: s.asn,
-			},
-			Err(_) => RequestContext {
-				user_agent,
-				ident,
-				mm_city: None,
-				mm_asn: None,
-			},
-		}
+		mm.map(|mm| (mm.city, mm.asn)).unwrap_or_default()
 	} else {
-		RequestContext {
-			user_agent,
-			ident,
-			mm_city: None,
-			mm_asn: None,
-		}
+		Default::default()
+	};
+
+	let ctx = RequestContext {
+		hostname,
+		https,
+		user_agent,
+		ident,
+		mm_asn,
+		mm_city,
 	};
 
 	request.extensions_mut().insert(ctx);
@@ -344,6 +360,7 @@ pub async fn init_webserver(
 		.route("/", get(root::root))
 		.route("/ip", get(ip::ip))
 		.route("/now", get(now_playing::now_playing))
+		.route("/nix", get(nix::nix))
 		.route("/pgp", get(pgp::pgp))
 		.route("/canvas", get(canvas::canvas))
 		.layer(root_route_service);

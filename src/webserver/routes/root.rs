@@ -98,20 +98,6 @@ pub async fn root(
 			.into(),
 		theme
 			.label(
-				"nix-dotfiles",
-				vec![
-					theme
-						.link_colored(
-							"https://codeberg.org/kybe/nix-dotfiles",
-							"https://codeberg.org/kybe/nix-dotfiles",
-						)
-						.into(),
-					theme.comment(" (i use nix btw)\n").into(),
-				],
-			)
-			.into(),
-		theme
-			.label(
 				"kybe-backend",
 				vec![
 					theme
@@ -128,7 +114,11 @@ pub async fn root(
 		theme
 			.label(
 				"PGP",
-				vec![theme.link_colored("https://kybe.xyz/pgp\n", "/pgp").into()],
+				vec![
+					theme
+						.link_colored(ctx.url("/pgp\n"), &ctx.url("/pgp"))
+						.into(),
+				],
 			)
 			.into(),
 		theme
@@ -189,10 +179,20 @@ pub async fn root(
 		theme.title("\nOther Endpoints:\n\n").into(),
 		theme
 			.label(
+				"Nix Config",
+				vec![
+					theme
+						.link_colored(ctx.url("/nix\n"), &ctx.url("/nix"))
+						.into(),
+				],
+			)
+			.into(),
+		theme
+			.label(
 				"Identity",
 				vec![
 					theme
-						.link_colored("https://kybe.xyz/ident.txt\n", "/ident.txt")
+						.link_colored(ctx.url("/ident.txt\n"), &ctx.url("/ident.txt"))
 						.into(),
 				],
 			)
@@ -200,7 +200,11 @@ pub async fn root(
 		theme
 			.label(
 				"Now Listening",
-				vec![theme.link_colored("https://kybe.xyz/now\n", "/now").into()],
+				vec![
+					theme
+						.link_colored(ctx.url("/now\n"), &ctx.url("/now"))
+						.into(),
+				],
 			)
 			.into(),
 		theme
@@ -208,7 +212,7 @@ pub async fn root(
 				"Canvas",
 				vec![
 					theme
-						.link_colored("https://kybe.xyz/canvas\n", "/canvas")
+						.link_colored(ctx.url("/canvas\n"), &ctx.url("/canvas"))
 						.into(),
 				],
 			)
@@ -216,7 +220,7 @@ pub async fn root(
 		theme
 			.label(
 				"IP",
-				vec![theme.link_colored("https://kybe.xyz/ip\n", "/ip").into()],
+				vec![theme.link_colored(ctx.url("/ip\n"), &ctx.url("/ip")).into()],
 			)
 			.into(),
 	]);

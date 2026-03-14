@@ -1,5 +1,5 @@
 use crate::webserver::render::{
-	ColorMapping, LinkTo, Object, Page,
+	ColorMapping, LinkTo, Object, Page, Theme,
 	color::{Color, Style},
 };
 
@@ -148,6 +148,10 @@ impl Page {
 		output
 	}
 
+	fn render_ansi_image(url: &str, alt: &str) -> String {
+		Page::render_ansi_object(&Theme::default().link_colored(alt, url).into())
+	}
+
 	fn render_ansi_canvas(data: &str, color_mapping: &ColorMapping) -> Option<String> {
 		let mut output = String::new();
 		let mut buffer = String::new();
@@ -209,6 +213,12 @@ impl Page {
 					&None,
 				),
 			),
+			super::Object::Image {
+				url,
+				alt,
+				width: _,
+				height: _,
+			} => Self::render_ansi_image(url, alt),
 		}
 	}
 

@@ -1,4 +1,3 @@
-#[allow(unused)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Color {
 	#[default]

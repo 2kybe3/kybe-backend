@@ -1,9 +1,11 @@
 mod canvas;
 mod code_block;
+mod image;
 mod link_to;
 mod text_blob;
 
 pub use canvas::{COLOR_MAPPING, CanvasBuilder};
 pub use code_block::CodeBlockBuilder;
+pub use image::ImageBuilder;
 pub use link_to::LinkToBuilder;
 pub use text_blob::TextBlobBuilder;

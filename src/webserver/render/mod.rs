@@ -35,6 +35,12 @@ pub enum Object {
 		data: String,
 		color_mapping: ColorMapping,
 	},
+	Image {
+		url: String,
+		alt: String,
+		width: i64,
+		height: i64,
+	},
 }
 
 pub enum Objects {

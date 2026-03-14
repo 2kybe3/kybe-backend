@@ -7,7 +7,6 @@ pub struct Theme {
 	pub title: Style,
 	pub subtitle: Style,
 	pub label: Style,
-	#[allow(unused)]
 	pub text: Style,
 	pub link: Style,
 	pub link_separator: Style,
