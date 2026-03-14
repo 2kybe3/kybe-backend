@@ -45,11 +45,7 @@ pub async fn nix(
 
 	let page = Page::from_iter(page);
 
-	let (is_html, result) = page.render(
-		&ctx.user_agent,
-		"/dev/canvas",
-		&state.config.webserver.umami,
-	);
+	let (is_html, result) = page.render(&ctx.user_agent, "/dev/nix", &state.config.webserver.umami);
 
 	let mut trace = trace.lock().await;
 	trace.request_status = RequestStatus::Success;
