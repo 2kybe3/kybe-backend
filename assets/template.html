@@ -6,28 +6,27 @@
     <meta name="description" content="my (2kybe3, kybe, kybe236) site">
     <title>{{title}}</title>
     <style>
-        * {
-          white-space: nowrap;
-          white-space: pre;
-          overflow: auto;
-        }
         body {
             font-family: "DepartureMono", sans-serif;
             font-size: 11px;
 
             background-color: #1e1e1e;
             color: #e5e5e5;
-            white-space: pre-wrap;
 
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+
+            height: 100vh;
             margin: 0;
+
+            white-space: pre;
         }
         main {
             margin: 5px;
             padding-bottom: 5px;
+            overflow-x: auto;
+            overflow-y: hidden;
         }
         pre {
             position: relative;
@@ -37,9 +36,6 @@
             border-radius: 4px;
             overflow-x: auto;
             margin-top: 1em;
-        }
-        pre {
-            style: margin-top: 4px;
             border-color: #11a8cd;
         }
         code {
