@@ -88,8 +88,8 @@ pub async fn root(
 				vec![
 					theme
 						.link_colored(
-							"https://github.com/2kybe3/cheat-sh",
-							"https://github.com/2kybe3/cheat-sh",
+							"https://git.kybe.xyz/2kybe3/cheat-sh",
+							"https://git.kybe.xyz/2kybe3/cheat-sh",
 						)
 						.into(),
 					theme.comment(" (a tiny wrapper for cheat.sh)\n").into(),
@@ -102,8 +102,8 @@ pub async fn root(
 				vec![
 					theme
 						.link_colored(
-							"https://github.com/2kybe3/kybe-backend",
-							"https://github.com/2kybe3/kybe-backend",
+							"https://git.kybe.xyz/2kybe3/kybe-backend",
+							"https://git.kybe.xyz/2kybe3/kybe-backend",
 						)
 						.into(),
 					theme.comment(" (this site)\n").into(),
@@ -144,6 +144,16 @@ pub async fn root(
 		theme.title("\nOther Platforms:\n\n").into(),
 		theme
 			.label(
+				"Git",
+				vec![
+					theme
+						.link_colored("https://git.kybe.xyz/\n", "https://git.kybe.xyz/")
+						.into(),
+				],
+			)
+			.into(),
+		theme
+			.label(
 				"Github",
 				vec![
 					theme
@@ -162,16 +172,6 @@ pub async fn root(
 				vec![
 					theme
 						.link_colored("https://codeberg.org/kybe\n", "https://codeberg.org/kybe")
-						.into(),
-				],
-			)
-			.into(),
-		theme
-			.label(
-				"cgit",
-				vec![
-					theme
-						.link_colored("https://git.kybe.xyz/\n", "https://git.kybe.xyz/")
 						.into(),
 				],
 			)
