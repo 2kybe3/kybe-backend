@@ -1,7 +1,7 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
-	Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, EmailConfig, GotifyConfig,
-	LastFMConfig, LoggerConfig, MaxMindConfig, NotificationConfig, TranslatorConfig, UmamiConfig,
+	Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, GotifyConfig, LastFMConfig,
+	LoggerConfig, MaxMindConfig, NotificationConfig, TranslatorConfig, UmamiConfig,
 	WebserverConfig,
 };
 use std::env;
@@ -183,13 +183,6 @@ impl Default for Config {
 					script_path: Some("https://kybe.xyz/script.js".into()),
 					id: Some("umami-id".into()),
 				},
-			},
-			email: EmailConfig {
-				enable: false,
-				server: "mail.kybe.xyz".into(),
-				port: 587,
-				email: "system@kybe.xyz".into(),
-				password: "".into(),
 			},
 		}
 	}

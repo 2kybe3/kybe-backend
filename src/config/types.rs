@@ -9,7 +9,6 @@ pub struct Config {
 	pub maxmind: MaxMindConfig,
 	pub lastfm: LastFMConfig,
 	pub logger: LoggerConfig,
-	pub email: EmailConfig,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -93,13 +92,4 @@ pub struct WebserverConfig {
 pub struct UmamiConfig {
 	pub script_path: Option<String>,
 	pub id: Option<String>,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct EmailConfig {
-	pub enable: bool,
-	pub email: String,
-	pub password: String,
-	pub server: String,
-	pub port: u16,
 }

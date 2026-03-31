@@ -49,10 +49,3 @@ interval_secs = 10
 
 [logger]
 file_logger_enabled = true
-
-[email]
-enable = false
-email = "system@kybe.xyz"
-password = ""
-server = "mail.kybe.xyz"
-port = 587

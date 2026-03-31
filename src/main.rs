@@ -1,6 +1,5 @@
 #![warn(clippy::unwrap_used)]
 
-pub mod email;
 pub mod external;
 pub mod maxmind;
 pub mod prometheus;
@@ -16,7 +15,6 @@ mod webserver;
 
 use crate::config::types::Config;
 use crate::db::Database;
-use crate::email::EmailService;
 use crate::external::lastfm::LastFM;
 use crate::maxmind::MaxMind;
 use crate::notifications::{Notification, Notifications};
@@ -144,13 +142,6 @@ async fn main() -> anyhow::Result<()> {
 	let args: Vec<String> = env::args().collect();
 	if args.iter().any(|arg| arg == "--sync-maxmind") {
 		database.sync_maxmind(Arc::clone(&mm)).await?;
-	}
-
-	#[allow(unused)]
-	let mut email_service = None;
-	#[allow(unused)]
-	if config.email.enable {
-		email_service = Some(Arc::new(EmailService::new(&config.email)));
 	}
 
 	if config.discord_bot.enable {
