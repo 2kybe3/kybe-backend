@@ -179,16 +179,6 @@ pub async fn root(
 		theme.title("\nOther Endpoints:\n\n").into(),
 		theme
 			.label(
-				"Nix Config",
-				vec![
-					theme
-						.link_colored(ctx.url("/nix\n"), &ctx.url("/nix"))
-						.into(),
-				],
-			)
-			.into(),
-		theme
-			.label(
 				"Identity",
 				vec![
 					theme
@@ -203,6 +193,16 @@ pub async fn root(
 				vec![
 					theme
 						.link_colored(ctx.url("/now\n"), &ctx.url("/now"))
+						.into(),
+				],
+			)
+			.into(),
+		theme
+			.label(
+				"Nix Config",
+				vec![
+					theme
+						.link_colored(ctx.url("/nix\n"), &ctx.url("/nix"))
 						.into(),
 				],
 			)
