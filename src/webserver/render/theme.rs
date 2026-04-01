@@ -10,6 +10,7 @@ pub struct Theme {
 	pub text: Style,
 	pub link: Style,
 	pub link_separator: Style,
+	#[allow(unused)]
 	pub comment: Style,
 }
 
@@ -45,6 +46,7 @@ impl Theme {
 		text.into().style(self.text)
 	}
 
+	#[allow(unused)]
 	pub fn comment(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
 		text.into().style(self.comment)
 	}

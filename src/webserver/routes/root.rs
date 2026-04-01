@@ -84,15 +84,15 @@ pub async fn root(
 		theme.title("\nProjects:\n\n").into(),
 		theme
 			.label(
-				"cheat-sh",
+				"gh-notify-daemon",
 				vec![
 					theme
 						.link_colored(
-							"https://git.kybe.xyz/2kybe3/cheat-sh",
-							"https://git.kybe.xyz/2kybe3/cheat-sh",
+							"A github notification daemon",
+							"https://git.kybe.xyz/2kybe3/gh-notify-daemon",
 						)
 						.into(),
-					theme.comment(" (a tiny wrapper for cheat.sh)\n").into(),
+					theme.text("\n").into(),
 				],
 			)
 			.into(),
@@ -102,11 +102,25 @@ pub async fn root(
 				vec![
 					theme
 						.link_colored(
-							"https://git.kybe.xyz/2kybe3/kybe-backend",
+							"This sites source code",
 							"https://git.kybe.xyz/2kybe3/kybe-backend",
 						)
 						.into(),
-					theme.comment(" (this site)\n").into(),
+					theme.text("\n").into(),
+				],
+			)
+			.into(),
+		theme
+			.label(
+				"cheat-sh",
+				vec![
+					theme
+						.link_colored(
+							"A tiny wrapper for cheat.sh",
+							"https://git.kybe.xyz/2kybe3/cheat-sh",
+						)
+						.into(),
+					theme.text("\n").into(),
 				],
 			)
 			.into(),
@@ -116,7 +130,7 @@ pub async fn root(
 				"PGP",
 				vec![
 					theme
-						.link_colored(ctx.url("/pgp\n"), &ctx.url("/pgp"))
+						.link_colored(ctx.url("/pgp\n"), &ctx.url("/phttps://github.com/gp"))
 						.into(),
 				],
 			)
@@ -157,11 +171,11 @@ pub async fn root(
 				"Github",
 				vec![
 					theme
-						.link_colored("https://github.com/kybe236", "https://github.com/kybe236")
+						.link_colored("kybe236", "https://github.com/kybe236")
 						.into(),
 					theme.text(" ").into(),
 					theme
-						.link_colored("https://github.com/2kybe3\n", "https://github.com/2kybe3")
+						.link_colored("2kybe3\n", "https://github.com/2kybe3")
 						.into(),
 				],
 			)
