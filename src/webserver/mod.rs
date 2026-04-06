@@ -293,12 +293,12 @@ async fn trace_middleware(
 
 pub fn make_limiter(
 	config: &Config,
-	replentish_after_ms: u64,
+	replenish_after_ms: u64,
 	burst_size: u32,
 ) -> anyhow::Result<Arc<GovernorConfig<ClientIpKeyExtractor, NoOpMiddleware<QuantaInstant>>>> {
 	Ok(Arc::new(
 		GovernorConfigBuilder::default()
-			.per_millisecond(replentish_after_ms)
+			.per_millisecond(replenish_after_ms)
 			.burst_size(burst_size)
 			.key_extractor(ClientIpKeyExtractor::new(&config.webserver))
 			.finish()

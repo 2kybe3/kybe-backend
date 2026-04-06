@@ -74,7 +74,7 @@ impl Page {
 			&& !text.contains(&link_to.link)
 		{
 			let mut colored = String::new();
-			if let Some(style) = link_to.seperator_style {
+			if let Some(style) = link_to.separator_style {
 				colored.push_str(&style.ansi_code());
 			}
 			colored.push_str(" => ");

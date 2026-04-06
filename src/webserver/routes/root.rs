@@ -130,7 +130,7 @@ pub async fn root(
 				"PGP",
 				vec![
 					theme
-						.link_colored(ctx.url("/pgp\n"), &ctx.url("/phttps://github.com/gp"))
+						.link_colored(ctx.url("/pgp\n"), &ctx.url("/pgp"))
 						.into(),
 				],
 			)

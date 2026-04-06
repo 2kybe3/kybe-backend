@@ -13,7 +13,7 @@ lazy_static! {
 		format!("{}uptime_seconds", BASE),
 		"Application uptime in seconds"
 	)
-	.expect("Error creating Prometheus gague");
+	.expect("Error creating Prometheus gage");
 	pub static ref LASTFM_FETCH_DURATION: HistogramVec = HistogramVec::new(
 		HistogramOpts::new(
 			format!("{}lastfm_fetch_duration", BASE),

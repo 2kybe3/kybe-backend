@@ -13,7 +13,7 @@ use crate::config::types::UmamiConfig;
 
 pub struct LinkTo {
 	link: String,
-	seperator_style: Option<Style>,
+	separator_style: Option<Style>,
 	link_style: Option<Style>,
 }
 

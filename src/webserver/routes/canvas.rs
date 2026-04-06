@@ -21,13 +21,13 @@ use crate::{
 };
 
 #[derive(Deserialize)]
-pub struct CanvasParamters {
+pub struct CanvasParameters {
 	pub q: Option<String>,
 }
 
 pub async fn canvas(
 	State(state): State<WebServerState>,
-	Query(parsed_query): Query<CanvasParamters>,
+	Query(parsed_query): Query<CanvasParameters>,
 	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
 	Extension(ctx): Extension<RequestContext>,
 ) -> impl IntoResponse {
@@ -47,7 +47,7 @@ pub async fn canvas(
 				TextBlobBuilder::new("Canvas\n\n")
 					.style(Style::new().fg(Color::Red))
 					.into(),
-				TextBlobBuilder::new("Use the q query paramter to use this canvas api\n\n").into(),
+				TextBlobBuilder::new("Use the q query parameter to use this canvas api\n\n").into(),
 				TextBlobBuilder::new(list.join("\n"))
 					.style(Style::new().fg(Color::Yellow))
 					.into(),

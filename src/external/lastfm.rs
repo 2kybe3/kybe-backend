@@ -13,7 +13,7 @@ use crate::config::types::LastFMConfig;
 
 const INTERVAL_DEFAULT: u8 = 10;
 const BASE_URL: &str = "http://ws.audioscrobbler.com/2.0/";
-pub const ARITST_BASE: &str = "https://www.last.fm/music/";
+pub const ARTIST_BASE: &str = "https://www.last.fm/music/";
 
 #[derive(Debug, Clone)]
 pub struct LastFM {
@@ -166,7 +166,7 @@ impl LastFM {
 
 pub fn artist_url(artist: &str) -> String {
 	let encoded = artist.replace(' ', "+");
-	format!("{}{}", ARITST_BASE, encoded)
+	format!("{}{}", ARTIST_BASE, encoded)
 }
 
 fn string_to_bool<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>

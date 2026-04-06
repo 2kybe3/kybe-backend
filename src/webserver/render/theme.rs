@@ -55,7 +55,7 @@ impl Theme {
 		text.into().style(self.link).link_to(
 			LinkToBuilder::new(link)
 				.link_style(self.link)
-				.seperator_style(self.link_separator)
+				.separator_style(self.link_separator)
 				.into(),
 		)
 	}
@@ -65,7 +65,7 @@ impl Theme {
 		text.into().link_to(
 			LinkToBuilder::new(link)
 				.link_style(self.link)
-				.seperator_style(self.link_separator)
+				.separator_style(self.link_separator)
 				.into(),
 		)
 	}

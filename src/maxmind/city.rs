@@ -1,7 +1,7 @@
 use maxminddb::geoip2::city;
 use serde::{Deserialize, Serialize};
 
-/// Taken from maxminddb but slighly reduced
+/// Taken from maxminddb but slightly reduced
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub struct CityMin {
 	#[serde(default, skip_serializing_if = "City::is_empty")]
