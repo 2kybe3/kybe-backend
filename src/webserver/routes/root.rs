@@ -84,6 +84,17 @@ pub async fn root(
 		theme.title("\nProjects:\n\n").into(),
 		theme
 			.label(
+				"kystash",
+				vec![
+					theme
+						.link_colored("A simple file sharing server", "https://kystash.kybe.xyz/")
+						.into(),
+					theme.text("\n").into(),
+				],
+			)
+			.into(),
+		theme
+			.label(
 				"gh-notify-daemon",
 				vec![
 					theme

@@ -9,7 +9,7 @@ use crate::external::lastfm::LastFM;
 use crate::maxmind::MaxMind;
 use crate::maxmind::asn::AsnMin;
 use crate::maxmind::city::CityMin;
-use crate::webserver::routes::{canvas, fallback_404, ip, kystash, nix, pgp, root};
+use crate::webserver::routes::{canvas, fallback_404, ip, nix, pgp, root};
 use crate::webserver::routes::{metrics, now_playing};
 use anyhow::anyhow;
 use axum::extract::{ConnectInfo, Request, State};
@@ -363,7 +363,6 @@ pub async fn init_webserver(
 		.route("/nix", get(nix::nix))
 		.route("/pgp", get(pgp::pgp))
 		.route("/canvas", get(canvas::canvas))
-		.route("/kystash", get(kystash::kystash))
 		.layer(root_route_service);
 
 	let app = unlogged_route
