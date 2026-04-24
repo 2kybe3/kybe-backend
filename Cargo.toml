@@ -21,7 +21,7 @@ urlencoding = "2.1.3"
 once_cell = "1.21.4"
 futures = "0.3.32"
 chrono = "0.4.44"
-russh = "0.57.1"
+russh = "0.60.1"
 toml = "1.0.6"
 rsc = "3.0.0"
 
