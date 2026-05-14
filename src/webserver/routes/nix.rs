@@ -32,8 +32,8 @@ pub async fn nix(
 				vec![
 					theme
 						.link_colored(
-							"https://git.kybe.xyz/kybe/nix-dotfiles\n",
-							"https://git.kybe.xyz/kybe/nix-dotfiles",
+							"https://git.kybe.xyz/2kybe3/hexix\n",
+							"https://git.kybe.xyz/2kybe3/hexix",
 						)
 						.into(),
 				],
