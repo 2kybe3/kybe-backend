@@ -201,12 +201,10 @@ impl server::Handler for Server {
 						should_close = true;
 					}
 
-					127 => {
-						if !state.buffer.is_empty() && state.cursor > 0 {
-							state.cursor -= 1;
-							state.buffer.remove(state.cursor);
-							redraw_line(state, &mut output);
-						}
+					127 if !state.buffer.is_empty() && state.cursor > 0 => {
+						state.cursor -= 1;
+						state.buffer.remove(state.cursor);
+						redraw_line(state, &mut output);
 					}
 
 					byte if byte.is_ascii_graphic() || byte == b' ' => {
