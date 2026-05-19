@@ -1,8 +1,7 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
-	Config, DatabaseConfig, DiscordBotConfig, DiscordConfig, GotifyConfig, LastFMConfig,
-	LoggerConfig, MaxMindConfig, NotificationConfig, TranslatorConfig, UmamiConfig,
-	WebserverConfig,
+	Config, DatabaseConfig, DiscordBotConfig, LastFMConfig, LoggerConfig, MaxMindConfig,
+	TranslatorConfig, UmamiConfig, WebserverConfig,
 };
 use std::env;
 use std::time::Instant;
@@ -130,16 +129,6 @@ impl Config {
 impl Default for Config {
 	fn default() -> Self {
 		Config {
-			notification: NotificationConfig {
-				discord: DiscordConfig {
-					enabled: false,
-					url: Some("https://discord.com/api/webhooks/.../...".into()),
-				},
-				gotify: GotifyConfig {
-					enabled: false,
-					url: Some("https://gotify.kybe.xyz/message?token=<token>".into()),
-				},
-			},
 			discord_bot: DiscordBotConfig {
 				enable: false,
 				token: "DISCORD_TOKEN".into(),

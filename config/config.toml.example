@@ -1,11 +1,3 @@
-[notification.gotify]
-enabled = false
-url = "https://gotify.kybe.xyz/message?token=<token>"
-
-[notification.discord]
-enabled = false
-url = "https://discord.com/api/webhooks/.../..."
-
 [discord_bot]
 enable = false
 token = "DISCORD_TOKEN"

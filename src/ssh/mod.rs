@@ -1,8 +1,8 @@
 use std::{collections::HashMap, fs, path::Path, sync::Arc};
 
 use russh::{
-	ChannelId, CryptoVec, Pty,
-	keys::{PrivateKey, ssh_key::rand_core::OsRng},
+	ChannelId, Pty,
+	keys::PrivateKey,
 	server::{self, Server as _},
 };
 use tokio::{net::TcpListener, sync::Mutex};
@@ -80,20 +80,20 @@ impl server::Handler for Server {
 			info!(ip = ?self.ip, channel = ?channel, cmd = ?cmd, args = ?args, "exec_request");
 			match *main {
 				"ident" | "identity" | "who" => {
-					session.data(channel, CryptoVec::from(IDENTITY))?;
+					session.data(channel, IDENTITY)?;
 					session.close(channel)?;
 				}
 				"pgp" | "gpg" => {
-					session.data(channel, CryptoVec::from(PGP_KEY))?;
+					session.data(channel, PGP_KEY)?;
 					session.close(channel)?;
 				}
 				_ => {
 					session.data(
 						channel,
-						CryptoVec::from(format!(
+						format!(
 							"get that dirty \"{}\" away from me, try \"ident, pgp\"\n",
 							cmd
-						)),
+						),
 					)?;
 					session.close(channel)?;
 				}
@@ -162,29 +162,26 @@ impl server::Handler for Server {
 						info!(command = ?input, ip = ?self.ip, "command");
 						state.buffer.clear();
 
-						output.push(CryptoVec::from("\r\n"));
+						output.push("\r\n".into());
 
 						match input.as_str() {
-							"help" => output.push(CryptoVec::from(
-								"Commands: ident, pgp, ping, clear, help, exit\r\n",
-							)),
-							"ident" | "identity" | "who" => output.push(CryptoVec::from(format!(
-								"{}\r\n",
-								IDENTITY.replace("\n", "\r\n")
-							))),
-							"gpg" | "pgp" => output.push(CryptoVec::from(format!(
-								"{}\r\n",
-								PGP_KEY.replace("\n", "\r\n")
-							))),
-							"ping" => output.push(CryptoVec::from("pong\r\n")),
-							"clear" => output.push(CryptoVec::from("\x1b[2J\x1b[H")),
+							"help" => output
+								.push("Commands: ident, pgp, ping, clear, help, exit\r\n".into()),
+							"ident" | "identity" | "who" => {
+								output.push(format!("{}\r\n", IDENTITY.replace("\n", "\r\n")))
+							}
+							"gpg" | "pgp" => {
+								output.push(format!("{}\r\n", PGP_KEY.replace("\n", "\r\n")))
+							}
+							"ping" => output.push("pong\r\n".into()),
+							"clear" => output.push("\x1b[2J\x1b[H".into()),
 							"exit" => should_close = true,
 							"" => {}
-							_ => output.push(CryptoVec::from("Unknown command\r\n")),
+							_ => output.push("Unknown command\r\n".into()),
 						}
 
 						if !should_close {
-							output.push(CryptoVec::from("> "));
+							output.push("> ".into());
 						}
 					}
 
@@ -282,36 +279,36 @@ impl server::Handler for Server {
 	}
 }
 
-fn move_left(state: &mut ClientState, output: &mut Vec<CryptoVec>) {
+fn move_left(state: &mut ClientState, output: &mut Vec<String>) {
 	if state.cursor > 0 {
 		state.cursor -= 1;
-		output.push(CryptoVec::from("\x1b[D"));
+		output.push("\x1b[D".into());
 	}
 }
 
-fn move_right(state: &mut ClientState, output: &mut Vec<CryptoVec>) {
+fn move_right(state: &mut ClientState, output: &mut Vec<String>) {
 	if state.cursor < state.buffer.len() {
 		state.cursor += 1;
-		output.push(CryptoVec::from("\x1b[C"));
+		output.push("\x1b[C".into());
 	}
 }
 
-fn redraw_line(state: &mut ClientState, output: &mut Vec<CryptoVec>) {
-	output.push(CryptoVec::from("\r"));
+fn redraw_line(state: &mut ClientState, output: &mut Vec<String>) {
+	output.push("\r".into());
 
-	output.push(CryptoVec::from("\x1b[2K"));
+	output.push("\x1b[2K".into());
 
-	output.push(CryptoVec::from("> "));
-	output.push(CryptoVec::from(state.buffer.clone()));
+	output.push("> ".into());
+	output.push(state.buffer.clone());
 
 	let right_shift = state.buffer.len() - state.cursor;
 	if right_shift > 0 {
-		output.push(CryptoVec::from(format!("\x1b[{}D", right_shift)));
+		output.push(format!("\x1b[{}D", right_shift));
 	}
 }
 
-type Sequence<'a> = &'a [(&'a [u8], fn(&mut ClientState, &mut Vec<CryptoVec>))];
-fn handle_escape(state: &mut ClientState, output: &mut Vec<CryptoVec>) {
+type Sequence<'a> = &'a [(&'a [u8], fn(&mut ClientState, &mut Vec<String>))];
+fn handle_escape(state: &mut ClientState, output: &mut Vec<String>) {
 	const SEQUENCES: Sequence = &[
 		// left
 		(b"\x1b[D", move_left),
@@ -349,7 +346,7 @@ fn load_or_generate_key(path: &str) -> anyhow::Result<PrivateKey> {
 		let data = fs::read(path)?;
 		Ok(PrivateKey::from_openssh(&data)?)
 	} else {
-		let key = PrivateKey::random(&mut OsRng, russh::keys::Algorithm::Ed25519)?;
+		let key = PrivateKey::random(&mut rand::rng(), russh::keys::Algorithm::Ed25519)?;
 		fs::write(
 			path,
 			key.clone()

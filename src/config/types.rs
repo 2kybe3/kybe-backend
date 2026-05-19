@@ -2,31 +2,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Config {
-	pub notification: NotificationConfig,
 	pub discord_bot: DiscordBotConfig,
 	pub webserver: WebserverConfig,
 	pub database: DatabaseConfig,
 	pub maxmind: MaxMindConfig,
 	pub lastfm: LastFMConfig,
 	pub logger: LoggerConfig,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct NotificationConfig {
-	pub gotify: GotifyConfig,
-	pub discord: DiscordConfig,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct GotifyConfig {
-	pub enabled: bool,
-	pub url: Option<String>,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct DiscordConfig {
-	pub enabled: bool,
-	pub url: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

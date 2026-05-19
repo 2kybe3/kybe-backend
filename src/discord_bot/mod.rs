@@ -10,7 +10,6 @@ use crate::db::Database;
 use crate::db::command_traces::{CommandStatus, CommandTrace};
 use crate::external::cataas::CATAAS;
 use crate::maxmind::MaxMind;
-use crate::notifications::{Notification, Notifications};
 use crate::translator::Translator;
 use poise::serenity_prelude as serenity;
 use poise::{CreateReply, FrameworkError};
@@ -26,7 +25,6 @@ pub const MAX_MSG_LENGTH: usize = 2000;
 
 #[derive(Debug)]
 pub struct Data {
-	pub notifications: Arc<Notifications>,
 	pub config: Arc<Config>,
 	pub translator: Option<Arc<Translator>>,
 	pub database: Database,
@@ -36,7 +34,6 @@ pub struct Data {
 }
 
 pub async fn init_bot(
-	notifications: Arc<Notifications>,
 	config: Arc<Config>,
 	database: Database,
 	mm: Arc<MaxMind>,
@@ -44,82 +41,62 @@ pub async fn init_bot(
 	let token = config.discord_bot.token.clone();
 
 	let framework = poise::Framework::builder()
-        .options(poise::FrameworkOptions {
-            commands: vec![
-                calculator::calculate(),
-                translator::detect(),
-                translator::languages(),
-                translator::translate(),
-                traces::get_trace(),
-                traces::get_latest_trace(),
+		.options(poise::FrameworkOptions {
+			commands: vec![
+				calculator::calculate(),
+				translator::detect(),
+				translator::languages(),
+				translator::translate(),
+				traces::get_trace(),
+				traces::get_latest_trace(),
 				version::version(),
-                maxmind::maxmind(),
+				maxmind::maxmind(),
 				cataas::cat(),
-            ],
-            on_error: |error: FrameworkError<'_, Data, Error>| Box::pin(async move {
-                if let Some(ctx) = error.ctx() {
-                    let notifications = &ctx.data().notifications;
+			],
+			on_error: |error: FrameworkError<'_, Data, Error>| {
+				Box::pin(async move { panic!("Error starting discord bot: {:?}", error) })
+			},
+			..Default::default()
+		})
+		.setup(move |ctx, _ready, framework| {
+			Box::pin(async move {
+				poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+				let translator_result = config.discord_bot.translator.clone().try_into();
 
-                    notifications.notify(Notification::new(
-                        "Discord Bot Error",
-                        format!("Error: {}", error),
-                    ), false).await
-                } else {
-                    panic!("Error starting discord bot: {:?}", error)
-                }
-            }),
-            ..Default::default()
-        })
-        .setup(move |ctx, _ready, framework| {
-            Box::pin(async move {
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                let translator_result = config.discord_bot.translator.clone().try_into();
+				let translator = match translator_result {
+					Ok(trans) => Some(Arc::new(trans)),
+					Err(e) => {
+						if config.discord_bot.translator.enabled {
+							tracing::warn!(
+								"Failed to initialize translator: {:#?}\nTranslation commands will be unavailable.",
+								e
+							);
+						}
+						None
+					}
+				};
 
-                let translator = match translator_result {
-                    Ok(trans) => {
-                        Some(Arc::new(trans))
-                    }
-                    Err(e) => {
-                        if config.discord_bot.translator.enabled {
-                            tracing::warn!(
-                                "Failed to initialize translator: {:#?}\nTranslation commands will be unavailable.",
-                                e
-                            );
-
-                            notifications
-                                .notify(Notification::new(
-                                    "Discord Bot - Translator Initialization Failed",
-                                    format!(
-                                        "Failed to initialize translator.\n\nError details:\n{:#?}\n\nTranslation commands will be unavailable.",
-                                        e
-                                    ),
-                                ), false)
-                                .await;
-                        }
-                        None
-                    }
-                };
-
-				let client = Arc::new(Client::builder()
-					.user_agent("2kybe3 / kybe-backend")
-					.timeout(Duration::from_secs(5))
-					.read_timeout(Duration::from_secs(5))
-					.connect_timeout(Duration::from_secs(5))
-					.build()?);
+				let client = Arc::new(
+					Client::builder()
+						.user_agent("2kybe3 / kybe-backend")
+						.timeout(Duration::from_secs(5))
+						.read_timeout(Duration::from_secs(5))
+						.connect_timeout(Duration::from_secs(5))
+						.build()?,
+				);
 
 				let cataas = CATAAS::new(client.clone());
 
-                Ok(Data {
-                    notifications,
-                    config,
-                    translator,
-                    database,
+				Ok(Data {
+					config,
+					translator,
+					database,
 					cataas,
-                    mm,
-                })
-            })
-        })
-        .build();
+					mm,
+				})
+			})
+		})
+		.build();
 
 	let intents = serenity::GatewayIntents::non_privileged();
 
