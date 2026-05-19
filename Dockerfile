@@ -1,4 +1,4 @@
-FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1@sha256:00c3c07c51d092325df88f0df2d626cd4302e12933f179ba154509cc314d6c2a AS chef
 WORKDIR /usr/src/kybe-backend
 
 FROM chef AS planner
@@ -21,7 +21,7 @@ COPY static/ident.txt ./static/ident.txt
 
 RUN cargo build --release
 
-FROM debian:trixie-slim
+FROM debian:trixie-slim@sha256:109e2c65005bf160609e4ba6acf7783752f8502ad218e298253428690b9eaa4b
 WORKDIR /opt/backend
 
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*

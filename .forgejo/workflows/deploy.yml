@@ -14,7 +14,7 @@ jobs:
     name: Build, Push & Deploy Backend
     runs-on: docker
     container:
-      image: ghcr.io/catthehacker/ubuntu:act-latest
+      image: ghcr.io/catthehacker/ubuntu:act-latest@sha256:ba462524eef12b7af3ed50b97d29c5c5eb7ba0eacb26d338d4c3957bbda76d58
     if: forgejo.ref == 'refs/heads/main'
 
     steps:
