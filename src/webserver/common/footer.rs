@@ -17,7 +17,7 @@ pub fn footer(trace_id: Uuid) -> Vec<Objects> {
 		TextBlobBuilder::new(format!("{}\n", crate::GIT_SHA.to_owned()))
 			.link_to(
 				LinkToBuilder::new(format!(
-					"https://github.com/2kybe3/kybe-backend/tree/{}",
+					"https://git.kybe.xyz/2kybe3/kybe-backend/src/commit/{}",
 					crate::GIT_SHA.to_owned()
 				))
 				.into(),
