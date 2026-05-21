@@ -1,55 +1,7 @@
-use std::vec;
-
 use crate::{
 	config::types::UmamiConfig,
-	webserver::render::{
-		ColorMapping, LinkTo, Object, Page,
-		color::{Color, Style},
-	},
+	webserver::render::{ColorMapping, LinkTo, Object, Page, Style, color::Color},
 };
-
-impl Style {
-	pub fn html_hex(&self) -> (&'static str, &'static str) {
-		(self.fg.html_code(), self.bg.html_code())
-	}
-
-	pub fn html_style(&self) -> String {
-		let (fg, bg) = self.html_hex();
-		let mut styles = vec![format!("color:{}", fg), format!("background-color:{}", bg)];
-		if self.bold {
-			styles.push("font-weight:bold".into());
-		}
-		if self.dim {
-			styles.push("opacity:0.6".into());
-		}
-		styles.join("; ")
-	}
-}
-impl Color {
-	pub fn html_code(&self) -> &'static str {
-		match self {
-			Color::Default => "inherit",
-
-			Color::Black => "#000000",
-			Color::Red => "#cd3131",
-			Color::Green => "#0dbc79",
-			Color::Yellow => "#e5e510",
-			Color::Blue => "#2472c8",
-			Color::Magenta => "#bc3fbc",
-			Color::Cyan => "#11a8cd",
-			Color::White => "#e5e5e5",
-
-			Color::BrightBlack => "#666666",
-			Color::BrightRed => "#f14c4c",
-			Color::BrightGreen => "#23d18b",
-			Color::BrightYellow => "#f5f543",
-			Color::BrightBlue => "#3b8eea",
-			Color::BrightMagenta => "#d670d6",
-			Color::BrightCyan => "#29b8db",
-			Color::BrightWhite => "#ffffff",
-		}
-	}
-}
 
 const HTML_TEMPLATE: &str = include_str!("../../../assets/template.html");
 
@@ -109,7 +61,7 @@ impl Page {
 		let mut output = String::new();
 		if title.is_some() || language.is_some() {
 			let mut parts = vec![];
-			let header_style = Style::new().fg(Color::Cyan);
+			let header_style = Style::new().fg(Color::CYAN);
 			if let Some(t) = title {
 				parts.push(format!(
 					"Title: {}{}",
@@ -205,7 +157,7 @@ impl Page {
 			} => Self::render_html_canvas(data, color_mapping).unwrap_or(
 				Self::render_html_text_blob(
 					"Error rendering Canvas",
-					&Style::new().fg(Color::Red),
+					&Style::new().fg(Color::RED),
 					&None,
 					true,
 				),

@@ -2,11 +2,13 @@ mod ansi;
 pub mod builders;
 mod color;
 mod html;
+mod style;
 mod theme;
 
 use std::collections::HashMap;
 
-pub use color::{Color, Style};
+pub use color::Color;
+pub use style::Style;
 pub use theme::Theme;
 
 use crate::config::types::UmamiConfig;

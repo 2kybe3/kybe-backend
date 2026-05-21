@@ -45,11 +45,11 @@ pub async fn canvas(
 			list.push("NL: NewLine".into());
 			Page::from_iter([
 				TextBlobBuilder::new("Canvas\n\n")
-					.style(Style::new().fg(Color::Red))
+					.style(Style::new().fg(Color::RED))
 					.into(),
 				TextBlobBuilder::new("Use the q query parameter to use this canvas api\n\n").into(),
 				TextBlobBuilder::new(list.join("\n"))
-					.style(Style::new().fg(Color::Yellow))
+					.style(Style::new().fg(Color::YELLOW))
 					.into(),
 				TextBlobBuilder::new(
 					"\n\nExample: https://kybe.xyz/canvas?q=BLBLBLBLBLBLBLBLBLBLNLRRRRRRRRRRNLYYYYYYYYYY\n",

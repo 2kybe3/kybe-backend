@@ -17,13 +17,13 @@ pub struct Theme {
 impl Default for Theme {
 	fn default() -> Self {
 		Self {
-			title: Style::new().fg(Color::BrightRed).bold(true),
-			subtitle: Style::new().fg(Color::BrightRed),
-			label: Style::new().fg(Color::Yellow),
-			text: Style::new().fg(Color::White),
-			link: Style::new().fg(Color::Green),
-			link_separator: Style::new().fg(Color::White),
-			comment: Style::new().fg(Color::BrightBlack).dim(true),
+			title: Style::new().fg(Color::BRIGHT_RED).bold(true),
+			subtitle: Style::new().fg(Color::BRIGHT_RED),
+			label: Style::new().fg(Color::YELLOW),
+			text: Style::new().fg(Color::WHITE),
+			link: Style::new().fg(Color::GREEN),
+			link_separator: Style::new().fg(Color::WHITE),
+			comment: Style::new().fg(Color::BRIGHT_BLACK).dim(true),
 		}
 	}
 }

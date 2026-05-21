@@ -6,24 +6,24 @@ use crate::webserver::render::{Color, ColorMapping, Object};
 
 pub static COLOR_MAPPING: Lazy<ColorMapping> = Lazy::new(|| {
 	let mut map = HashMap::new();
-	map.insert("D".into(), Color::Default);
-	map.insert("BL".into(), Color::Black);
-	map.insert("R".into(), Color::Red);
-	map.insert("G".into(), Color::Green);
-	map.insert("Y".into(), Color::Yellow);
-	map.insert("BU".into(), Color::Blue);
-	map.insert("M".into(), Color::Magenta);
-	map.insert("C".into(), Color::Cyan);
-	map.insert("W".into(), Color::White);
+	map.insert("D".into(), Color::DEFAULT);
+	map.insert("BL".into(), Color::BLACK);
+	map.insert("R".into(), Color::RED);
+	map.insert("G".into(), Color::GREEN);
+	map.insert("Y".into(), Color::YELLOW);
+	map.insert("BU".into(), Color::BLUE);
+	map.insert("M".into(), Color::MAGENTA);
+	map.insert("C".into(), Color::CYAN);
+	map.insert("W".into(), Color::WHITE);
 
-	map.insert("BrBL".into(), Color::BrightBlack);
-	map.insert("BrR".into(), Color::BrightRed);
-	map.insert("BrG".into(), Color::BrightGreen);
-	map.insert("BrY".into(), Color::BrightYellow);
-	map.insert("BrBU".into(), Color::BrightBlue);
-	map.insert("BrM".into(), Color::BrightMagenta);
-	map.insert("BrC".into(), Color::BrightCyan);
-	map.insert("BrW".into(), Color::BrightWhite);
+	map.insert("BrBL".into(), Color::BRIGHT_BLACK);
+	map.insert("BrR".into(), Color::BRIGHT_RED);
+	map.insert("BrG".into(), Color::BRIGHT_GREEN);
+	map.insert("BrY".into(), Color::BRIGHT_YELLOW);
+	map.insert("BrBU".into(), Color::BRIGHT_BLUE);
+	map.insert("BrM".into(), Color::BRIGHT_MAGENTA);
+	map.insert("BrC".into(), Color::BRIGHT_CYAN);
+	map.insert("BrW".into(), Color::BRIGHT_WHITE);
 
 	map
 });
