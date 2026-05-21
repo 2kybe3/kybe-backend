@@ -16,15 +16,6 @@ pub static COLOR_MAPPING: Lazy<ColorMapping> = Lazy::new(|| {
 	map.insert("C".into(), Color::CYAN);
 	map.insert("W".into(), Color::WHITE);
 
-	map.insert("BrBL".into(), Color::BRIGHT_BLACK);
-	map.insert("BrR".into(), Color::BRIGHT_RED);
-	map.insert("BrG".into(), Color::BRIGHT_GREEN);
-	map.insert("BrY".into(), Color::BRIGHT_YELLOW);
-	map.insert("BrBU".into(), Color::BRIGHT_BLUE);
-	map.insert("BrM".into(), Color::BRIGHT_MAGENTA);
-	map.insert("BrC".into(), Color::BRIGHT_CYAN);
-	map.insert("BrW".into(), Color::BRIGHT_WHITE);
-
 	map
 });
 

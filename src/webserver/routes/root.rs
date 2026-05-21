@@ -1,11 +1,10 @@
-use std::sync::Arc;
-
 use axum::{
 	Extension,
 	extract::State,
 	response::{Html, IntoResponse},
 };
 use reqwest::StatusCode;
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::{
@@ -35,22 +34,39 @@ pub async fn root(
 	};
 
 	let mut page: Vec<Objects> = vec![
-		theme.title("Hello Stranger (also on ").into(),
+		theme.title("Hello Stranger (also on").into(),
 		theme
 			.title(theme.link_colored("i2p", "http://kybe.i2p"))
 			.into(),
 		theme.title(")\n").into(),
-		theme.subtitle("kybe – /dev/urandom stuff\n\n").into(),
+		theme.subtitle("kybe - /dev/urandom stuff\n\n").into(),
 		CodeBlockBuilder::new(vec![
 			TextBlobBuilder::new("$ ").copyable(false).into(),
 			TextBlobBuilder::new("curl https://kybe.xyz").into(),
 		])
 		.into(),
+		theme.title("\nCurrently Listening:\n\n").into(),
+		theme
+			.label(
+				"Playing",
+				vec![
+					theme
+						.link_colored(
+							if playing.is_some() {
+								"True\n"
+							} else {
+								"False\n"
+							},
+							"https://metrics.kybe.xyz/public-dashboards/f64d242587e14e2689b22e0ff542a1e9",
+						)
+						.into(),
+				],
+			)
+			.into(),
 	];
 
 	if let Some(playing) = playing {
 		page.append(&mut vec![
-			theme.title("\nCurrently Listening:\n\n").into(),
 			theme
 				.label(
 					"Artist",

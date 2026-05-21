@@ -42,18 +42,13 @@ impl Style {
 // Ansi
 impl Style {
 	pub fn ansi_code(self) -> String {
-		let mut codes = vec![];
-		if self.dim {
-			codes.push("2")
-		}
-
-		let fg = self.fg.ansi_fg();
-		let bg = self.bg.ansi_bg();
 		let reset = "\x1b[0m";
 		let bold = if self.bold { "\x1b[2m" } else { "" };
 		let dim = if self.dim { "\x1b[3m" } else { "" };
+		let fg = self.fg.ansi_fg();
+		let bg = self.bg.ansi_bg();
 
-		format!("{reset}{fg}{bg}{bold}{dim}")
+		format!("{reset}{bold}{dim}{fg}{bg}")
 	}
 }
 
@@ -61,8 +56,8 @@ impl Style {
 impl Style {
 	pub fn html_style(&self) -> String {
 		let mut styles = vec![
-			format!("color:{}", self.fg.hex()),
-			format!("background-color:{}", self.bg.hex()),
+			format!("color:{}", self.fg.html()),
+			format!("background-color:{}", self.bg.html()),
 		];
 		if self.bold {
 			styles.push("font-weight:bold".into());
