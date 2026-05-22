@@ -14,8 +14,9 @@ use crate::{
 	webserver::{
 		RequestContext, WebServerState,
 		render::{
-			Color, Page, Style,
+			Page, Style,
 			builders::{COLOR_MAPPING, CanvasBuilder, TextBlobBuilder},
+			color::bit4::Bit4Color,
 		},
 	},
 };
@@ -35,7 +36,7 @@ pub async fn canvas(
 	let page = match q {
 		Some(q) => Page::from_iter([
 			CanvasBuilder::new(q).into(),
-			TextBlobBuilder::new("\n").style(Style::default()).into(),
+			TextBlobBuilder::new("\n").style(Style::new()).into(),
 		]),
 		None => {
 			let mut list = COLOR_MAPPING
@@ -45,11 +46,11 @@ pub async fn canvas(
 			list.push("NL: NewLine".into());
 			Page::from_iter([
 				TextBlobBuilder::new("Canvas\n\n")
-					.style(Style::new().fg(Color::RED))
+					.style(Style::new().fg(Bit4Color::RED))
 					.into(),
 				TextBlobBuilder::new("Use the q query parameter to use this canvas api\n\n").into(),
 				TextBlobBuilder::new(list.join("\n"))
-					.style(Style::new().fg(Color::YELLOW))
+					.style(Style::new().fg(Bit4Color::YELLOW))
 					.into(),
 				TextBlobBuilder::new(
 					"\n\nExample: https://kybe.xyz/canvas?q=BLBLBLBLBLBLBLBLBLBLNLRRRRRRRRRRNLYYYYYYYYYY\n",

@@ -1,11 +1,10 @@
-use crate::webserver::render::{ColorMapping, LinkTo, Object, Page, Style, Theme, color::Color};
+use crate::webserver::render::{
+	ColorMapping, LinkTo, Object, Page, Style, Theme, color::bit4::Bit4Color,
+};
 
 impl Page {
 	fn render_ansi_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String {
-		let mut output = String::new();
-
-		output.push_str(&style.ansi_code());
-
+		let mut output = style.ansi_code();
 		let mut text = text.to_string();
 
 		if let Some(link_to) = link_to
@@ -13,11 +12,11 @@ impl Page {
 			&& !text.contains(&link_to.link)
 		{
 			let mut colored = String::new();
-			if let Some(style) = link_to.separator_style {
+			if let Some(style) = &link_to.separator_style {
 				colored.push_str(&style.ansi_code());
 			}
 			colored.push_str(" => ");
-			if let Some(style) = link_to.link_style {
+			if let Some(style) = &link_to.link_style {
 				colored.push_str(&style.ansi_code());
 			} else {
 				// If no link style is set use the previous style (the text)
@@ -53,7 +52,7 @@ impl Page {
 
 		if title.is_some() || language.is_some() {
 			output.push_str("---title---\n");
-			output.push_str(&Style::new().fg(Color::CYAN).ansi_code());
+			output.push_str(&Style::new().fg(Bit4Color::CYAN).ansi_code());
 			if let Some(title) = title {
 				output.push_str(&format!(
 					"title: {}{}",
@@ -94,7 +93,7 @@ impl Page {
 	fn render_ansi_canvas(data: &str, color_mapping: &ColorMapping) -> Option<String> {
 		let mut output = String::new();
 		let mut buffer = String::new();
-		let mut last_color = Color::DEFAULT;
+		let mut last_color = Bit4Color::DEFAULT.into();
 
 		for ch in data.chars() {
 			buffer.push(ch);
@@ -148,7 +147,7 @@ impl Page {
 			} => Self::render_ansi_canvas(data, color_mapping).unwrap_or(
 				Self::render_ansi_text_blob(
 					"Error rendering Canvas",
-					&Style::new().fg(Color::RED),
+					&Style::new().fg(Bit4Color::RED),
 					&None,
 				),
 			),

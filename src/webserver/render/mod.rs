@@ -1,6 +1,6 @@
 mod ansi;
 pub mod builders;
-mod color;
+pub mod color;
 mod html;
 mod style;
 mod theme;

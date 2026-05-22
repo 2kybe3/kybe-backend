@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,7 @@
     <style>
         body {
             font-family: "DepartureMono", sans-serif;
-            font-size: 11px;
+            font-size: 13px;
 
             background-color: #1e1e1e;
             color: #e5e5e5;
@@ -22,12 +23,14 @@
 
             white-space: pre;
         }
+
         main {
             margin: 5px;
             padding-bottom: 5px;
             overflow-x: auto;
             overflow-y: hidden;
         }
+
         pre {
             position: relative;
             padding: 0.5em;
@@ -38,10 +41,12 @@
             margin-top: 1em;
             border-color: #11a8cd;
         }
+
         code {
             padding: 0.2rem;
             display: block;
         }
+
         .copy-btn {
             position: absolute;
             top: 0.3em;
@@ -62,35 +67,37 @@
         @font-face {
             font-family: "DepartureMono";
             src: url("static/DepartureMono-1.500/DepartureMono-Regular.woff2") format("woff2"),
-                 url("static/DepartureMono-1.500/DepartureMono-Regular.otf") format("opentype"),
-                 url("static/DepartureMono-1.500/DepartureMono-Regular.woff") format("woff");
+                url("static/DepartureMono-1.500/DepartureMono-Regular.otf") format("opentype"),
+                url("static/DepartureMono-1.500/DepartureMono-Regular.woff") format("woff");
             font-weight: normal;
             font-style: normal;
         }
     </style>
 </head>
-<body>
-<main>
-{{content}}
-</main>
-<script>
-    document.querySelectorAll('pre').forEach(pre => {
-        const button = document.createElement('button');
-        button.innerText = "Copy";
-        button.className = "copy-btn";
-        pre.appendChild(button);
 
-        button.addEventListener('click', () => {
-            const copyText = Array.from(pre.querySelectorAll('.copyable'))
-                .map(el => el.innerText)
-                .join("");
-            navigator.clipboard.writeText(copyText).then(() => {
-                button.innerText = "Copied";
-                setTimeout(() => button.innerText = "Copy", 1000);
+<body>
+    <main>
+        {{content}}
+    </main>
+    <script>
+        document.querySelectorAll('pre').forEach(pre => {
+            const button = document.createElement('button');
+            button.innerText = "Copy";
+            button.className = "copy-btn";
+            pre.appendChild(button);
+
+            button.addEventListener('click', () => {
+                const copyText = Array.from(pre.querySelectorAll('.copyable'))
+                    .map(el => el.innerText)
+                    .join("");
+                navigator.clipboard.writeText(copyText).then(() => {
+                    button.innerText = "Copied";
+                    setTimeout(() => button.innerText = "Copy", 1000);
+                });
             });
         });
-    });
-</script>
-{{umami}}
+    </script>
+    {{umami}}
 </body>
+
 </html>

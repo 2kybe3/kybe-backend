@@ -14,6 +14,7 @@ uuid = { version = "1.22.0", features = ["v7", "serde"] }
 maxminddb = { version = "0.28.1", features = ["mmap"] }
 tokio = { version = "1.49", features = ["full"] }
 tower_governor = "0.8.0"
+enum_delegate = "0.2.0"
 async-trait = "0.1.89"
 html-escape = "0.2.13"
 lazy_static = "1.5.0"

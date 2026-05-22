@@ -1,6 +1,6 @@
 use crate::{
 	config::types::UmamiConfig,
-	webserver::render::{ColorMapping, LinkTo, Object, Page, Style, color::Color},
+	webserver::render::{ColorMapping, LinkTo, Object, Page, Style, color::bit4::Bit4Color},
 };
 
 const HTML_TEMPLATE: &str = include_str!("../../../assets/template.html");
@@ -61,7 +61,7 @@ impl Page {
 		let mut output = String::new();
 		if title.is_some() || language.is_some() {
 			let mut parts = vec![];
-			let header_style = Style::new().fg(Color::CYAN);
+			let header_style = Style::new().fg(Bit4Color::CYAN);
 			if let Some(t) = title {
 				parts.push(format!(
 					"Title: {}{}",
@@ -157,7 +157,7 @@ impl Page {
 			} => Self::render_html_canvas(data, color_mapping).unwrap_or(
 				Self::render_html_text_blob(
 					"Error rendering Canvas",
-					&Style::new().fg(Color::RED),
+					&Style::new().fg(Bit4Color::RED),
 					&None,
 					true,
 				),

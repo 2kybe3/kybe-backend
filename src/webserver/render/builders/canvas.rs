@@ -2,19 +2,19 @@ use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
 
-use crate::webserver::render::{Color, ColorMapping, Object};
+use crate::webserver::render::{ColorMapping, Object, color::bit4::Bit4Color};
 
 pub static COLOR_MAPPING: Lazy<ColorMapping> = Lazy::new(|| {
 	let mut map = HashMap::new();
-	map.insert("D".into(), Color::DEFAULT);
-	map.insert("BL".into(), Color::BLACK);
-	map.insert("R".into(), Color::RED);
-	map.insert("G".into(), Color::GREEN);
-	map.insert("Y".into(), Color::YELLOW);
-	map.insert("BU".into(), Color::BLUE);
-	map.insert("M".into(), Color::MAGENTA);
-	map.insert("C".into(), Color::CYAN);
-	map.insert("W".into(), Color::WHITE);
+	map.insert("D".into(), Bit4Color::DEFAULT.into());
+	map.insert("BL".into(), Bit4Color::BLACK.into());
+	map.insert("R".into(), Bit4Color::RED.into());
+	map.insert("G".into(), Bit4Color::GREEN.into());
+	map.insert("Y".into(), Bit4Color::YELLOW.into());
+	map.insert("BU".into(), Bit4Color::BLUE.into());
+	map.insert("M".into(), Bit4Color::MAGENTA.into());
+	map.insert("C".into(), Bit4Color::CYAN.into());
+	map.insert("W".into(), Bit4Color::WHITE.into());
 
 	map
 });
