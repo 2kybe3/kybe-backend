@@ -22,7 +22,11 @@ pub trait ColorTrait {
 	fn is_default(&self) -> bool;
 
 	fn html(&self) -> Option<String> {
-		if self.is_default() { None } else { self.hex() }
+		if self.is_default() {
+			Some("inherit".into())
+		} else {
+			self.hex()
+		}
 	}
 
 	fn ansi(&self, fg: bool) -> Option<String>;
