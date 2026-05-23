@@ -1,22 +1,59 @@
 use crate::webserver::render::{
-	ColorMapping, LinkTo, Object, Page, Style, Theme, color::bit4::Bit4Color,
+	Object, Page, PageRenderer, Style, Theme,
+	color::bit4::Bit4Color,
+	object::{ColorMapping, LinkTo},
 };
 
-impl Page {
-	fn render_ansi_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String {
+pub struct AnsiRenderer();
+
+impl<'a> PageRenderer<'a> for AnsiRenderer {
+	fn render(page: &Page<'a>) -> String {
+		(*page.objects)
+			.iter()
+			.map(Self::render_object)
+			.collect::<Vec<_>>()
+			.join("")
+	}
+
+	fn render_object(obj: &Object) -> String {
+		match obj {
+			super::Object::TextBlob {
+				text,
+				style,
+				link_to,
+			} => Self::render_text_blob(text, style, link_to),
+			super::Object::CodeBlock {
+				title,
+				language,
+				code,
+			} => Self::render_code_block(title, language, code),
+			super::Object::Canvas {
+				data,
+				color_mapping,
+			} => Self::render_canvas(data, color_mapping),
+			super::Object::Image {
+				url,
+				alt,
+				width,
+				height,
+			} => Self::render_image(url, alt, width, height),
+		}
+	}
+
+	fn render_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String {
 		let mut output = style.ansi_code();
 		let mut text = text.to_string();
 
 		if let Some(link_to) = link_to
-			&& link_to.link.starts_with("http")
-			&& !text.contains(&link_to.link)
+			&& link_to.link().starts_with("http")
+			&& !text.contains(link_to.link())
 		{
 			let mut colored = String::new();
-			if let Some(style) = &link_to.separator_style {
+			if let Some(style) = &link_to.separator_style() {
 				colored.push_str(&style.ansi_code());
 			}
 			colored.push_str(" => ");
-			if let Some(style) = &link_to.link_style {
+			if let Some(style) = &link_to.link_style() {
 				colored.push_str(&style.ansi_code());
 			} else {
 				// If no link style is set use the previous style (the text)
@@ -27,11 +64,11 @@ impl Page {
 
 			match index {
 				Some(index) => {
-					text.insert_str(index, &format!("{}{}", &colored, &link_to.link));
+					text.insert_str(index, &format!("{}{}", &colored, &link_to.link()));
 				}
 				None => {
 					text.push_str(&colored);
-					text.push_str(&link_to.link);
+					text.push_str(link_to.link());
 				}
 			};
 		}
@@ -43,17 +80,13 @@ impl Page {
 		output
 	}
 
-	fn render_ansi_code_block(
-		title: &Option<String>,
-		language: &Option<String>,
-		code: &[Object],
-	) -> String {
+	fn render_code_block(title: &Option<String>, language: &Option<String>, code: &str) -> String {
 		let mut output = String::new();
 
 		if title.is_some() || language.is_some() {
 			output.push_str("---title---\n");
 			output.push_str(&Style::new().fg(Bit4Color::CYAN).ansi_code());
-			if let Some(title) = title {
+			if let Some(title) = &title {
 				output.push_str(&format!(
 					"title: {}{}",
 					title,
@@ -74,26 +107,24 @@ impl Page {
 			output.push_str("\n---code----\n");
 		}
 
-		output.push_str(
-			&code
-				.iter()
-				.map(Self::render_ansi_object)
-				.collect::<Vec<_>>()
-				.join(""),
-		);
+		// TODO: highlighting
+		output.push_str(code);
+
 		output.push_str("\n-----------\n\n");
 
 		output
 	}
 
-	fn render_ansi_image(url: &str, alt: &str) -> String {
-		Page::render_ansi_object(&Theme::default().link_colored(alt, url).into())
+	fn render_image(url: &str, alt: &str, _width: &i64, _height: &i64) -> String {
+		AnsiRenderer::render_object(&(Theme::default().link_colored(alt, url).into()))
 	}
 
-	fn render_ansi_canvas(data: &str, color_mapping: &ColorMapping) -> Option<String> {
+	fn render_canvas(data: &str, color_mapping: &ColorMapping) -> String {
 		let mut output = String::new();
 		let mut buffer = String::new();
 		let mut last_color = Bit4Color::DEFAULT.into();
+
+		let mut failed = false;
 
 		for ch in data.chars() {
 			buffer.push(ch);
@@ -117,54 +148,19 @@ impl Page {
 
 			let max_key_len = color_mapping.keys().map(|k| k.len()).max().unwrap_or(0);
 			if buffer.len() > max_key_len {
-				return None;
+				failed = true;
+				break;
 			}
 		}
 
-		if !buffer.is_empty() {
-			return None;
+		if !buffer.is_empty() && failed {
+			Self::render_text_blob(
+				"Error rendering Canvas",
+				&Style::new().fg(Bit4Color::RED),
+				&None,
+			)
+		} else {
+			output
 		}
-
-		Some(output)
-	}
-
-	pub fn render_ansi_object(obj: &Object) -> String {
-		match obj {
-			super::Object::TextBlob {
-				text,
-				style,
-				link_to,
-				..
-			} => Self::render_ansi_text_blob(text, style, link_to),
-			super::Object::CodeBlock {
-				title,
-				language,
-				code,
-			} => Self::render_ansi_code_block(title, language, code),
-			super::Object::Canvas {
-				data,
-				color_mapping,
-			} => Self::render_ansi_canvas(data, color_mapping).unwrap_or(
-				Self::render_ansi_text_blob(
-					"Error rendering Canvas",
-					&Style::new().fg(Bit4Color::RED),
-					&None,
-				),
-			),
-			super::Object::Image {
-				url,
-				alt,
-				width: _,
-				height: _,
-			} => Self::render_ansi_image(url, alt),
-		}
-	}
-
-	pub fn render_ansi(&self) -> String {
-		self.objects
-			.iter()
-			.map(Self::render_ansi_object)
-			.collect::<Vec<_>>()
-			.join("")
 	}
 }

@@ -1,9 +1,10 @@
 use uuid::Uuid;
 
 use crate::webserver::render::{
-	Objects, Style,
+	Style,
 	builders::{LinkToBuilder, TextBlobBuilder},
 	color::{bit4::Bit4Color, bit24::Bit24Color},
+	object::Objects,
 };
 
 pub const GERMAN_FLAG_BLACK: Bit24Color = Bit24Color::new(0, 0, 0);

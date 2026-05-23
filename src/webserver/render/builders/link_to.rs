@@ -1,4 +1,4 @@
-use crate::webserver::render::{LinkTo, Style};
+use crate::webserver::render::{Style, object::LinkTo};
 
 pub struct LinkToBuilder {
 	link: String,
@@ -34,10 +34,6 @@ impl LinkToBuilder {
 
 impl From<LinkToBuilder> for LinkTo {
 	fn from(l: LinkToBuilder) -> LinkTo {
-		LinkTo {
-			link: l.link,
-			separator_style: l.separator_style,
-			link_style: l.link_style,
-		}
+		LinkTo::new(l.link, l.separator_style, l.link_style)
 	}
 }

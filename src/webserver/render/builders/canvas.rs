@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
 
-use crate::webserver::render::{ColorMapping, Object, color::bit4::Bit4Color};
+use crate::webserver::render::{Object, color::bit4::Bit4Color, object::ColorMapping};
 
 pub static COLOR_MAPPING: Lazy<ColorMapping> = Lazy::new(|| {
 	let mut map = HashMap::new();

@@ -1,8 +1,4 @@
-use axum::{
-	Extension,
-	extract::State,
-	response::{Html, IntoResponse},
-};
+use axum::{Extension, extract::State, http::header, response::IntoResponse};
 use reqwest::StatusCode;
 
 use crate::webserver::{
@@ -16,21 +12,23 @@ pub async fn fallback_404(
 ) -> impl IntoResponse {
 	let theme = Theme::default();
 
-	let page = Page::from_iter([
+	let page = vec![
 		theme
 			.title("Look's like we couldn't serve your request ")
 			.into(),
 		TextBlobBuilder::new(":-(")
 			.style(theme.title.bold(true))
 			.into(),
-	]);
+	];
 
-	let (is_html, result) =
-		page.render(&ctx.user_agent, "/dev/null", &state.config.webserver.umami);
+	let page = Page::from_iter("/dev/null", &state.config, page);
 
-	if is_html {
-		(StatusCode::NOT_FOUND, Html(result)).into_response()
-	} else {
-		(StatusCode::NOT_FOUND, result).into_response()
-	}
+	let mut result = page.render(&ctx.user_agent);
+
+	(
+		StatusCode::OK,
+		[(header::CONTENT_TYPE, result.take_content_type())],
+		result.take_data(),
+	)
+		.into_response()
 }

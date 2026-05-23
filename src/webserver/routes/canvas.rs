@@ -3,7 +3,8 @@ use std::sync::Arc;
 use axum::{
 	Extension,
 	extract::{Query, State},
-	response::{Html, IntoResponse},
+	http::header,
+	response::IntoResponse,
 };
 use reqwest::StatusCode;
 use serde::Deserialize;
@@ -34,17 +35,17 @@ pub async fn canvas(
 ) -> impl IntoResponse {
 	let q = parsed_query.q.clone();
 	let page = match q {
-		Some(q) => Page::from_iter([
+		Some(q) => vec![
 			CanvasBuilder::new(q).into(),
 			TextBlobBuilder::new("\n").style(Style::new()).into(),
-		]),
+		],
 		None => {
 			let mut list = COLOR_MAPPING
 				.iter()
 				.map(|(key, value)| format!("{key}: {value:?}"))
 				.collect::<Vec<_>>();
 			list.push("NL: NewLine".into());
-			Page::from_iter([
+			vec![
 				TextBlobBuilder::new("Canvas\n\n")
 					.style(Style::new().fg(Bit4Color::RED))
 					.into(),
@@ -56,23 +57,23 @@ pub async fn canvas(
 					"\n\nExample: https://kybe.xyz/canvas?q=BLBLBLBLBLBLBLBLBLBLNLRRRRRRRRRRNLYYYYYYYYYY\n",
 				)
 				.into(),
-			])
+			]
 		}
 	};
 
-	let (is_html, result) = page.render(
-		&ctx.user_agent,
-		"/dev/canvas",
-		&state.config.webserver.umami,
-	);
+	let page = Page::from_iter("/dev/canvas", &state.config, page);
+
+	let mut result = page.render(&ctx.user_agent);
 
 	let mut trace = trace.lock().await;
+
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
 
-	if is_html {
-		(StatusCode::OK, Html(result)).into_response()
-	} else {
-		(StatusCode::OK, result).into_response()
-	}
+	(
+		StatusCode::OK,
+		[(header::CONTENT_TYPE, result.take_content_type())],
+		result.take_data(),
+	)
+		.into_response()
 }

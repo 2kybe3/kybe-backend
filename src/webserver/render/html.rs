@@ -1,15 +1,26 @@
-use crate::{
-	config::types::UmamiConfig,
-	webserver::render::{ColorMapping, LinkTo, Object, Page, Style, color::bit4::Bit4Color},
+use crate::webserver::render::{
+	Object, Page, PageRenderer, Style,
+	color::bit4::Bit4Color,
+	object::{ColorMapping, LinkTo},
 };
 
 const HTML_TEMPLATE: &str = include_str!("../../../assets/template.html");
 
-impl Page {
-	pub fn render_html_page(&self, title: &str, umami: &UmamiConfig) -> String {
-		let inner_html = self.render_html();
+pub struct HtmlRenderer();
 
-		let umami = match (umami.id.clone(), umami.script_path.clone()) {
+impl<'a> PageRenderer<'a> for HtmlRenderer {
+	fn render(page: &Page<'a>) -> String {
+		let inner_html = page
+			.objects
+			.iter()
+			.map(Self::render_object)
+			.collect::<Vec<_>>()
+			.join("");
+
+		let umami = match (
+			page.config.webserver.umami.id.clone(),
+			page.config.webserver.umami.script_path.clone(),
+		) {
 			(Some(id), Some(path)) => format!(
 				"<script defer src=\"{}\" data-website-id=\"{}\"></script>",
 				path, id
@@ -22,42 +33,53 @@ impl Page {
 		};
 
 		HTML_TEMPLATE
-			.replace("{{title}}", &html_escape::encode_text(title))
+			.replace("{{title}}", &html_escape::encode_text(page.title))
 			.replace("{{content}}", &inner_html)
 			.replace("{{umami}}", &umami)
 	}
 
-	pub fn render_html_text_blob(
-		text: &str,
-		style: &Style,
-		link_to: &Option<LinkTo>,
-		copyable: bool,
-	) -> String {
+	fn render_object(obj: &Object) -> String {
+		match obj {
+			super::Object::TextBlob {
+				text,
+				style,
+				link_to,
+			} => Self::render_text_blob(text, style, link_to),
+			super::Object::CodeBlock {
+				title,
+				language,
+				code,
+			} => Self::render_code_block(title, language, code),
+			super::Object::Canvas {
+				data,
+				color_mapping,
+			} => Self::render_canvas(data, color_mapping),
+			super::Object::Image {
+				url,
+				alt,
+				width,
+				height,
+			} => Self::render_image(url, alt, width, height),
+		}
+	}
+
+	fn render_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String {
 		let (start, end) = match link_to {
 			Some(link_to) => (
-				&*format!(
-					"<a class=\"[class]\" style=\"[style]\" href={}>",
-					link_to.link
-				),
+				&*format!("<a style=\"[style]\" href={}>", link_to.link()),
 				"</a>",
 			),
-			None => ("<span class=\"[class]\" style=\"[style]\">", "</span>"),
+			None => ("<span style=\"[style]\">", "</span>"),
 		};
 		format!(
 			"{}{}{}",
-			&start
-				.replace("[style]", &style.html_style())
-				.replace("[class]", if copyable { "copyable" } else { "" }),
+			&start.replace("[style]", &style.html_style()),
 			&html_escape::encode_text(text).replace("\n", "<br>"),
 			end
 		)
 	}
 
-	pub fn render_html_code_block(
-		title: &Option<String>,
-		language: &Option<String>,
-		code: &[Object],
-	) -> String {
+	fn render_code_block(title: &Option<String>, language: &Option<String>, code: &str) -> String {
 		let mut output = String::new();
 		if title.is_some() || language.is_some() {
 			let mut parts = vec![];
@@ -81,18 +103,15 @@ impl Page {
 		}
 
 		output.push_str("<pre><code>");
-		output.push_str(
-			&code
-				.iter()
-				.map(Self::render_html_object)
-				.collect::<Vec<_>>()
-				.join(""),
-		);
+
+		// TODO: highlighting
+		output.push_str(code);
+
 		output.push_str("</code></pre>");
 		output
 	}
 
-	fn render_html_image(url: &str, alt: &str, width: i64, height: i64) -> String {
+	fn render_image(url: &str, alt: &str, width: &i64, height: &i64) -> String {
 		format!(
 			"<img src=\"{}\" alt=\"{}\" width=\"{}\" height=\"{}\">",
 			url,
@@ -102,9 +121,11 @@ impl Page {
 		)
 	}
 
-	fn render_html_canvas(data: &str, color_mapping: &ColorMapping) -> Option<String> {
+	fn render_canvas(data: &str, color_mapping: &ColorMapping) -> String {
 		let mut output = String::new();
 		let mut buffer = String::new();
+
+		let mut failed = false;
 
 		for ch in data.chars() {
 			buffer.push(ch);
@@ -127,55 +148,18 @@ impl Page {
 
 			let max_key_len = color_mapping.keys().map(|k| k.len()).max().unwrap_or(0);
 			if buffer.len() > max_key_len {
-				return None;
+				failed = true;
 			}
 		}
 
-		if !buffer.is_empty() {
-			return None;
+		if !buffer.is_empty() && failed {
+			Self::render_text_blob(
+				"Error rendering Canvas",
+				&Style::new().fg(Bit4Color::RED),
+				&None,
+			)
+		} else {
+			output
 		}
-
-		Some(output)
-	}
-
-	pub fn render_html_object(obj: &Object) -> String {
-		match obj {
-			super::Object::TextBlob {
-				text,
-				style,
-				link_to,
-				copyable,
-			} => Self::render_html_text_blob(text, style, link_to, *copyable),
-			super::Object::CodeBlock {
-				title,
-				language,
-				code,
-			} => Self::render_html_code_block(title, language, code),
-			super::Object::Canvas {
-				data,
-				color_mapping,
-			} => Self::render_html_canvas(data, color_mapping).unwrap_or(
-				Self::render_html_text_blob(
-					"Error rendering Canvas",
-					&Style::new().fg(Bit4Color::RED),
-					&None,
-					true,
-				),
-			),
-			super::Object::Image {
-				url,
-				alt,
-				width,
-				height,
-			} => Self::render_html_image(url, alt, *width, *height),
-		}
-	}
-
-	pub fn render_html(&self) -> String {
-		self.objects
-			.iter()
-			.map(Self::render_html_object)
-			.collect::<Vec<_>>()
-			.join("")
 	}
 }

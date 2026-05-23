@@ -3,15 +3,15 @@ use crate::webserver::render::Object;
 pub struct CodeBlockBuilder {
 	title: Option<String>,
 	language: Option<String>,
-	code: Vec<Object>,
+	code: String,
 }
 
 impl CodeBlockBuilder {
-	pub fn new(code: Vec<Object>) -> CodeBlockBuilder {
+	pub fn new(code: String) -> CodeBlockBuilder {
 		CodeBlockBuilder {
 			title: None,
 			language: None,
-			code: code.into_iter().collect(),
+			code,
 		}
 	}
 

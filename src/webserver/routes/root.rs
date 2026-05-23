@@ -1,8 +1,4 @@
-use axum::{
-	Extension,
-	extract::State,
-	response::{Html, IntoResponse},
-};
+use axum::{Extension, extract::State, http::header, response::IntoResponse};
 use reqwest::StatusCode;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -12,10 +8,7 @@ use crate::{
 	external::lastfm,
 	webserver::{
 		RequestContext, WebServerState, common,
-		render::{
-			Objects, Page, Theme,
-			builders::{CodeBlockBuilder, TextBlobBuilder},
-		},
+		render::{Page, Theme, builders::CodeBlockBuilder, object::Objects},
 	},
 };
 
@@ -40,11 +33,7 @@ pub async fn root(
 			.into(),
 		theme.title(")\n").into(),
 		theme.subtitle("kybe - /dev/urandom stuff\n\n").into(),
-		CodeBlockBuilder::new(vec![
-			TextBlobBuilder::new("$ ").copyable(false).into(),
-			TextBlobBuilder::new("curl https://kybe.xyz").into(),
-		])
-		.into(),
+		CodeBlockBuilder::new("curl https://kybe.xyz".into()).into(),
 		theme.title("\nCurrently Listening:\n\n").into(),
 		theme
 			.label(
@@ -256,16 +245,17 @@ pub async fn root(
 	]);
 	page.append(&mut common::footer::footer(trace.trace_id));
 
-	let page = Page::from_iter(page);
+	let page = Page::from_iter("/", &state.config, page);
 
-	let (is_html, result) = page.render(&ctx.user_agent, "/", &state.config.webserver.umami);
+	let mut result = page.render(&ctx.user_agent);
 
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
 
-	if is_html {
-		(StatusCode::OK, Html(result)).into_response()
-	} else {
-		(StatusCode::OK, result).into_response()
-	}
+	(
+		StatusCode::OK,
+		[(header::CONTENT_TYPE, result.take_content_type())],
+		result.take_data(),
+	)
+		.into_response()
 }

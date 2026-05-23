@@ -2,103 +2,90 @@ mod ansi;
 pub mod builders;
 pub mod color;
 mod html;
+pub mod object;
 mod style;
 mod theme;
-
-use std::collections::HashMap;
 
 pub use color::Color;
 pub use style::Style;
 pub use theme::Theme;
 
-use crate::config::types::UmamiConfig;
-
-pub struct LinkTo {
-	link: String,
-	separator_style: Option<Style>,
-	link_style: Option<Style>,
-}
-
-type ColorMapping = HashMap<String, Color>;
-
-pub enum Object {
-	TextBlob {
-		text: String,
-		style: Style,
-		link_to: Option<LinkTo>,
-		copyable: bool,
+use crate::{
+	config::types::Config,
+	webserver::render::{
+		ansi::AnsiRenderer,
+		html::HtmlRenderer,
+		object::{ColorMapping, LinkTo, Object, Objects},
 	},
-	CodeBlock {
-		title: Option<String>,
-		language: Option<String>,
-		code: Vec<Object>,
-	},
-	Canvas {
-		data: String,
-		color_mapping: ColorMapping,
-	},
-	Image {
-		url: String,
-		alt: String,
-		width: i64,
-		height: i64,
-	},
-}
+};
 
-pub enum Objects {
-	One(Object),
-	Many(Vec<Object>),
-}
-
-impl IntoIterator for Objects {
-	type Item = Object;
-	type IntoIter = std::vec::IntoIter<Object>;
-
-	fn into_iter(self) -> Self::IntoIter {
-		match self {
-			Objects::One(obj) => vec![obj].into_iter(),
-			Objects::Many(vec) => vec.into_iter(),
-		}
-	}
-}
-
-impl From<Vec<Object>> for Objects {
-	fn from(v: Vec<Object>) -> Self {
-		Objects::Many(v)
-	}
-}
-
-impl<T: Into<Object>> From<T> for Objects {
-	fn from(o: T) -> Self {
-		Objects::One(o.into())
-	}
-}
-
-pub struct Page {
+pub struct Page<'a> {
+	title: &'a str,
+	config: &'a Config,
 	objects: Vec<Object>,
 }
 
-impl Page {
-	pub fn new(objects: Vec<Object>) -> Page {
-		Page { objects }
+pub struct RenderResult {
+	data: String,
+	content_type: String,
+}
+
+pub trait PageRenderer<'a> {
+	fn render(page: &Page<'a>) -> String;
+	fn render_object(obj: &Object) -> String;
+	fn render_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String;
+	fn render_code_block(title: &Option<String>, language: &Option<String>, code: &str) -> String;
+	fn render_image(url: &str, alt: &str, width: &i64, height: &i64) -> String;
+	fn render_canvas(data: &str, color_mapping: &ColorMapping) -> String;
+}
+
+impl RenderResult {
+	pub fn new(page: Page, user_agent: &str) -> RenderResult {
+		match user_agent_is_cli(user_agent) {
+			true => RenderResult {
+				data: AnsiRenderer::render(&page),
+				content_type: "text/:-)".into(),
+			},
+			false => RenderResult {
+				data: HtmlRenderer::render(&page),
+				content_type: "text/html".into(),
+			},
+		}
 	}
 
-	// (is_html, data)
-	pub fn render(self, user_agent: &str, title: &str, umami: &UmamiConfig) -> (bool, String) {
-		if user_agent.contains("curl") {
-			(false, self.render_ansi())
-		} else {
-			(true, self.render_html_page(title, umami))
-		}
+	pub fn take_content_type(&mut self) -> String {
+		std::mem::take(&mut self.content_type)
+	}
+
+	pub fn take_data(&mut self) -> String {
+		std::mem::take(&mut self.data)
 	}
 }
 
-impl Page {
-	pub fn from_iter<I>(iter: I) -> Self
+impl<'a> Page<'a> {
+	pub fn new(title: &'a str, config: &'a Config, objects: Vec<Object>) -> Page<'a> {
+		Page {
+			title,
+			config,
+			objects,
+		}
+	}
+
+	pub fn render(self, user_agent: &str) -> RenderResult {
+		RenderResult::new(self, user_agent)
+	}
+}
+
+impl<'a> Page<'a> {
+	pub fn from_iter<I>(title: &'a str, config: &'a Config, iter: I) -> Self
 	where
 		I: IntoIterator<Item = Objects>,
 	{
 		let objects = iter.into_iter().flatten().collect();
-		Self::new(objects)
+		Self::new(title, config, objects)
 	}
+}
+
+fn user_agent_is_cli(user_agent: &str) -> bool {
+	user_agent.to_lowercase().trim().contains("curl")
 }

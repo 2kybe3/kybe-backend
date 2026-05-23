@@ -1,8 +1,7 @@
-use crate::webserver::render::{LinkTo, Object, Style};
+use crate::webserver::render::{Object, Style, object::LinkTo};
 
 pub struct TextBlobBuilder {
 	text: String,
-	copyable: bool,
 	style: Option<Style>,
 	link_to: Option<LinkTo>,
 }
@@ -11,7 +10,6 @@ impl TextBlobBuilder {
 	pub fn new(text: impl Into<String>) -> Self {
 		Self {
 			text: text.into(),
-			copyable: true,
 			style: None,
 			link_to: None,
 		}
@@ -20,7 +18,6 @@ impl TextBlobBuilder {
 	pub fn style(self, style: Style) -> TextBlobBuilder {
 		TextBlobBuilder {
 			text: self.text,
-			copyable: false,
 			style: Some(style),
 			link_to: self.link_to,
 		}
@@ -29,18 +26,8 @@ impl TextBlobBuilder {
 	pub fn link_to(self, link_to: LinkTo) -> TextBlobBuilder {
 		TextBlobBuilder {
 			text: self.text,
-			copyable: self.copyable,
 			style: self.style,
 			link_to: Some(link_to),
-		}
-	}
-
-	pub fn copyable(self, copyable: bool) -> TextBlobBuilder {
-		TextBlobBuilder {
-			text: self.text,
-			copyable,
-			style: self.style,
-			link_to: self.link_to,
 		}
 	}
 }
@@ -49,7 +36,6 @@ impl From<TextBlobBuilder> for Object {
 	fn from(t: TextBlobBuilder) -> Self {
 		Object::TextBlob {
 			text: t.text,
-			copyable: t.copyable,
 			style: t.style.unwrap_or_default(),
 			link_to: t.link_to,
 		}

@@ -1,5 +1,3 @@
-use tracing::info;
-
 use crate::webserver::render::color::{ColorTrait, bit24::Bit24Color};
 
 impl Bit4Code {
@@ -63,7 +61,6 @@ impl ColorTrait for Bit4Color {
 		if !self.is_default()
 			&& let Some((code, _bit24)) = self.0
 		{
-			info!("{} : {} @ {}", fg, code.fg(), code.bg());
 			Some(format!("\x1b[{}m", if fg { code.fg() } else { code.bg() }))
 		} else {
 			None

@@ -1,10 +1,6 @@
 use std::sync::Arc;
 
-use axum::{
-	Extension,
-	extract::State,
-	response::{Html, IntoResponse},
-};
+use axum::{Extension, extract::State, http::header, response::IntoResponse};
 use reqwest::StatusCode;
 use tokio::sync::Mutex;
 
@@ -12,7 +8,7 @@ use crate::{
 	db::website_traces::{RequestStatus, WebsiteTrace},
 	webserver::{
 		RequestContext, WebServerState,
-		render::{Objects, Page, Theme, builders::ImageBuilder},
+		render::{Page, Theme, builders::ImageBuilder, object::Objects},
 	},
 };
 
@@ -43,17 +39,19 @@ pub async fn nix(
 		ImageBuilder::new(ctx.url("/static/nix.png"), "My Config Demo", 800, 450).into(),
 	];
 
-	let page = Page::from_iter(page);
+	let page = Page::from_iter("/dev/nix", &state.config, page);
 
-	let (is_html, result) = page.render(&ctx.user_agent, "/dev/nix", &state.config.webserver.umami);
+	let mut result = page.render(&ctx.user_agent);
 
 	let mut trace = trace.lock().await;
+
 	trace.request_status = RequestStatus::Success;
 	trace.status_code = StatusCode::OK.into();
 
-	if is_html {
-		(StatusCode::OK, Html(result)).into_response()
-	} else {
-		(StatusCode::OK, result).into_response()
-	}
+	(
+		StatusCode::OK,
+		[(header::CONTENT_TYPE, result.take_content_type())],
+		result.take_data(),
+	)
+		.into_response()
 }
