@@ -1840,7 +1840,6 @@ dependencies = [
  "futures",
  "governor",
  "html-escape",
- "lazy_static",
  "maxminddb",
  "once_cell",
  "poise",

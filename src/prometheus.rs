@@ -1,11 +1,10 @@
 use anyhow::anyhow;
-use lazy_static::lazy_static;
 use prometheus_client::{
     encoding::{EncodeLabelSet, text::encode},
     metrics::{counter::Counter, family::Family, gauge::Gauge, histogram::Histogram},
     registry::Registry,
 };
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 use tokio::time::Instant;
 
 const BASE: &str = "kybe_backend_";
@@ -15,17 +14,19 @@ pub struct StatusLabel {
     pub status: u16,
 }
 
-lazy_static! {
-    pub static ref REGISTRY: Mutex<Registry> = Mutex::new(<Registry>::default());
-    pub static ref START_TIME: Instant = Instant::now();
-    pub static ref UPTIME_SECONDS: Gauge = Gauge::default();
-    pub static ref LASTFM_FETCH_DURATION: Histogram = Histogram::new(vec![
+pub static REGISTRY: LazyLock<Mutex<Registry>> =
+    LazyLock::new(|| Mutex::new(<Registry>::default()));
+pub static START_TIME: LazyLock<Instant> = LazyLock::new(Instant::now);
+pub static UPTIME_SECONDS: LazyLock<Gauge> = LazyLock::new(Gauge::default);
+pub static LASTFM_FETCH_DURATION: LazyLock<Histogram> = LazyLock::new(|| {
+    Histogram::new(vec![
         0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 2.0, 5.0,
-    ]);
-    pub static ref LASTFM_FETCH_STATUS: Family<StatusLabel, Counter> = Family::default();
-    pub static ref LASTFM_LISTENING_STATE: Gauge = Gauge::default();
-    pub static ref LASTFM_FETCH_TIMESTAMP: Gauge = Gauge::default();
-}
+    ])
+});
+pub static LASTFM_FETCH_STATUS: LazyLock<Family<StatusLabel, Counter>> =
+    LazyLock::new(Family::default);
+pub static LASTFM_LISTENING_STATE: LazyLock<Gauge> = LazyLock::new(Gauge::default);
+pub static LASTFM_FETCH_TIMESTAMP: LazyLock<Gauge> = LazyLock::new(Gauge::default);
 
 pub fn register_custom_metrics() {
     let mut reg = REGISTRY.lock().expect("Mutex lock shouldn't fail");
