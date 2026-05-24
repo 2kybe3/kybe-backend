@@ -71,4 +71,4 @@ jobs:
 
       - name: Push to Attic
         if: ${{ steps.attic.conclusion == 'success' }}
-        run: attic push main -j 64 $(ls -d /nix/store/*/)
+        run: attic push main --ignore-upstream-cache-filter -j 64 $(ls -d /nix/store/*/)
