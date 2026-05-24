@@ -32,23 +32,31 @@ let
     nativeBuildInputs = with pkgs; [
       pkg-config
     ];
-
-    postFixup = ''
-      wrapProgram $out/bin/kybe-backend \
-        --set KYBE_BACKEND_STATIC_DIR ${../static} \
-        --set KYBE_BACKEND_GIT_SHA ${self.rev or self.dirtyRev}
-    '';
   };
 
   cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
-  kybe-backend = craneLib.buildPackage (
+  kybe-backend-unwrapped = craneLib.buildPackage (
     commonArgs
     // {
       inherit cargoArtifacts;
       meta.mainProgram = "kybe-backend";
     }
   );
+
+  kybe-backend = pkgs.symlinkJoin {
+    name = "kybe-backend-wrapped";
+
+    paths = [ kybe-backend-unwrapped ];
+
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+
+    postBuild = ''
+      wrapProgram $out/bin/kybe-backend \
+        --set KYBE_BACKEND_STATIC_DIR ${../static} \
+        --set KYBE_BACKEND_GIT_SHA ${self.rev or self.dirtyRev}
+    '';
+  };
 
   checks = {
     inherit kybe-backend;
