@@ -30,7 +30,7 @@
       in
       {
         checks = {
-          inherit (backend.checks) kybe-backend kybe-backend-clippy;
+          inherit (backend.checks) kybe-backend-clippy;
           formatting = treefmt-eval.config.build.check self;
         };
         packages = {
