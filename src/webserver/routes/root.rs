@@ -8,7 +8,12 @@ use crate::{
     external::lastfm,
     webserver::{
         RequestContext, WebServerState, common,
-        render::{Page, Theme, builders::CodeBlockBuilder, object::Objects, user_agent_is_cli},
+        render::{
+            Page, Theme,
+            builders::{CodeBlockBuilder, TextBlobBuilder},
+            object::Objects,
+            user_agent_is_cli,
+        },
     },
 };
 
@@ -36,11 +41,14 @@ pub async fn root(
     ];
 
     if !user_agent_is_cli(&ctx.user_agent) {
-        page.push(CodeBlockBuilder::new("curl https://kybe.xyz".into()).into());
+        page.append(&mut vec![
+            CodeBlockBuilder::new("curl https://kybe.xyz".into()).into(),
+            theme.raw("\n").into(),
+        ]);
     };
 
     page.append(&mut vec![
-        theme.title("\nCurrently Listening:\n\n").into(),
+        theme.title("Currently Listening:\n\n").into(),
         theme
             .label(
                 "Playing",
@@ -48,13 +56,14 @@ pub async fn root(
 					theme
 						.link_colored(
 							if playing.is_some() {
-								"True\n"
+								"True"
 							} else {
-								"False\n"
+								"False"
 							},
 							"https://metrics.kybe.xyz/public-dashboards/f64d242587e14e2689b22e0ff542a1e9",
 						)
 						.into(),
+                    theme.comment(" (click me)\n").into(),
 				],
             )
             .into(),
@@ -64,25 +73,16 @@ pub async fn root(
         page.append(&mut vec![
             theme
                 .label(
-                    "Artist",
+                    "Song",
                     vec![
+                        theme
+                            .link_colored(playing.name.as_str(), &playing.url)
+                            .into(),
+                        TextBlobBuilder::new(" — ").style(theme.link.clone()).into(), // oh no, a em-dash kek (- looks to short lol)
                         theme
                             .link_colored(
                                 format!("{}\n", playing.artist.as_str()).as_str(),
                                 &lastfm::artist_url(&playing.artist),
-                            )
-                            .into(),
-                    ],
-                )
-                .into(),
-            theme
-                .label(
-                    "Name",
-                    vec![
-                        theme
-                            .link_colored(
-                                format!("{}\n", playing.name.as_str()).as_str(),
-                                &playing.url,
                             )
                             .into(),
                     ],
@@ -95,12 +95,12 @@ pub async fn root(
         theme.title("\nProjects:\n\n").into(),
         theme
             .label(
-                "gh-notify-daemon",
+                "cheat-sh",
                 vec![
                     theme
                         .link_colored(
-                            "A github notification daemon",
-                            "https://git.kybe.xyz/2kybe3/gh-notify-daemon",
+                            "A tiny wrapper for cheat.sh",
+                            "https://git.kybe.xyz/2kybe3/cheat-sh",
                         )
                         .into(),
                     theme.text("\n").into(),
@@ -123,12 +123,12 @@ pub async fn root(
             .into(),
         theme
             .label(
-                "cheat-sh",
+                "gh-notify-daemon",
                 vec![
                     theme
                         .link_colored(
-                            "A tiny wrapper for cheat.sh",
-                            "https://git.kybe.xyz/2kybe3/cheat-sh",
+                            "A github notification daemon",
+                            "https://git.kybe.xyz/2kybe3/gh-notify-daemon",
                         )
                         .into(),
                     theme.text("\n").into(),
@@ -141,17 +141,10 @@ pub async fn root(
                 "PGP",
                 vec![
                     theme
-                        .link_colored(ctx.url("/pgp\n"), &ctx.url("/pgp"))
-                        .into(),
-                ],
-            )
-            .into(),
-        theme
-            .label(
-                "Matrix",
-                vec![
-                    theme
-                        .link_colored("@kybe:kybe.xyz\n", "https://matrix.to/#/@kybe:kybe.xyz")
+                        .link_colored(
+                            "4B2067C3BD6D410F13E5 36A343CE43938A3C7A8F\n",
+                            &ctx.url("/pgp"),
+                        )
                         .into(),
                 ],
             )
@@ -166,14 +159,33 @@ pub async fn root(
                 ],
             )
             .into(),
+        theme
+            .label(
+                "Matrix",
+                vec![
+                    theme
+                        .link_colored("@kybe:kybe.xyz\n", "https://matrix.to/#/@kybe:kybe.xyz")
+                        .into(),
+                ],
+            )
+            .into(),
         theme.title("\nOther Platforms:\n\n").into(),
         theme
             .label(
                 "Git",
                 vec![
                     theme
-                        .link_colored("https://git.kybe.xyz/\n", "https://git.kybe.xyz/")
+                        .link_colored("2kybe3", "https://git.kybe.xyz/2kybe3")
                         .into(),
+                    theme.text(" ").into(),
+                    theme
+                        .link_colored("renovate", "https://git.kybe.xyz/renovate")
+                        .into(),
+                    theme.text(" ").into(),
+                    theme
+                        .link_colored("archive", "https://git.kybe.xyz/archive")
+                        .into(),
+                    theme.comment(" (most used)\n").into(),
                 ],
             )
             .into(),
@@ -196,7 +208,7 @@ pub async fn root(
                 "Codeberg",
                 vec![
                     theme
-                        .link_colored("https://codeberg.org/kybe\n", "https://codeberg.org/kybe")
+                        .link_colored("kybe\n", "https://codeberg.org/kybe")
                         .into(),
                 ],
             )
@@ -204,20 +216,26 @@ pub async fn root(
         theme.title("\nOther Endpoints:\n\n").into(),
         theme
             .label(
-                "Identity",
+                "IP",
+                vec![theme.link_colored(ctx.url("/ip\n"), &ctx.url("/ip")).into()],
+            )
+            .into(),
+        theme
+            .label(
+                "Canvas",
                 vec![
                     theme
-                        .link_colored(ctx.url("/ident.txt\n"), &ctx.url("/ident.txt"))
+                        .link_colored(ctx.url("/canvas\n"), &ctx.url("/canvas"))
                         .into(),
                 ],
             )
             .into(),
         theme
             .label(
-                "Now Listening",
+                "Identity",
                 vec![
                     theme
-                        .link_colored(ctx.url("/now\n"), &ctx.url("/now"))
+                        .link_colored(ctx.url("/ident.txt\n"), &ctx.url("/ident.txt"))
                         .into(),
                 ],
             )
@@ -234,18 +252,12 @@ pub async fn root(
             .into(),
         theme
             .label(
-                "Canvas",
+                "Now Listening",
                 vec![
                     theme
-                        .link_colored(ctx.url("/canvas\n"), &ctx.url("/canvas"))
+                        .link_colored(ctx.url("/now\n"), &ctx.url("/now"))
                         .into(),
                 ],
-            )
-            .into(),
-        theme
-            .label(
-                "IP",
-                vec![theme.link_colored(ctx.url("/ip\n"), &ctx.url("/ip")).into()],
             )
             .into(),
     ]);

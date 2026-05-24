@@ -11,7 +11,6 @@ pub struct Theme {
     pub text: Style,
     pub link: Style,
     pub link_separator: Style,
-    #[allow(unused)]
     pub comment: Style,
 }
 
@@ -24,7 +23,7 @@ impl Default for Theme {
             text: Style::new().fg(Bit4Color::WHITE),
             link: Style::new().fg(Bit4Color::GREEN),
             link_separator: Style::new().fg(Bit4Color::WHITE),
-            comment: Style::new().fg(Bit4Color::BLACK).dim(true),
+            comment: Style::new().fg(Bit4Color::BRIGHT_WHITE).dim(true),
         }
     }
 }
@@ -47,7 +46,6 @@ impl Theme {
         text.into().style(self.text.clone())
     }
 
-    #[allow(unused)]
     pub fn comment(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
         text.into().style(self.comment.clone())
     }
