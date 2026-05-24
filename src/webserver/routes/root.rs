@@ -170,7 +170,7 @@ pub async fn root(
                     theme
                         .link_colored("@kybe:kybe.xyz", "https://matrix.to/#/@kybe:kybe.xyz")
                         .into(),
-                    theme.comment(" (prefered)\n").into(),
+                    theme.comment(" (preferred)\n").into(),
                 ],
             )
             .into(),
