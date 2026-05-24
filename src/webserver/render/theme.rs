@@ -12,6 +12,7 @@ pub struct Theme {
     pub link: Style,
     pub link_separator: Style,
     pub comment: Style,
+    pub terminal_prompt: Style,
 }
 
 impl Default for Theme {
@@ -24,12 +25,12 @@ impl Default for Theme {
             link: Style::new().fg(Bit4Color::GREEN),
             link_separator: Style::new().fg(Bit4Color::WHITE),
             comment: Style::new().fg(Bit4Color::BRIGHT_WHITE).dim(true),
+            terminal_prompt: Style::new().fg(Bit4Color::CYAN),
         }
     }
 }
 
 impl Theme {
-    #[allow(unused)]
     pub fn raw(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
         text.into()
     }
@@ -48,6 +49,12 @@ impl Theme {
 
     pub fn comment(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
         text.into().style(self.comment.clone())
+    }
+
+    pub fn terminal_prompt(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
+        text.into()
+            .style(self.terminal_prompt.clone())
+            .copyable(false)
     }
 
     pub fn link_colored(&self, text: impl Into<TextBlobBuilder>, link: &str) -> TextBlobBuilder {

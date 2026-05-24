@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 use crate::{
     db::website_traces::{RequestStatus, WebsiteTrace},
     webserver::{
-        RequestContext, WebServerState, common,
+        RequestContext, TERMINAL_PROMPT, WebServerState, common,
         render::{
             Page, Theme,
             builders::{CodeBlockBuilder, TextBlobBuilder},
@@ -26,20 +26,20 @@ pub async fn pgp(
             .title("Hello Stranger, and maybe PGP user :-)\n\n")
             .into(),
         CodeBlockBuilder::new(vec![
-            TextBlobBuilder::new("$ ").copyable(false).into(),
+            theme.terminal_prompt(TERMINAL_PROMPT).into(),
             TextBlobBuilder::new("curl https://kybe.xyz/pgp.txt | gpg --import").into(),
         ])
         .title("Curl")
         .into(),
         CodeBlockBuilder::new(vec![
-            TextBlobBuilder::new("$ ").copyable(false).into(),
+            theme.terminal_prompt(TERMINAL_PROMPT).into(),
             TextBlobBuilder::new("resolvectl openpgp kybe@kybe.xyz --raw=payload | gpg --import")
                 .into(),
         ])
         .title("RFC7929")
         .into(),
         CodeBlockBuilder::new(vec![
-            TextBlobBuilder::new("$ ").copyable(false).into(),
+            theme.terminal_prompt(TERMINAL_PROMPT).into(),
             TextBlobBuilder::new("ssh ssh.kybe.xyz pgp | gpg --import").into(),
         ])
         .title("SSH (IPv6 required)")

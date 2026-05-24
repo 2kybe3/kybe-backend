@@ -7,7 +7,7 @@ use crate::{
     db::website_traces::{RequestStatus, WebsiteTrace},
     external::lastfm,
     webserver::{
-        RequestContext, WebServerState, common,
+        RequestContext, TERMINAL_PROMPT, WebServerState, common,
         render::{
             Page, Theme,
             builders::{CodeBlockBuilder, TextBlobBuilder},
@@ -43,7 +43,7 @@ pub async fn root(
     if !user_agent_is_cli(&ctx.user_agent) {
         page.append(&mut vec![
             CodeBlockBuilder::new(vec![
-                TextBlobBuilder::new("$ ").copyable(false).into(),
+                theme.terminal_prompt(TERMINAL_PROMPT).into(),
                 TextBlobBuilder::new("curl https://kybe.xyz").into(),
             ])
             .into(),

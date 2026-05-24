@@ -34,6 +34,8 @@ use tower_governor::{GovernorError, GovernorLayer};
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{error, warn};
 
+pub static TERMINAL_PROMPT: &str = "λ ";
+
 #[derive(Clone)]
 struct WebServerState {
     mm: Arc<MaxMind>,
