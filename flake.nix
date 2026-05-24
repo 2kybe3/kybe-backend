@@ -1,36 +1,44 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
+    flake-utils.url = "github:numtide/flake-utils";
+
+    crane.url = "github:ipetkov/crane";
+
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
     {
+      self,
+      crane,
       nixpkgs,
       flake-utils,
-      rust-overlay,
+      treefmt-nix,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        overlays = [ (import rust-overlay) ];
-        pkgs = import nixpkgs { inherit system overlays; };
+        pkgs = import nixpkgs { inherit system; };
+        backend = pkgs.callPackage ./nix/backend.nix { inherit self crane; };
+        image = pkgs.callPackage ./nix/image.nix { backend = backend.package; };
+        treefmt-eval = treefmt-nix.lib.evalModule pkgs ./nix/treefmt.nix;
       in
       {
-        devShells.default =
-          with pkgs;
-          mkShell {
-            buildInpust = [
-              openssl
-              pkg-config
-              rust-bin.beta.latest.default
-            ];
-          };
+        checks = {
+          inherit (backend.checks) kybe-backend kybe-backend-clippy;
+          formatting = treefmt-eval.config.build.check self;
+        };
+        packages = {
+          backend = backend.package;
+          inherit image;
+        };
+        devShells.backend = backend.devShell;
+        formatter = treefmt-eval.config.build.wrapper;
       }
     );
 }

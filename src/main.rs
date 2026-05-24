@@ -22,7 +22,7 @@ use std::env;
 use std::sync::Arc;
 use tracing::warn;
 
-pub static GIT_SHA: Lazy<&str> = Lazy::new(|| include_str!("../assets/git.sha").trim());
+pub static GIT_SHA: Lazy<String> = Lazy::new(|| env::var("KYBE_BACKEND_GIT_SHA").unwrap_or("dev".to_string()));
 
 pub async fn notify_error(title: impl AsRef<str>, msg: impl Into<String>, exit: bool) {
 	tracing::error!("{}: {}", title.as_ref(), msg.into());

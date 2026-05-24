@@ -1,6 +1,7 @@
 [package]
 name = "kybe-backend"
 edition = "2024"
+version = "0.0.0"
 
 [[bin]]
 name = "kybe-backend"

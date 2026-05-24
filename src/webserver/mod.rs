@@ -22,6 +22,7 @@ use governor::clock::QuantaInstant;
 use governor::middleware::NoOpMiddleware;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -322,6 +323,8 @@ pub async fn init_webserver(
 		database,
 	};
 
+	let static_dir = env::var("KYBE_BACKEND_STATIC_DIR").unwrap_or("static".into());
+
 	let api_auth_layer =
 		middleware::from_fn_with_state(webserver_state.clone(), api_auth_middleware);
 	let ctx_layer =
@@ -352,7 +355,7 @@ pub async fn init_webserver(
 		.nest_service("/pgp.txt", ServeFile::new("static/pgp.txt"))
 		.nest_service(
 			"/static",
-			ServeDir::new("static").fallback(fallback_router.into_service()),
+			ServeDir::new(static_dir).fallback(fallback_router.into_service()),
 		)
 		.layer(asset_limiter_layer.clone());
 
