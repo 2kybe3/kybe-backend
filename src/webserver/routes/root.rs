@@ -8,7 +8,7 @@ use crate::{
     external::lastfm,
     webserver::{
         RequestContext, WebServerState, common,
-        render::{Page, Theme, builders::CodeBlockBuilder, object::Objects},
+        render::{Page, Theme, builders::CodeBlockBuilder, object::Objects, user_agent_is_cli},
     },
 };
 
@@ -33,7 +33,13 @@ pub async fn root(
             .into(),
         theme.title(")\n").into(),
         theme.subtitle("kybe - /dev/urandom stuff\n\n").into(),
-        CodeBlockBuilder::new("curl https://kybe.xyz".into()).into(),
+    ];
+
+    if user_agent_is_cli(&ctx.user_agent) {
+        page.push(CodeBlockBuilder::new("curl https://kybe.xyz".into()).into());
+    };
+
+    page.append(&mut vec![
         theme.title("\nCurrently Listening:\n\n").into(),
         theme
             .label(
@@ -52,7 +58,7 @@ pub async fn root(
 				],
             )
             .into(),
-    ];
+    ]);
 
     if let Some(playing) = playing {
         page.append(&mut vec![

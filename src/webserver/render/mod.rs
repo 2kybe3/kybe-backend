@@ -86,6 +86,6 @@ impl<'a> Page<'a> {
     }
 }
 
-fn user_agent_is_cli(user_agent: &str) -> bool {
+pub fn user_agent_is_cli(user_agent: &str) -> bool {
     user_agent.to_lowercase().trim().contains("curl")
 }
