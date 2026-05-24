@@ -35,7 +35,7 @@ pub async fn root(
         theme.subtitle("kybe - /dev/urandom stuff\n\n").into(),
     ];
 
-    if user_agent_is_cli(&ctx.user_agent) {
+    if !user_agent_is_cli(&ctx.user_agent) {
         page.push(CodeBlockBuilder::new("curl https://kybe.xyz".into()).into());
     };
 
