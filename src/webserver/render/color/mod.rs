@@ -7,37 +7,37 @@ pub mod rgb;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[enum_delegate::implement(ColorTrait)]
 pub enum Color {
-	Bit24Color(Bit24Color),
-	Bit4(Bit4Color),
+    Bit24Color(Bit24Color),
+    Bit4(Bit4Color),
 }
 
 impl Default for Color {
-	fn default() -> Self {
-		Color::Bit4(Bit4Color::DEFAULT)
-	}
+    fn default() -> Self {
+        Color::Bit4(Bit4Color::DEFAULT)
+    }
 }
 
 #[enum_delegate::register]
 pub trait ColorTrait {
-	fn is_default(&self) -> bool;
+    fn is_default(&self) -> bool;
 
-	fn html(&self) -> Option<String> {
-		if self.is_default() {
-			Some("inherit".into())
-		} else {
-			self.hex()
-		}
-	}
+    fn html(&self) -> Option<String> {
+        if self.is_default() {
+            Some("inherit".into())
+        } else {
+            self.hex()
+        }
+    }
 
-	fn ansi(&self, fg: bool) -> Option<String>;
+    fn ansi(&self, fg: bool) -> Option<String>;
 
-	fn hex(&self) -> Option<String>;
+    fn hex(&self) -> Option<String>;
 
-	fn ansi_fg(&self) -> Option<String> {
-		self.ansi(true)
-	}
+    fn ansi_fg(&self) -> Option<String> {
+        self.ansi(true)
+    }
 
-	fn ansi_bg(&self) -> Option<String> {
-		self.ansi(false)
-	}
+    fn ansi_bg(&self) -> Option<String> {
+        self.ansi(false)
+    }
 }

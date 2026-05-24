@@ -7,100 +7,100 @@ use uuid::Uuid;
 #[derive(Debug, sqlx::Type, PartialEq, Clone)]
 #[sqlx(type_name = "request_status", rename_all = "lowercase")]
 pub enum RequestStatus {
-	Success,
-	Redirect,
-	#[sqlx(rename = "client_error")]
-	ClientError,
-	#[sqlx(rename = "server_error")]
-	ServerError,
-	Unauthorized,
+    Success,
+    Redirect,
+    #[sqlx(rename = "client_error")]
+    ClientError,
+    #[sqlx(rename = "server_error")]
+    ServerError,
+    Unauthorized,
 }
 
 #[derive(Debug, sqlx::FromRow, Clone)]
 pub struct WebsiteTrace {
-	pub trace_id: Uuid,
-	pub method: String,
-	pub path: String,
-	pub query: Option<String>,
-	pub ip_address: String,
-	pub user_agent: String,
-	pub started_at: DateTime<Utc>,
-	pub duration_ms: i64,
-	pub status_code: u16,
-	pub request_status: RequestStatus,
-	pub data: serde_json::Value,
-	pub mm_asn: serde_json::Value,
-	pub mm_city: serde_json::Value,
-	pub request_headers: serde_json::Value,
-	pub request_body: Option<serde_json::Value>,
-	pub response_body: Option<serde_json::Value>,
-	pub error: Option<String>,
+    pub trace_id: Uuid,
+    pub method: String,
+    pub path: String,
+    pub query: Option<String>,
+    pub ip_address: String,
+    pub user_agent: String,
+    pub started_at: DateTime<Utc>,
+    pub duration_ms: i64,
+    pub status_code: u16,
+    pub request_status: RequestStatus,
+    pub data: serde_json::Value,
+    pub mm_asn: serde_json::Value,
+    pub mm_city: serde_json::Value,
+    pub request_headers: serde_json::Value,
+    pub request_body: Option<serde_json::Value>,
+    pub response_body: Option<serde_json::Value>,
+    pub error: Option<String>,
 }
 
 impl WebsiteTrace {
-	pub fn start(
-		method: impl AsRef<str>,
-		path: impl Into<String>,
-		query: Option<impl Into<String>>,
-		user_agent: impl Into<String>,
-		ip: impl Into<String>,
-		mm_asn: impl Into<serde_json::Value>,
-		mm_city: impl Into<serde_json::Value>,
-	) -> Self {
-		Self {
-			trace_id: Uuid::now_v7(),
-			method: method.as_ref().to_uppercase(),
-			path: path.into(),
-			query: query.map(Into::into),
-			ip_address: ip.into(),
-			user_agent: user_agent.into(),
-			started_at: Utc::now(),
-			duration_ms: 0,
-			status_code: 0,
-			data: serde_json::Value::Object(Map::new()),
-			request_headers: serde_json::Value::Object(Map::new()),
-			mm_asn: mm_asn.into(),
-			mm_city: mm_city.into(),
-			request_status: RequestStatus::Success,
-			request_body: None,
-			response_body: None,
-			error: None,
-		}
-	}
+    pub fn start(
+        method: impl AsRef<str>,
+        path: impl Into<String>,
+        query: Option<impl Into<String>>,
+        user_agent: impl Into<String>,
+        ip: impl Into<String>,
+        mm_asn: impl Into<serde_json::Value>,
+        mm_city: impl Into<serde_json::Value>,
+    ) -> Self {
+        Self {
+            trace_id: Uuid::now_v7(),
+            method: method.as_ref().to_uppercase(),
+            path: path.into(),
+            query: query.map(Into::into),
+            ip_address: ip.into(),
+            user_agent: user_agent.into(),
+            started_at: Utc::now(),
+            duration_ms: 0,
+            status_code: 0,
+            data: serde_json::Value::Object(Map::new()),
+            request_headers: serde_json::Value::Object(Map::new()),
+            mm_asn: mm_asn.into(),
+            mm_city: mm_city.into(),
+            request_status: RequestStatus::Success,
+            request_body: None,
+            response_body: None,
+            error: None,
+        }
+    }
 
-	fn complete(&mut self, duration_ms: i64, status_code: u16) {
-		self.duration_ms = duration_ms;
-		self.status_code = status_code;
+    fn complete(&mut self, duration_ms: i64, status_code: u16) {
+        self.duration_ms = duration_ms;
+        self.status_code = status_code;
 
-		self.request_status = match status_code {
-			200..=299 => RequestStatus::Success,
-			300..=399 => RequestStatus::Redirect,
-			401 => RequestStatus::Unauthorized,
-			400..=499 => RequestStatus::ClientError,
-			500..=599 => RequestStatus::ServerError,
-			_ => RequestStatus::ClientError,
-		};
-	}
+        self.request_status = match status_code {
+            200..=299 => RequestStatus::Success,
+            300..=399 => RequestStatus::Redirect,
+            401 => RequestStatus::Unauthorized,
+            400..=499 => RequestStatus::ClientError,
+            500..=599 => RequestStatus::ServerError,
+            _ => RequestStatus::ClientError,
+        };
+    }
 
-	pub async fn finish(&mut self, status_code: u16, database: &Database) {
-		let duration = chrono::Utc::now()
-			.signed_duration_since(self.started_at)
-			.num_milliseconds();
+    pub async fn finish(&mut self, status_code: u16, database: &Database) {
+        let duration = chrono::Utc::now()
+            .signed_duration_since(self.started_at)
+            .num_milliseconds();
 
-		self.complete(duration, status_code);
+        self.complete(duration, status_code);
 
-		if let Err(e) = database.save_website_trace(self).await {
-			error!("Failed to save website trace: {e:?}");
-		}
+        if let Err(e) = database.save_website_trace(self).await {
+            error!("Failed to save website trace: {e:?}");
+        }
 
-		debug!(trace = ?self, "API request finished");
-	}
+        debug!(trace = ?self, "API request finished");
+    }
 }
 
 impl Database {
-	pub async fn save_website_trace(&self, trace: &WebsiteTrace) -> Result<Uuid, sqlx::Error> {
-		sqlx::query!(
-			r#"
+    pub async fn save_website_trace(&self, trace: &WebsiteTrace) -> Result<Uuid, sqlx::Error> {
+        sqlx::query!(
+            r#"
             INSERT INTO website_traces (
                 trace_id, method, path, query, ip_address, user_agent, started_at, duration_ms,
                 status_code, data, mm_asn, mm_city, request_headers, request_status,request_body,
@@ -112,27 +112,27 @@ impl Database {
                 $15, $16, $17
             )
             "#,
-			trace.trace_id,
-			trace.method,
-			trace.path,
-			trace.query,
-			trace.ip_address,
-			trace.user_agent,
-			trace.started_at,
-			trace.duration_ms,
-			trace.status_code as i32,
-			trace.data,
-			trace.mm_asn,
-			trace.mm_city,
-			trace.request_headers,
-			trace.request_status.clone() as RequestStatus,
-			trace.request_body,
-			trace.response_body,
-			trace.error
-		)
-		.execute(self.pool())
-		.await?;
+            trace.trace_id,
+            trace.method,
+            trace.path,
+            trace.query,
+            trace.ip_address,
+            trace.user_agent,
+            trace.started_at,
+            trace.duration_ms,
+            trace.status_code as i32,
+            trace.data,
+            trace.mm_asn,
+            trace.mm_city,
+            trace.request_headers,
+            trace.request_status.clone() as RequestStatus,
+            trace.request_body,
+            trace.response_body,
+            trace.error
+        )
+        .execute(self.pool())
+        .await?;
 
-		Ok(trace.trace_id)
-	}
+        Ok(trace.trace_id)
+    }
 }

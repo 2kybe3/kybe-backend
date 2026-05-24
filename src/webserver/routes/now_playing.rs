@@ -4,23 +4,23 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::{
-	db::website_traces::{RequestStatus, WebsiteTrace},
-	webserver::WebServerState,
+    db::website_traces::{RequestStatus, WebsiteTrace},
+    webserver::WebServerState,
 };
 
 pub async fn now_playing(
-	State(state): State<WebServerState>,
-	Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
+    State(state): State<WebServerState>,
+    Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
 ) -> impl IntoResponse {
-	let mut trace = trace.lock().await;
-	trace.request_status = RequestStatus::Success;
-	trace.status_code = StatusCode::OK.into();
+    let mut trace = trace.lock().await;
+    trace.request_status = RequestStatus::Success;
+    trace.status_code = StatusCode::OK.into();
 
-	let playing = if let Some(lastfm) = state.lastfm {
-		Some(lastfm.get_playing(Some(&mut trace.data)).await)
-	} else {
-		None
-	};
+    let playing = if let Some(lastfm) = state.lastfm {
+        Some(lastfm.get_playing(Some(&mut trace.data)).await)
+    } else {
+        None
+    };
 
-	(StatusCode::OK, Json(playing)).into_response()
+    (StatusCode::OK, Json(playing)).into_response()
 }

@@ -25,22 +25,22 @@ pub const MAX_MSG_LENGTH: usize = 2000;
 
 #[derive(Debug)]
 pub struct Data {
-	pub config: Arc<Config>,
-	pub translator: Option<Arc<Translator>>,
-	pub database: Database,
-	pub mm: Arc<MaxMind>,
+    pub config: Arc<Config>,
+    pub translator: Option<Arc<Translator>>,
+    pub database: Database,
+    pub mm: Arc<MaxMind>,
 
-	pub cataas: CATAAS,
+    pub cataas: CATAAS,
 }
 
 pub async fn init_bot(
-	config: Arc<Config>,
-	database: Database,
-	mm: Arc<MaxMind>,
+    config: Arc<Config>,
+    database: Database,
+    mm: Arc<MaxMind>,
 ) -> Result<(), Error> {
-	let token = config.discord_bot.token.clone();
+    let token = config.discord_bot.token.clone();
 
-	let framework = poise::Framework::builder()
+    let framework = poise::Framework::builder()
 		.options(poise::FrameworkOptions {
 			commands: vec![
 				calculator::calculate(),
@@ -98,69 +98,69 @@ pub async fn init_bot(
 		})
 		.build();
 
-	let intents = serenity::GatewayIntents::non_privileged();
+    let intents = serenity::GatewayIntents::non_privileged();
 
-	let client = serenity::ClientBuilder::new(&token, intents)
-		.framework(framework)
-		.await;
+    let client = serenity::ClientBuilder::new(&token, intents)
+        .framework(framework)
+        .await;
 
-	let mut client = client?;
-	client.start().await?;
-	Ok(())
+    let mut client = client?;
+    client.start().await?;
+    Ok(())
 }
 
 pub async fn defer(ctx: &Context<'_>, trace: &mut CommandTrace) -> anyhow::Result<()> {
-	if let Err(e) = ctx.defer().await {
-		trace.status = CommandStatus::Error;
-		trace.error = Some(format!("Defer failed: {:?}", e));
+    if let Err(e) = ctx.defer().await {
+        trace.status = CommandStatus::Error;
+        trace.error = Some(format!("Defer failed: {:?}", e));
 
-		finalize_command_trace(ctx, trace).await?;
-		return Err(e.into());
-	}
-	Ok(())
+        finalize_command_trace(ctx, trace).await?;
+        return Err(e.into());
+    }
+    Ok(())
 }
 
 pub async fn attach(ctx: &Context<'_>, text: String, filename: impl Into<String>) {
-	let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, filename);
-	let reply = CreateReply::default().attachment(attachment);
-	if let Err(e) = ctx.send(reply).await {
-		error!("Failed to send response: {:?}", e);
-		let _ = ctx
-			.say("Failed to send the full response due to an error.")
-			.await;
-	}
+    let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, filename);
+    let reply = CreateReply::default().attachment(attachment);
+    if let Err(e) = ctx.send(reply).await {
+        error!("Failed to send response: {:?}", e);
+        let _ = ctx
+            .say("Failed to send the full response due to an error.")
+            .await;
+    }
 }
 
 pub async fn reply_or_attach(ctx: &Context<'_>, text: String, filename: impl Into<String>) {
-	let result = if text.chars().count() <= MAX_MSG_LENGTH {
-		ctx.reply(&text).await
-	} else {
-		let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, filename);
-		let reply = CreateReply::default().attachment(attachment);
-		ctx.send(reply).await
-	};
+    let result = if text.chars().count() <= MAX_MSG_LENGTH {
+        ctx.reply(&text).await
+    } else {
+        let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, filename);
+        let reply = CreateReply::default().attachment(attachment);
+        ctx.send(reply).await
+    };
 
-	if let Err(e) = result {
-		error!("Failed to send response: {:?}", e);
-		let _ = ctx
-			.say("Failed to send the full response due to an error.")
-			.await;
-	}
+    if let Err(e) = result {
+        error!("Failed to send response: {:?}", e);
+        let _ = ctx
+            .say("Failed to send the full response due to an error.")
+            .await;
+    }
 }
 
 pub async fn finalize_command_trace(
-	ctx: &Context<'_>,
-	trace: &mut CommandTrace,
+    ctx: &Context<'_>,
+    trace: &mut CommandTrace,
 ) -> anyhow::Result<()> {
-	trace.duration_ms = chrono::Utc::now()
-		.signed_duration_since(trace.started_at)
-		.num_milliseconds();
-	ctx.data().database.save_command_trace(trace).await?;
+    trace.duration_ms = chrono::Utc::now()
+        .signed_duration_since(trace.started_at)
+        .num_milliseconds();
+    ctx.data().database.save_command_trace(trace).await?;
 
-	if trace.status == CommandStatus::Error {
-		tracing::error!(trace = ?trace, "command finished with error");
-	} else {
-		tracing::debug!(trace = ?trace, "command finished");
-	}
-	Ok(())
+    if trace.status == CommandStatus::Error {
+        tracing::error!(trace = ?trace, "command finished with error");
+    } else {
+        tracing::debug!(trace = ?trace, "command finished");
+    }
+    Ok(())
 }
