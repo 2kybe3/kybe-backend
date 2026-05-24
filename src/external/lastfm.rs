@@ -127,6 +127,9 @@ impl LastFM {
             url: t.url,
         });
 
+        crate::prometheus::set_listening_state(result.is_some());
+        crate::prometheus::update_lastfm_sync_timestamp(chrono::Utc::now().timestamp());
+
         let mut cache = self.cache.lock().await;
 
         cache.sync_instant = Instant::now();
