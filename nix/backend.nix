@@ -56,6 +56,8 @@ let
         --set KYBE_BACKEND_STATIC_DIR ${../static} \
         --set KYBE_BACKEND_GIT_SHA ${self.rev or self.dirtyRev}
     '';
+
+    meta.mainProgram = "kybe-backend";
   };
 
   checks = {
