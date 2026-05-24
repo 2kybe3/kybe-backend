@@ -27,7 +27,7 @@ jobs:
           attic use main
 
       - name: Build image
-        run: nix build .#image -L -v --no-write-lock-file
+        run: nix build .#image -L -v --no-update-lock-file
 
       - name: Load image
         run: docker load < ./result
