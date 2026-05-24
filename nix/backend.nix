@@ -33,8 +33,11 @@ let
       pkg-config
     ];
 
-    KYBE_BACKEND_STATIC_DIR = ../static;
-    KYBE_BACKEND_GIT_SHA = self.rev or self.dirtyRev;
+    postFixup = ''
+      wrapProgram $out/bin/kybe-backend \
+        --set KYBE_BACKEND_STATIC_DIR ${../static} \
+        --set KYBE_BACKEND_GIT_SHA ${self.rev or self.dirtyRev}
+    '';
   };
 
   cargoArtifacts = craneLib.buildDepsOnly commonArgs;
