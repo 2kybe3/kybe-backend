@@ -33,8 +33,17 @@ pub struct RenderResult {
 pub trait PageRenderer<'a> {
     fn render(page: &Page<'a>) -> String;
     fn render_object(obj: &Object) -> String;
-    fn render_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String;
-    fn render_code_block(title: &Option<String>, language: &Option<String>, code: &str) -> String;
+    fn render_text_blob(
+        text: &str,
+        copyable: &bool,
+        style: &Style,
+        link_to: &Option<LinkTo>,
+    ) -> String;
+    fn render_code_block(
+        title: &Option<String>,
+        language: &Option<String>,
+        code: &[Object],
+    ) -> String;
     fn render_image(url: &str, alt: &str, width: &i64, height: &i64) -> String;
     fn render_canvas(data: &str, color_mapping: &ColorMapping) -> String;
 }

@@ -83,7 +83,10 @@
             button.className = "copy-btn";
             pre.appendChild(button);
 
-            button.addEventListener('click', () => {
+            const copyText = Array.from(pre.querySelectorAll('.copyable'))
+                .map(el => el.innerText)
+                .join("");
+            navigator.clipboard.writeText(copyText).then(() => {
                 navigator.clipboard.writeText(pre.innerText).then(() => {
                     button.innerText = "Copied";
                     setTimeout(() => button.innerText = "Copy", 1000);

@@ -42,7 +42,11 @@ pub async fn root(
 
     if !user_agent_is_cli(&ctx.user_agent) {
         page.append(&mut vec![
-            CodeBlockBuilder::new("curl https://kybe.xyz".into()).into(),
+            CodeBlockBuilder::new(vec![
+                TextBlobBuilder::new("$ ").copyable(false).into(),
+                TextBlobBuilder::new("curl https://kybe.xyz").into(),
+            ])
+            .into(),
             theme.raw("\n").into(),
         ]);
     };

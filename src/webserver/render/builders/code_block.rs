@@ -3,11 +3,11 @@ use crate::webserver::render::Object;
 pub struct CodeBlockBuilder {
     title: Option<String>,
     language: Option<String>,
-    code: String,
+    code: Vec<Object>,
 }
 
 impl CodeBlockBuilder {
-    pub fn new(code: String) -> CodeBlockBuilder {
+    pub fn new(code: Vec<Object>) -> CodeBlockBuilder {
         CodeBlockBuilder {
             title: None,
             language: None,

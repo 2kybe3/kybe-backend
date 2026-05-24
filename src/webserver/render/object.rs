@@ -34,13 +34,14 @@ impl LinkTo {
 pub enum Object {
     TextBlob {
         text: String,
+        copyable: bool,
         style: Style,
         link_to: Option<LinkTo>,
     },
     CodeBlock {
         title: Option<String>,
         language: Option<String>,
-        code: String,
+        code: Vec<Object>,
     },
     Image {
         url: String,

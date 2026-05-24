@@ -42,9 +42,10 @@ impl<'a> PageRenderer<'a> for HtmlRenderer {
         match obj {
             super::Object::TextBlob {
                 text,
+                copyable,
                 style,
                 link_to,
-            } => Self::render_text_blob(text, style, link_to),
+            } => Self::render_text_blob(text, copyable, style, link_to),
             super::Object::CodeBlock {
                 title,
                 language,
@@ -63,23 +64,37 @@ impl<'a> PageRenderer<'a> for HtmlRenderer {
         }
     }
 
-    fn render_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String {
+    fn render_text_blob(
+        text: &str,
+        copyable: &bool,
+        style: &Style,
+        link_to: &Option<LinkTo>,
+    ) -> String {
         let (start, end) = match link_to {
             Some(link_to) => (
-                &*format!("<a style=\"[style]\" href={}>", link_to.link()),
+                &*format!(
+                    "<a class=\"[class]\" style=\"[style]\" href={}>",
+                    link_to.link()
+                ),
                 "</a>",
             ),
-            None => ("<span style=\"[style]\">", "</span>"),
+            None => ("<span class=\"[class]\" style=\"[style]\">", "</span>"),
         };
         format!(
             "{}{}{}",
-            &start.replace("[style]", &style.html_style()),
+            &start
+                .replace("[style]", &style.html_style())
+                .replace("[class]", if *copyable { "copyable" } else { "" }),
             &html_escape::encode_text(text).replace("\n", "<br>"),
             end
         )
     }
 
-    fn render_code_block(title: &Option<String>, language: &Option<String>, code: &str) -> String {
+    fn render_code_block(
+        title: &Option<String>,
+        language: &Option<String>,
+        code: &[Object],
+    ) -> String {
         let mut output = String::new();
         if title.is_some() || language.is_some() {
             let mut parts = vec![];
@@ -104,8 +119,13 @@ impl<'a> PageRenderer<'a> for HtmlRenderer {
 
         output.push_str("<pre><code>");
 
-        // TODO: highlighting
-        output.push_str(code);
+        output.push_str(
+            &code
+                .iter()
+                .map(Self::render_object)
+                .collect::<Vec<_>>()
+                .join(""),
+        );
 
         output.push_str("</code></pre>");
         output
@@ -155,6 +175,7 @@ impl<'a> PageRenderer<'a> for HtmlRenderer {
         if !buffer.is_empty() && failed {
             Self::render_text_blob(
                 "Error rendering Canvas",
+                &true,
                 &Style::new().fg(Bit4Color::RED),
                 &None,
             )

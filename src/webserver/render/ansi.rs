@@ -19,9 +19,10 @@ impl<'a> PageRenderer<'a> for AnsiRenderer {
         match obj {
             super::Object::TextBlob {
                 text,
+                copyable,
                 style,
                 link_to,
-            } => Self::render_text_blob(text, style, link_to),
+            } => Self::render_text_blob(text, copyable, style, link_to),
             super::Object::CodeBlock {
                 title,
                 language,
@@ -40,7 +41,12 @@ impl<'a> PageRenderer<'a> for AnsiRenderer {
         }
     }
 
-    fn render_text_blob(text: &str, style: &Style, link_to: &Option<LinkTo>) -> String {
+    fn render_text_blob(
+        text: &str,
+        _copyable: &bool,
+        style: &Style,
+        link_to: &Option<LinkTo>,
+    ) -> String {
         let mut output = style.ansi_code();
         let mut text = text.to_string();
 
@@ -80,7 +86,11 @@ impl<'a> PageRenderer<'a> for AnsiRenderer {
         output
     }
 
-    fn render_code_block(title: &Option<String>, language: &Option<String>, code: &str) -> String {
+    fn render_code_block(
+        title: &Option<String>,
+        language: &Option<String>,
+        code: &[Object],
+    ) -> String {
         let mut output = String::new();
 
         if title.is_some() || language.is_some() {
@@ -107,8 +117,13 @@ impl<'a> PageRenderer<'a> for AnsiRenderer {
             output.push_str("\n---code----\n");
         }
 
-        // TODO: highlighting
-        output.push_str(code);
+        output.push_str(
+            &code
+                .iter()
+                .map(Self::render_object)
+                .collect::<Vec<_>>()
+                .join(""),
+        );
 
         output.push_str("\n-----------\n\n");
 
@@ -156,6 +171,7 @@ impl<'a> PageRenderer<'a> for AnsiRenderer {
         if !buffer.is_empty() && failed {
             Self::render_text_blob(
                 "Error rendering Canvas",
+                &true,
                 &Style::new().fg(Bit4Color::RED),
                 &None,
             )
