@@ -168,8 +168,9 @@ pub async fn root(
                 "Matrix",
                 vec![
                     theme
-                        .link_colored("@kybe:kybe.xyz\n", "https://matrix.to/#/@kybe:kybe.xyz")
+                        .link_colored("@kybe:kybe.xyz", "https://matrix.to/#/@kybe:kybe.xyz")
                         .into(),
+                    theme.comment(" (prefered)\n").into(),
                 ],
             )
             .into(),
