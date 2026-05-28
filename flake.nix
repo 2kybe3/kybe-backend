@@ -9,6 +9,11 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -18,14 +23,20 @@
       nixpkgs,
       flake-utils,
       treefmt-nix,
+      rust-overlay,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ (import rust-overlay) ];
+        };
+
         backend = pkgs.callPackage ./nix/backend.nix { inherit self crane; };
         image = pkgs.callPackage ./nix/image.nix { backend = backend.package; };
+
         treefmt-eval = treefmt-nix.lib.evalModule pkgs ./nix/treefmt.nix;
       in
       {

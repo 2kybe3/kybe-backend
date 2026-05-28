@@ -5,7 +5,7 @@
   ...
 }:
 let
-  craneLib = crane.mkLib pkgs;
+  craneLib = (crane.mkLib pkgs).overrideToolchain (p: p.rust-bin.stable.latest.default);
 
   inherit (pkgs) lib;
 
