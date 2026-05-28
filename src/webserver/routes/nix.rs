@@ -21,21 +21,29 @@ pub async fn nix(
 
     let page: Vec<Objects> = vec![
         theme.title("/dev/urandom rice\n").into(),
-        theme.subtitle("My nixos config\n\n").into(),
+        theme.subtitle("My NixOS config\n\n").into(),
         theme
             .label(
                 "Download",
                 vec![
                     theme
+                        .link_colored("git", "https://git.kybe.xyz/2kybe3/hexix")
+                        .into(),
+                    theme.text(", ").into(),
+                    theme
                         .link_colored(
-                            "https://git.kybe.xyz/2kybe3/hexix\n",
-                            "https://git.kybe.xyz/2kybe3/hexix",
+                            "tar.gz",
+                            "https://git.kybe.xyz/2kybe3/hexix/archive/main.tar.gz",
                         )
+                        .into(),
+                    theme.text(", ").into(),
+                    theme
+                        .link_colored("zip", "https://git.kybe.xyz/2kybe3/hexix/archive/main.zip")
                         .into(),
                 ],
             )
             .into(),
-        theme.text("\n").into(),
+        theme.text("\n\n").into(),
         ImageBuilder::new(ctx.url("/static/nix.png"), "My Config Demo", 800, 450).into(),
     ];
 
