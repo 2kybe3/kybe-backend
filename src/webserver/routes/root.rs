@@ -197,7 +197,7 @@ pub async fn root(
                     theme
                         .link_colored("renovate", "https://git.kybe.xyz/renovate")
                         .into(),
-                    theme.text(" ").into(),
+                    theme.text(", ").into(),
                     theme
                         .link_colored("archive", "https://git.kybe.xyz/archive")
                         .into(),
@@ -212,7 +212,7 @@ pub async fn root(
                     theme
                         .link_colored("kybe236", "https://github.com/kybe236")
                         .into(),
-                    theme.text(" ").into(),
+                    theme.text(", ").into(),
                     theme
                         .link_colored("2kybe3\n", "https://github.com/2kybe3")
                         .into(),
