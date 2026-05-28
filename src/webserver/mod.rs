@@ -57,7 +57,12 @@ fn client_ip(
     remote_addr: SocketAddr,
     config: &ClientIpKeyExtractor,
 ) -> Option<Ident> {
-    if config.behind_proxy && remote_addr.ip() == config.proxy_ip.expect("proxy_ip not set") {
+    if config.behind_proxy
+        && remote_addr.ip()
+            == config
+                .proxy_ip
+                .expect("behind_proxy true but proxy_ip not set")
+    {
         headers
             .get(
                 config
@@ -72,9 +77,16 @@ fn client_ip(
                     ipaddr: s.parse().ok(),
                 })
             })
-    } else if config.behind_i2p && remote_addr.ip() == config.i2p_ip.expect("i2p_ip not set") {
+    } else if config.behind_i2p
+        && remote_addr.ip() == config.i2p_ip.expect("behind_i2p true but i2p_ip not set")
+    {
         headers
-            .get(config.i2p_header.clone().expect("i2p_header not set"))
+            .get(
+                config
+                    .i2p_header
+                    .clone()
+                    .expect("behind_i2p true but i2p_header not set"),
+            )
             .and_then(|v| {
                 v.to_str().ok().map(String::from).map(|s| Ident {
                     i2p: true,
