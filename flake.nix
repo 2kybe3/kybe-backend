@@ -9,7 +9,6 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -34,6 +33,7 @@
           overlays = [ (import rust-overlay) ];
         };
 
+        ci = pkgs.callPackage ./nix/ci.nix { };
         backend = pkgs.callPackage ./nix/backend.nix { inherit self crane; };
         image = pkgs.callPackage ./nix/image.nix { backend = backend.package; };
 
@@ -46,7 +46,7 @@
         };
         packages = {
           backend = backend.package;
-          inherit image;
+          inherit ci image;
         };
         devShells.backend = backend.devShell;
         formatter = treefmt-eval.config.build.wrapper;

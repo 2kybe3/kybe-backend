@@ -1,13 +1,12 @@
 {
-  self,
+  lib,
   pkgs,
+  self,
   crane,
   ...
 }:
 let
   craneLib = (crane.mkLib pkgs).overrideToolchain (p: p.rust-bin.stable.latest.default);
-
-  inherit (pkgs) lib;
 
   unfilteredRoot = ../.;
 

@@ -1,18 +1,14 @@
 {
+  lib,
   pkgs,
   backend,
   ...
 }:
-let
-  inherit (pkgs) lib;
-in
 pkgs.dockerTools.buildImage {
   name = "kybe-backend";
   tag = "latest";
 
-  copyToRoot = with pkgs; [
-    cacert
-  ];
+  copyToRoot = [ pkgs.cacert ];
 
   config = {
     Cmd = [ "${lib.getExe backend}" ];

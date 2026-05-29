@@ -1,9 +1,12 @@
 name: Lint
+
 on: [push]
 
 jobs:
   lint:
-    runs-on: docker
+    runs-on: self-hosted
+    container:
+      image: ghcr.io/catthehacker/ubuntu:act-latest@sha256:a2208a45e885c103d836912573aebc9d4568da2d9392f5194bd0dece0e5fcd29
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
