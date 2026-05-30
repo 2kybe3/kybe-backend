@@ -368,7 +368,10 @@ pub async fn init_webserver(
             "/ident.txt",
             ServeFile::new(format!("{static_dir}/ident.txt")),
         )
-        .nest_service("/favicon.ico", ServeFile::new(format!("{static_dir}/de.png")))
+        .nest_service(
+            "/favicon.ico",
+            ServeFile::new(format!("{static_dir}/de.png")),
+        )
         .nest_service("/pgp.txt", ServeFile::new(format!("{static_dir}/pgp.txt")))
         .nest_service(
             "/static",
