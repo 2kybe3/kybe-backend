@@ -52,7 +52,8 @@ pub async fn root(
     };
 
     page.append(&mut vec![
-        theme.title("Currently Listening:\n\n").into(),
+        theme.title_underlined("Currently Listening"),
+        theme.raw("\n\n").into(),
         theme
             .label(
                 "Playing",
@@ -96,7 +97,9 @@ pub async fn root(
     };
 
     page.append(&mut vec![
-        theme.title("\nProjects:\n\n").into(),
+        theme.raw("\n").into(),
+        theme.title_underlined("Projects"),
+        theme.raw("\n\n").into(),
         theme
             .label(
                 "hexix",
@@ -150,7 +153,9 @@ pub async fn root(
                 ],
             )
             .into(),
-        theme.title("\nContact:\n\n").into(),
+        theme.raw("\n").into(),
+        theme.title_underlined("Contact"),
+        theme.raw("\n\n").into(),
         theme
             .label(
                 "PGP",
@@ -185,7 +190,9 @@ pub async fn root(
                 ],
             )
             .into(),
-        theme.title("\nOther Platforms:\n\n").into(),
+        theme.raw("\n").into(),
+        theme.title_underlined("Other Platforms"),
+        theme.raw("\n\n").into(),
         theme
             .label(
                 "Git",
@@ -229,7 +236,9 @@ pub async fn root(
                 ],
             )
             .into(),
-        theme.title("\nOther Endpoints:\n\n").into(),
+        theme.raw("\n").into(),
+        theme.title_underlined("Other Endpoints"),
+        theme.raw("\n\n").into(),
         theme
             .label(
                 "IP",

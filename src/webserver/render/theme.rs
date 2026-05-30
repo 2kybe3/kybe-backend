@@ -2,6 +2,7 @@ use crate::webserver::render::{
     Object, Style,
     builders::{LinkToBuilder, TextBlobBuilder},
     color::bit4::Bit4Color,
+    object::Objects,
 };
 
 pub struct Theme {
@@ -18,8 +19,8 @@ pub struct Theme {
 impl Default for Theme {
     fn default() -> Self {
         Self {
-            title: Style::new().fg(Bit4Color::RED),
-            subtitle: Style::new().fg(Bit4Color::BRIGHT_RED),
+            title: Style::new().fg(Bit4Color::BRIGHT_RED),
+            subtitle: Style::new().fg(Bit4Color::RED),
             label: Style::new().fg(Bit4Color::YELLOW),
             text: Style::new().fg(Bit4Color::WHITE),
             link: Style::new().fg(Bit4Color::GREEN),
@@ -37,6 +38,18 @@ impl Theme {
 
     pub fn title(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
         text.into().style(self.title.clone())
+    }
+
+    pub fn title_underlined(&self, text: &str) -> Objects {
+        vec![
+            TextBlobBuilder::new(format!("{text}\n"))
+                .style(self.title.clone())
+                .into(),
+            TextBlobBuilder::new("-".repeat(text.len()))
+                .style(self.title.clone())
+                .into(),
+        ]
+        .into()
     }
 
     pub fn subtitle(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
