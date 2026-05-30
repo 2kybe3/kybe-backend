@@ -44,7 +44,7 @@ let
   );
 
   kybe-backend = pkgs.symlinkJoin {
-    name = "kybe-backend-wrapped";
+    inherit (kybe-backend-unwrapped) pname version;
 
     paths = [ kybe-backend-unwrapped ];
 
