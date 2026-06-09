@@ -113,6 +113,20 @@ pub async fn root(
             .into(),
         theme
             .label(
+                "kybar",
+                vec![
+                    theme
+                        .link_colored(
+                            "Wayland native app launcher",
+                            "https://git.kybe.xyz/2kybe3/kybar",
+                        )
+                        .into(),
+                    theme.text("\n").into(),
+                ],
+            )
+            .into(),
+        theme
+            .label(
                 "webhook-router",
                 vec![
                     theme
