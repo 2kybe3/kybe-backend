@@ -3,6 +3,7 @@ IDENTITY
 handle:         kybe,2kybe3,kybe236
 matrix:         @kybe:kybe.xyz
 github:         github.com/kybe236
+parked:         kybeekyb.com, kybe.tech, kybe.me
 sites:          kybe.xyz
 
 -----BEGIN PGP PUBLIC KEY BLOCK-----
