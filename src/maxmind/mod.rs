@@ -41,14 +41,14 @@ impl MaxMind {
                 info!("verifying maxmind City");
                 city.verify()?;
             }
-            info!("maxmind City verified and loaded: {:?}", city.metadata);
+            info!("maxmind City verified and loaded: {:?}", city.metadata());
         }
         if let Some(ref asn) = asn {
             if config.asn_db_check {
                 info!("verifying maxmind ASN");
                 asn.verify()?;
             }
-            info!("maxmind ASN verified and loaded: {:?}", asn.metadata);
+            info!("maxmind ASN verified and loaded: {:?}", asn.metadata());
         }
         info!(
             "loaded and checked maxmind in {} MS",
