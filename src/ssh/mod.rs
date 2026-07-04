@@ -233,8 +233,9 @@ impl server::Handler for Server {
     async fn channel_open_session(
         &mut self,
         channel: russh::Channel<server::Msg>,
+        reply: server::ChannelOpenHandle,
         session: &mut server::Session,
-    ) -> Result<bool, Self::Error> {
+    ) -> Result<(), Self::Error> {
         info!(ip = ?self.ip, "connect");
         {
             let mut clients = self.clients.lock().await;
@@ -243,7 +244,8 @@ impl server::Handler for Server {
                 ClientState::new(channel.id(), session.handle(), self.ip),
             );
         }
-        Ok(true)
+        reply.accept().await;
+        Ok(())
     }
 
     async fn channel_close(
