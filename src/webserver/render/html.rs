@@ -82,10 +82,10 @@ impl<'a> PageRenderer<'a> for HtmlRenderer {
         };
         format!(
             "{}{}{}",
-            &start
+            start
                 .replace("[style]", &style.html_style())
                 .replace("[class]", if *copyable { "copyable" } else { "" }),
-            &html_escape::encode_text(text).replace("\n", "<br>"),
+            html_escape::encode_text(text).replace("\n", "<br>"),
             end
         )
     }
@@ -160,7 +160,7 @@ impl<'a> PageRenderer<'a> for HtmlRenderer {
                 output.push_str(&format!(
                     "<span style=\"{}\">{}</span>",
                     Style::new().fg(color).bg(color).html_style(),
-                    &html_escape::encode_text(" ")
+                    html_escape::encode_text(" ")
                 ));
                 buffer.clear();
                 continue;

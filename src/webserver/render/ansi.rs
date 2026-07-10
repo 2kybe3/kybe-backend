@@ -70,7 +70,7 @@ impl<'a> PageRenderer<'a> for AnsiRenderer {
 
             match index {
                 Some(index) => {
-                    text.insert_str(index, &format!("{}{}", &colored, &link_to.link()));
+                    text.insert_str(index, &format!("{}{}", colored, link_to.link()));
                 }
                 None => {
                     text.push_str(&colored);
