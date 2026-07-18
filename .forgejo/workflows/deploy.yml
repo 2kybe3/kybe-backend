@@ -49,7 +49,7 @@ jobs:
         run: docker push ${{ env.REMOTE_TAG }}
 
       - name: Copy docker-compose.yml to server
-        uses: https://github.com/appleboy/ssh-action@068c0c7a4e59a5ae12fb7cb454b05735d830c82b # master
+        uses: https://github.com/appleboy/ssh-action@b838bc2f27cd449b957159452d432aff91697637 # master
         with:
           host: ${{ vars.SERVER_HOST }}
           username: ${{ vars.SERVER_USER }}
@@ -59,7 +59,7 @@ jobs:
           target: "/opt/backend/"
 
       - name: Deploy to production server
-        uses: https://github.com/appleboy/ssh-action@068c0c7a4e59a5ae12fb7cb454b05735d830c82b # master
+        uses: https://github.com/appleboy/ssh-action@b838bc2f27cd449b957159452d432aff91697637 # master
         with:
           host: ${{ vars.SERVER_HOST }}
           username: ${{ vars.SERVER_USER }}
