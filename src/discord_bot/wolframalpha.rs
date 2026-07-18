@@ -1,5 +1,3 @@
-use poise::{CreateReply, serenity_prelude::CreateEmbed};
-
 use crate::discord_bot::{Context, Error};
 
 #[poise::command(
@@ -12,8 +10,7 @@ pub async fn wolframalpha(ctx: Context<'_>, expression: String) -> Result<(), Er
 
     let res = ctx.data().wolframalpha.query(expression).await?;
 
-    let mut reply = CreateReply::default();
-
+    let mut response = String::new();
     for pod in res {
         let mut description = String::new();
         for subpod in pod.subpods {
@@ -24,11 +21,11 @@ pub async fn wolframalpha(ctx: Context<'_>, expression: String) -> Result<(), Er
             continue;
         }
 
-        let embed = CreateEmbed::new().title(pod.title).description(description);
-        reply = reply.embed(embed);
+        response.push_str(&format!("# {}\n", pod.title));
+        response.push_str(&format!("```\n{description}\n```\n"));
     }
 
-    ctx.send(reply).await?;
+    ctx.reply(response).await?;
 
     Ok(())
 }

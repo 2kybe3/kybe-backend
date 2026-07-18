@@ -78,6 +78,8 @@ impl WolframAlpha {
             .text()
             .await?;
 
+        tracing::info!("{res}");
+
         let res: WolframAlphaResponse = serde_json::from_str(&res)?;
         let pods = res.queryresult.pods;
 
