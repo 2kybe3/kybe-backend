@@ -21,14 +21,12 @@ let
 
   commonArgs = {
     inherit src;
+
+    __structuredAttrs = true;
     strictDeps = true;
 
     # no tests
     doCheck = false;
-
-    nativeBuildInputs = with pkgs; [
-      pkg-config
-    ];
   };
 
   cargoArtifacts = craneLib.buildDepsOnly commonArgs;

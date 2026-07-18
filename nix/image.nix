@@ -4,11 +4,11 @@
   backend,
   ...
 }:
-pkgs.dockerTools.buildImage {
+pkgs.dockerTools.buildLayeredImage {
   name = "kybe-backend";
   tag = "latest";
 
-  copyToRoot = [ pkgs.cacert ];
+  contents = [ pkgs.cacert ];
 
   config = {
     Cmd = [ "${lib.getExe backend}" ];
