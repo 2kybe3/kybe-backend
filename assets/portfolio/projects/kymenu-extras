@@ -1,0 +1,2 @@
+Companion utilities for kymenu.
+Includes kymenu-dir (file browser) and kymenu-ssh (SSH host selector).

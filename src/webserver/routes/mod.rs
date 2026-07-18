@@ -6,3 +6,4 @@ pub mod nix;
 pub mod now_playing;
 pub mod pgp;
 pub mod root;
+pub mod portfolio;

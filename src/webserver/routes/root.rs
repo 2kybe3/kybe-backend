@@ -48,7 +48,6 @@ pub async fn root(
 
     page.append(&mut vec![
         theme.title_underlined("Currently Listening"),
-        theme.raw("\n\n").into(),
         theme
             .label(
                 "Playing",
@@ -94,7 +93,6 @@ pub async fn root(
     page.append(&mut vec![
         theme.raw("\n").into(),
         theme.title_underlined("Projects"),
-        theme.raw("\n\n").into(),
         theme
             .label(
                 "hexix",
@@ -178,7 +176,6 @@ pub async fn root(
             .into(),
         theme.raw("\n").into(),
         theme.title_underlined("Contact"),
-        theme.raw("\n\n").into(),
         theme
             .label(
                 "PGP",
@@ -215,7 +212,6 @@ pub async fn root(
             .into(),
         theme.raw("\n").into(),
         theme.title_underlined("Other Platforms"),
-        theme.raw("\n\n").into(),
         theme
             .label(
                 "Git",
@@ -249,19 +245,8 @@ pub async fn root(
                 ],
             )
             .into(),
-        theme
-            .label(
-                "Codeberg",
-                vec![
-                    theme
-                        .link_colored("kybe\n", "https://codeberg.org/kybe")
-                        .into(),
-                ],
-            )
-            .into(),
         theme.raw("\n").into(),
         theme.title_underlined("Other Endpoints"),
-        theme.raw("\n\n").into(),
         theme
             .label(
                 "IP",

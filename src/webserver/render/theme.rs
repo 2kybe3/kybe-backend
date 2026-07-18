@@ -8,6 +8,8 @@ use crate::webserver::render::{
 pub struct Theme {
     pub title: Style,
     pub subtitle: Style,
+    pub section: Style,
+    pub sub_section: Style,
     pub label: Style,
     pub text: Style,
     pub link: Style,
@@ -21,6 +23,8 @@ impl Default for Theme {
         Self {
             title: Style::new().fg(Bit4Color::BRIGHT_RED),
             subtitle: Style::new().fg(Bit4Color::RED),
+            section: Style::new().fg(Bit4Color::BRIGHT_RED),
+            sub_section: Style::new().fg(Bit4Color::BRIGHT_RED),
             label: Style::new().fg(Bit4Color::YELLOW),
             text: Style::new().fg(Bit4Color::WHITE),
             link: Style::new().fg(Bit4Color::GREEN),
@@ -45,9 +49,46 @@ impl Theme {
             TextBlobBuilder::new(format!("{text}\n"))
                 .style(self.title.clone())
                 .into(),
-            TextBlobBuilder::new("-".repeat(text.len()))
+            TextBlobBuilder::new("=".repeat(text.len()))
                 .style(self.title.clone())
                 .into(),
+            TextBlobBuilder::new("\n\n").into(),
+        ]
+        .into()
+    }
+
+    #[allow(unused)]
+    pub fn section(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
+        text.into().style(self.section.clone())
+    }
+
+    pub fn section_underlined(&self, text: &str) -> Objects {
+        vec![
+            TextBlobBuilder::new(format!("{text}\n"))
+                .style(self.section.clone())
+                .into(),
+            TextBlobBuilder::new("-".repeat(text.len()))
+                .style(self.section.clone())
+                .into(),
+            TextBlobBuilder::new("\n\n").into(),
+        ]
+        .into()
+    }
+
+    #[allow(unused)]
+    pub fn sub_section(&self, text: impl Into<TextBlobBuilder>) -> TextBlobBuilder {
+        text.into().style(self.sub_section.clone())
+    }
+
+    pub fn sub_section_underlined(&self, text: &str) -> Objects {
+        vec![
+            TextBlobBuilder::new(format!("{text}\n"))
+                .style(self.sub_section.clone())
+                .into(),
+            TextBlobBuilder::new("~".repeat(text.len()))
+                .style(self.sub_section.clone())
+                .into(),
+            TextBlobBuilder::new("\n\n").into(),
         ]
         .into()
     }
