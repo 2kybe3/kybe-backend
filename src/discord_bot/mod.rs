@@ -1,11 +1,12 @@
-mod calculator;
 mod cataas;
 mod maxmind;
 mod translator;
 mod version;
+mod wolframalpha;
 
 use crate::config::types::Config;
 use crate::external::cataas::CATAAS;
+use crate::external::wolframalpha::WolframAlpha;
 use crate::maxmind::MaxMind;
 use crate::translator::Translator;
 use poise::serenity_prelude as serenity;
@@ -22,10 +23,10 @@ pub const MAX_MSG_LENGTH: usize = 2000;
 
 #[derive(Debug)]
 pub struct Data {
-    pub translator: Option<Arc<Translator>>,
-    pub mm: Arc<MaxMind>,
-
     pub cataas: CATAAS,
+    pub mm: Arc<MaxMind>,
+    pub translator: Option<Arc<Translator>>,
+    pub wolframalpha: WolframAlpha,
 }
 
 pub async fn init_bot(config: Arc<Config>, mm: Arc<MaxMind>) -> Result<(), Error> {
@@ -34,7 +35,7 @@ pub async fn init_bot(config: Arc<Config>, mm: Arc<MaxMind>) -> Result<(), Error
     let framework = poise::Framework::builder()
 		.options(poise::FrameworkOptions {
 			commands: vec![
-				calculator::calculate(),
+                wolframalpha::wolframalpha(),
 				translator::detect(),
 				translator::languages(),
 				translator::translate(),
@@ -76,10 +77,13 @@ pub async fn init_bot(config: Arc<Config>, mm: Arc<MaxMind>) -> Result<(), Error
 
 				let cataas = CATAAS::new(client.clone());
 
+                let wolframalpha = WolframAlpha::new(client.clone(), config.wolfram_alpha.clone());
+
 				Ok(Data {
-					translator,
 					cataas,
 					mm,
+					translator,
+                    wolframalpha,
 				})
 			})
 		})

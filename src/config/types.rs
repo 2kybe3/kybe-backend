@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Config {
+    pub wolfram_alpha: WolframAlphaConfig,
     pub discord_bot: DiscordBotConfig,
     pub webserver: WebserverConfig,
     pub maxmind: MaxMindConfig,
@@ -21,6 +22,12 @@ pub struct DiscordBotConfig {
 pub struct TranslatorConfig {
     pub enabled: bool,
     pub url: Option<String>,
+    pub token: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct WolframAlphaConfig {
+    pub enabled: bool,
     pub token: Option<String>,
 }
 

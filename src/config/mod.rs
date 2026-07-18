@@ -1,7 +1,7 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
     Config, DiscordBotConfig, LastFMConfig, LoggerConfig, MaxMindConfig, TranslatorConfig,
-    UmamiConfig, WebserverConfig,
+    UmamiConfig, WebserverConfig, WolframAlphaConfig,
 };
 use std::env;
 use std::time::Instant;
@@ -114,6 +114,10 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
+            wolfram_alpha: WolframAlphaConfig {
+                enabled: false,
+                token: Some("APP_ID".into()),
+            },
             discord_bot: DiscordBotConfig {
                 enable: false,
                 token: "DISCORD_TOKEN".into(),
