@@ -1,20 +1,13 @@
-use std::sync::Arc;
-
 use axum::{Extension, extract::State, http::header, response::IntoResponse};
 use reqwest::StatusCode;
-use tokio::sync::Mutex;
 
-use crate::{
-    db::website_traces::{RequestStatus, WebsiteTrace},
-    webserver::{
-        RequestContext, WebServerState,
-        render::{Page, Theme, builders::ImageBuilder, object::Objects},
-    },
+use crate::webserver::{
+    RequestContext, WebServerState,
+    render::{Page, Theme, builders::ImageBuilder, object::Objects},
 };
 
 pub async fn nix(
     State(state): State<WebServerState>,
-    Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
     Extension(ctx): Extension<RequestContext>,
 ) -> impl IntoResponse {
     let theme = Theme::default();
@@ -50,11 +43,6 @@ pub async fn nix(
     let page = Page::from_iter("/dev/nix", &state.config, page);
 
     let mut result = page.render(&ctx.user_agent);
-
-    let mut trace = trace.lock().await;
-
-    trace.request_status = RequestStatus::Success;
-    trace.status_code = StatusCode::OK.into();
 
     (
         StatusCode::OK,

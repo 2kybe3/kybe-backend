@@ -8,23 +8,3 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend/config:/opt/backend/config
-    environment:
-      - KYBE_DATABASE_POSTGRES_URL=postgres://kybe:kybe@postgres:5432/kybe_db
-    depends_on:
-      - postgres
-
-  postgres:
-    image: postgres:18.4-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
-    container_name: kybe-postgres
-    ports:
-      - "5432:5432"
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: kybe
-      POSTGRES_PASSWORD: kybe
-      POSTGRES_DB: kybe_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:

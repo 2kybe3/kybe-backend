@@ -1,13 +1,10 @@
 mod calculator;
 mod cataas;
 mod maxmind;
-mod traces;
 mod translator;
 mod version;
 
 use crate::config::types::Config;
-use crate::db::Database;
-use crate::db::command_traces::{CommandStatus, CommandTrace};
 use crate::external::cataas::CATAAS;
 use crate::maxmind::MaxMind;
 use crate::translator::Translator;
@@ -25,19 +22,13 @@ pub const MAX_MSG_LENGTH: usize = 2000;
 
 #[derive(Debug)]
 pub struct Data {
-    pub config: Arc<Config>,
     pub translator: Option<Arc<Translator>>,
-    pub database: Database,
     pub mm: Arc<MaxMind>,
 
     pub cataas: CATAAS,
 }
 
-pub async fn init_bot(
-    config: Arc<Config>,
-    database: Database,
-    mm: Arc<MaxMind>,
-) -> Result<(), Error> {
+pub async fn init_bot(config: Arc<Config>, mm: Arc<MaxMind>) -> Result<(), Error> {
     let token = config.discord_bot.token.clone();
 
     let framework = poise::Framework::builder()
@@ -47,8 +38,6 @@ pub async fn init_bot(
 				translator::detect(),
 				translator::languages(),
 				translator::translate(),
-				traces::get_trace(),
-				traces::get_latest_trace(),
 				version::version(),
 				maxmind::maxmind(),
 				cataas::cat(),
@@ -88,9 +77,7 @@ pub async fn init_bot(
 				let cataas = CATAAS::new(client.clone());
 
 				Ok(Data {
-					config,
 					translator,
-					database,
 					cataas,
 					mm,
 				})
@@ -106,17 +93,6 @@ pub async fn init_bot(
 
     let mut client = client?;
     client.start().await?;
-    Ok(())
-}
-
-pub async fn defer(ctx: &Context<'_>, trace: &mut CommandTrace) -> anyhow::Result<()> {
-    if let Err(e) = ctx.defer().await {
-        trace.status = CommandStatus::Error;
-        trace.error = Some(format!("Defer failed: {:?}", e));
-
-        finalize_command_trace(ctx, trace).await?;
-        return Err(e.into());
-    }
     Ok(())
 }
 
@@ -146,21 +122,4 @@ pub async fn reply_or_attach(ctx: &Context<'_>, text: String, filename: impl Int
             .say("Failed to send the full response due to an error.")
             .await;
     }
-}
-
-pub async fn finalize_command_trace(
-    ctx: &Context<'_>,
-    trace: &mut CommandTrace,
-) -> anyhow::Result<()> {
-    trace.duration_ms = chrono::Utc::now()
-        .signed_duration_since(trace.started_at)
-        .num_milliseconds();
-    ctx.data().database.save_command_trace(trace).await?;
-
-    if trace.status == CommandStatus::Error {
-        tracing::error!(trace = ?trace, "command finished with error");
-    } else {
-        tracing::debug!(trace = ?trace, "command finished");
-    }
-    Ok(())
 }

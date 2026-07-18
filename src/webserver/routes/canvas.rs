@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     Extension,
     extract::{Query, State},
@@ -8,17 +6,13 @@ use axum::{
 };
 use reqwest::StatusCode;
 use serde::Deserialize;
-use tokio::sync::Mutex;
 
-use crate::{
-    db::website_traces::{RequestStatus, WebsiteTrace},
-    webserver::{
-        RequestContext, WebServerState,
-        render::{
-            Page, Style,
-            builders::{COLOR_MAPPING, CanvasBuilder, TextBlobBuilder},
-            color::bit4::Bit4Color,
-        },
+use crate::webserver::{
+    RequestContext, WebServerState,
+    render::{
+        Page, Style,
+        builders::{COLOR_MAPPING, CanvasBuilder, TextBlobBuilder},
+        color::bit4::Bit4Color,
     },
 };
 
@@ -30,7 +24,6 @@ pub struct CanvasParameters {
 pub async fn canvas(
     State(state): State<WebServerState>,
     Query(parsed_query): Query<CanvasParameters>,
-    Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
     Extension(ctx): Extension<RequestContext>,
 ) -> impl IntoResponse {
     let q = parsed_query.q.clone();
@@ -64,11 +57,6 @@ pub async fn canvas(
     let page = Page::from_iter("/dev/canvas", &state.config, page);
 
     let mut result = page.render(&ctx.user_agent);
-
-    let mut trace = trace.lock().await;
-
-    trace.request_status = RequestStatus::Success;
-    trace.status_code = StatusCode::OK.into();
 
     (
         StatusCode::OK,

@@ -1,5 +1,4 @@
-use crate::db::command_traces::{CommandStatus, CommandTrace};
-use crate::discord_bot::{Context, Error, attach, defer, finalize_command_trace};
+use crate::discord_bot::{Context, Error, attach};
 use crate::external::cataas::{CATAASCatRequest, Filter, Fit, Position, Type};
 use futures::{Stream, StreamExt};
 use poise::CreateReply;
@@ -57,8 +56,6 @@ pub async fn cat(
     #[description = "With custom filter"] lightness: Option<i32>,
     #[description = "Vebose result"] verbose: Option<bool>,
 ) -> anyhow::Result<(), Error> {
-    let mut trace = CommandTrace::start(&ctx, "cat");
-
     if let Some(amount) = amount
         && !(1..=10).contains(&amount)
     {
@@ -66,31 +63,10 @@ pub async fn cat(
         return Ok(());
     }
 
-    trace.input = serde_json::json!({
-        "tag": tag,
-        "amount": amount,
-        "says": says,
-        "cat_type": cat_type,
-        "filter": filter,
-        "fit": fit,
-        "position": position,
-        "width": width,
-        "height": height,
-        "blur": blur,
-        "r": r,
-        "g": g,
-        "b": b,
-        "brightness": brightness,
-        "saturation": saturation,
-        "hue": hue,
-        "lightness": lightness,
-        "verbose": verbose,
-    });
-
     let verbose = verbose.unwrap_or(false);
     let amount = amount.unwrap_or(1);
 
-    defer(&ctx, &mut trace).await?;
+    ctx.defer().await?;
 
     let request = CATAASCatRequest {
         cat_type,
@@ -114,12 +90,7 @@ pub async fn cat(
         let res = ctx
             .data()
             .cataas
-            .get_cat_url(
-                &request,
-                tag.as_deref(),
-                says.as_deref(),
-                Some(&mut trace.data),
-            )
+            .get_cat_url(&request, tag.as_deref(), says.as_deref())
             .await;
 
         match res {
@@ -150,44 +121,28 @@ pub async fn cat(
                             .say("Failed to send the full response due to an error.")
                             .await;
                     }
-                    trace.output = Some(format!("Image: {}", res.url));
                 }
                 Err(e) => {
-                    trace.error = Some(format!("{:?}", e));
-                    trace.status = CommandStatus::Error;
-
                     if verbose {
-                        let res = format!("{:#?}", res);
-                        trace.output = Some(res.clone());
-                        attach(&ctx, res, "error.txt").await;
+                        attach(&ctx, format!("{:#?}", e), "error.txt").await;
                     } else {
-                        trace.output = Some(res.url.clone());
                         ctx.reply(res.url).await?;
                     }
                 }
             },
             Ok(None) => {
-                trace.output = Some("No cat found".into());
                 ctx.reply("No cat found").await?;
             }
             Err(e) => {
-                trace.status = CommandStatus::Error;
-                trace.error = Some(format!("{:?}", e));
-
                 if verbose {
-                    let res = format!("{:#?}", e);
-                    trace.output = Some(res.clone());
-                    attach(&ctx, res, "error.txt").await;
+                    attach(&ctx, format!("{:#?}", e), "error.txt").await;
                 } else {
-                    trace.output = Some("Error evaluating expression".into());
                     ctx.reply("Error evaluating expression").await?;
                 }
                 break;
             }
         }
     }
-
-    finalize_command_trace(&ctx, &mut trace).await?;
 
     Ok(())
 }

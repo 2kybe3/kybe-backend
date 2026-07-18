@@ -5,7 +5,6 @@ use std::net::IpAddr;
 
 use maxminddb::Reader;
 use serde::{Deserialize, Serialize};
-use tokio::time::Instant;
 use tracing::info;
 
 use crate::{
@@ -27,7 +26,6 @@ pub struct LookupResponse {
 
 impl MaxMind {
     pub fn new(config: MaxMindConfig) -> anyhow::Result<Self> {
-        let now = Instant::now();
         let city = config
             .city_enable
             .then(|| Reader::open_readfile(config.city))
@@ -36,24 +34,25 @@ impl MaxMind {
             .asn_enable
             .then(|| Reader::open_readfile(config.asn))
             .transpose()?;
+
         if let Some(ref city) = city {
             if config.city_db_check {
                 info!("verifying maxmind City");
                 city.verify()?;
+                info!(metadata = ?city.metadata(), "maxmind City DB verified and loaded");
             }
-            info!("maxmind City verified and loaded: {:?}", city.metadata());
+            info!(metadata = ?city.metadata(), "maxmind City DB loaded");
         }
+
         if let Some(ref asn) = asn {
             if config.asn_db_check {
                 info!("verifying maxmind ASN");
                 asn.verify()?;
+                info!(metadata = ?asn.metadata(), "maxmind ASN DB verified and loaded");
             }
-            info!("maxmind ASN verified and loaded: {:?}", asn.metadata());
+            info!(metadata = ?asn.metadata(), "maxmind ASN DB loaded");
         }
-        info!(
-            "loaded and checked maxmind in {} MS",
-            now.elapsed().as_millis()
-        );
+
         Ok(Self { city, asn })
     }
 

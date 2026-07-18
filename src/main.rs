@@ -6,14 +6,12 @@ pub mod prometheus;
 pub mod translator;
 
 mod config;
-mod db;
 mod discord_bot;
 mod logger;
 mod ssh;
 mod webserver;
 
 use crate::config::types::Config;
-use crate::db::Database;
 use crate::external::lastfm::LastFM;
 use crate::maxmind::MaxMind;
 use futures::future::try_join_all;
@@ -57,26 +55,12 @@ async fn main() -> anyhow::Result<()> {
         None
     };
 
-    let database = match Database::init(Arc::clone(&config)).await {
-        Ok(db) => db,
-        Err(e) => {
-            notify_error("Database", format!("init failed: {e}"), true).await;
-            unreachable!("the upper function has already exited")
-        }
-    };
-
-    let args: Vec<String> = env::args().collect();
-    if args.iter().any(|arg| arg == "--sync-maxmind") {
-        database.sync_maxmind(Arc::clone(&mm)).await?;
-    }
-
     if config.discord_bot.enable {
         let config = Arc::clone(&config);
         let mm = Arc::clone(&mm);
-        let database = database.clone();
 
         handles.push(tokio::spawn(async move {
-            if let Err(e) = discord_bot::init_bot(config, database, mm).await {
+            if let Err(e) = discord_bot::init_bot(config, mm).await {
                 notify_error("Discord Bot", format!("init failed: {e}",), true).await;
             }
         }));
@@ -92,7 +76,7 @@ async fn main() -> anyhow::Result<()> {
     }
 
     handles.push(tokio::spawn(async move {
-        if let Err(e) = webserver::init_webserver(config, database, mm, lastfm).await {
+        if let Err(e) = webserver::init_webserver(config, mm, lastfm).await {
             notify_error("Discord Bot", format!("init failed: {e}"), true).await;
         }
     }));

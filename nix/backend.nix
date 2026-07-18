@@ -14,10 +14,8 @@ let
     root = unfilteredRoot;
     fileset = lib.fileset.unions [
       (craneLib.fileset.commonCargoSources unfilteredRoot)
-      ../migrations
       ../assets
       ../static
-      ../.sqlx
     ];
   };
 
@@ -61,6 +59,7 @@ let
 
   checks = {
     inherit kybe-backend;
+
     kybe-backend-clippy = craneLib.cargoClippy (
       commonArgs
       // {
@@ -75,10 +74,5 @@ in
 
   package = kybe-backend;
 
-  devShell = craneLib.devShell {
-    checks = checks;
-    packages = with pkgs; [
-      sqlx-cli
-    ];
-  };
+  devShell = craneLib.devShell { };
 }

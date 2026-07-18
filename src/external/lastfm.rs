@@ -97,7 +97,9 @@ impl LastFM {
                     error!("Failed to refresh Last.fm cache: {:?}", e);
                 }
                 let elapsed_ms = now.elapsed().as_millis();
+
                 crate::prometheus::update_lastfm_fetch_duration(elapsed_ms);
+
                 tokio::time::sleep(Duration::from_secs(self.interval_secs.into())).await;
             }
         });
@@ -140,29 +142,9 @@ impl LastFM {
         Ok(())
     }
 
-    pub async fn get_playing(&self, debug_store: Option<&mut serde_json::Value>) -> Cache {
+    pub async fn get_playing(&self) -> Cache {
         let mut cache = self.cache.lock().await.clone();
-
         cache.sync_age = cache.sync_instant.elapsed().as_millis();
-
-        let debug_entry = serde_json::json!({
-            "result": cache.result,
-            "sync": cache.sync.timestamp_millis(),
-            "sync_age": cache.sync_instant.elapsed().as_millis(),
-        });
-
-        if let Some(store) = debug_store {
-            let obj = store.as_object_mut().expect("debug_store must be a object");
-
-            let entry = obj
-                .entry("lastfm")
-                .or_insert_with(|| serde_json::Value::Array(Vec::new()));
-
-            if let Some(arr) = entry.as_array_mut() {
-                arr.push(debug_entry);
-            }
-        }
-
         cache
     }
 }

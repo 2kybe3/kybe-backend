@@ -1,7 +1,7 @@
 use crate::config::error::ConfigError;
 use crate::config::types::{
-    Config, DatabaseConfig, DiscordBotConfig, LastFMConfig, LoggerConfig, MaxMindConfig,
-    TranslatorConfig, UmamiConfig, WebserverConfig,
+    Config, DiscordBotConfig, LastFMConfig, LoggerConfig, MaxMindConfig, TranslatorConfig,
+    UmamiConfig, WebserverConfig,
 };
 use std::env;
 use std::time::Instant;
@@ -65,21 +65,6 @@ impl Config {
         }
     }
 
-    pub async fn load_env_overrides(mut cfg: Config) -> Config {
-        macro_rules! env_override_str {
-            ($field:expr, $env_name:literal) => {
-                if let Ok(val) = env::var($env_name) {
-                    tracing::info!("Overriding {} from environment", $env_name);
-                    $field = val;
-                }
-            };
-        }
-
-        env_override_str!(cfg.database.postgres_url, "KYBE_DATABASE_POSTGRES_URL");
-
-        cfg
-    }
-
     pub async fn load() -> Result<Self, ConfigError> {
         let path = env::current_dir()
             .map_err(ConfigError::CurrentDir)?
@@ -87,8 +72,7 @@ impl Config {
         let contents = fs::read_to_string(&path)
             .await
             .map_err(ConfigError::ReadFile)?;
-        let res = toml::from_str(&contents)?;
-        Ok(Self::load_env_overrides(res).await)
+        Ok(toml::from_str(&contents)?)
     }
     pub async fn create_default() -> Result<(), ConfigError> {
         let path = env::current_dir()
@@ -139,10 +123,6 @@ impl Default for Config {
                     url: Some("https://translate.kybe.xyz".into()),
                     token: Some("".into()),
                 },
-            },
-            database: DatabaseConfig {
-                postgres_url: "postgres://postgres:password@localhost/test".into(),
-                max_connections: 5,
             },
             maxmind: MaxMindConfig {
                 city_enable: false,

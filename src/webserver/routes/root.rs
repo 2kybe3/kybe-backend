@@ -1,10 +1,7 @@
 use axum::{Extension, extract::State, http::header, response::IntoResponse};
 use reqwest::StatusCode;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 use crate::{
-    db::website_traces::{RequestStatus, WebsiteTrace},
     external::lastfm,
     webserver::{
         RequestContext, TERMINAL_PROMPT, WebServerState, common,
@@ -19,14 +16,12 @@ use crate::{
 
 pub async fn root(
     State(state): State<WebServerState>,
-    Extension(trace): Extension<Arc<Mutex<WebsiteTrace>>>,
     Extension(ctx): Extension<RequestContext>,
 ) -> impl IntoResponse {
-    let mut trace = trace.lock().await;
     let theme = Theme::default();
 
     let playing = if let Some(lastfm) = state.lastfm {
-        lastfm.get_playing(Some(&mut trace.data)).await.result
+        lastfm.get_playing().await.result
     } else {
         None
     };
@@ -314,14 +309,11 @@ pub async fn root(
             )
             .into(),
     ]);
-    page.append(&mut common::footer::footer(trace.trace_id));
+    page.append(&mut common::footer::footer());
 
     let page = Page::from_iter("/", &state.config, page);
 
     let mut result = page.render(&ctx.user_agent);
-
-    trace.request_status = RequestStatus::Success;
-    trace.status_code = StatusCode::OK.into();
 
     (
         StatusCode::OK,

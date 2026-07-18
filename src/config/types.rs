@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub discord_bot: DiscordBotConfig,
     pub webserver: WebserverConfig,
-    pub database: DatabaseConfig,
     pub maxmind: MaxMindConfig,
     pub lastfm: LastFMConfig,
     pub logger: LoggerConfig,
@@ -23,12 +22,6 @@ pub struct TranslatorConfig {
     pub enabled: bool,
     pub url: Option<String>,
     pub token: Option<String>,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct DatabaseConfig {
-    pub postgres_url: String,
-    pub max_connections: u32,
 }
 
 // Max Mind (https://www.maxmind.com/en/geoip-databases)

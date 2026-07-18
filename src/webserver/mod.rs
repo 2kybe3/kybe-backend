@@ -3,8 +3,6 @@ pub mod render;
 mod routes;
 
 use crate::config::types::{Config, WebserverConfig};
-use crate::db::Database;
-use crate::db::website_traces::WebsiteTrace;
 use crate::external::lastfm::LastFM;
 use crate::maxmind::MaxMind;
 use crate::maxmind::asn::AsnMin;
@@ -26,7 +24,6 @@ use std::env;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tokio::sync::Mutex;
 use tower::ServiceBuilder;
 use tower_governor::governor::{GovernorConfig, GovernorConfigBuilder};
 use tower_governor::key_extractor::KeyExtractor;
@@ -39,7 +36,6 @@ pub static TERMINAL_PROMPT: &str = "λ ";
 #[derive(Clone)]
 struct WebServerState {
     mm: Arc<MaxMind>,
-    database: Database,
     config: Arc<Config>,
     lastfm: Option<Arc<LastFM>>,
 }
@@ -267,45 +263,6 @@ async fn user_context_middleware(
     next.run(request).await
 }
 
-async fn trace_middleware(
-    State(state): State<WebServerState>,
-
-    mut request: Request,
-    next: Next,
-) -> Response {
-    let ctx = request
-        .extensions()
-        .get::<RequestContext>()
-        .expect("user_context_middleware must run first");
-
-    let trace = Arc::new(Mutex::new(WebsiteTrace::start(
-        request.method(),
-        request.uri().path(),
-        request.uri().query(),
-        ctx.user_agent.clone(),
-        ctx.ident
-            .ipaddr
-            .map(|ip| ip.to_string())
-            .unwrap_or_default(),
-        serde_json::json!(ctx.mm_asn),
-        serde_json::json!(ctx.mm_city),
-    )));
-
-    request.extensions_mut().insert(trace.clone());
-
-    let response = next.run(request).await;
-
-    let status = response.status().into();
-
-    let db = state.database.clone();
-    tokio::spawn(async move {
-        let mut t = trace.lock().await;
-        t.finish(status, &db).await
-    });
-
-    response
-}
-
 pub fn make_limiter(
     config: &Config,
     replenish_after_ms: u64,
@@ -323,19 +280,13 @@ pub fn make_limiter(
 
 pub async fn init_webserver(
     config: Arc<Config>,
-    database: Database,
     mm: Arc<MaxMind>,
     lastfm: Option<Arc<LastFM>>,
 ) -> anyhow::Result<()> {
     let root_limiter = make_limiter(&config, 500, 10)?;
     let asset_limiter = make_limiter(&config, 500, 20)?;
 
-    let webserver_state = WebServerState {
-        mm,
-        lastfm,
-        config,
-        database,
-    };
+    let webserver_state = WebServerState { mm, lastfm, config };
 
     let static_dir = env::var("KYBE_BACKEND_STATIC_DIR").unwrap_or("static".into());
 
@@ -343,14 +294,11 @@ pub async fn init_webserver(
         middleware::from_fn_with_state(webserver_state.clone(), api_auth_middleware);
     let ctx_layer =
         middleware::from_fn_with_state(webserver_state.clone(), user_context_middleware);
-    let trace_layer = middleware::from_fn_with_state(webserver_state.clone(), trace_middleware);
 
     let root_limiter_layer = GovernorLayer::new(root_limiter);
     let asset_limiter_layer = GovernorLayer::new(asset_limiter);
 
-    let root_route_service = ServiceBuilder::new()
-        .layer(root_limiter_layer)
-        .layer(trace_layer.clone());
+    let root_route_service = ServiceBuilder::new().layer(root_limiter_layer);
 
     let fallback_router = Router::new()
         .fallback(get(fallback_404::fallback_404))
