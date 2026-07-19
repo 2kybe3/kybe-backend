@@ -23,6 +23,14 @@ macro_rules! git_repo {
     };
 }
 
+macro_rules! demo {
+    ($theme:expr,$url:literal) => {
+        $theme
+            .label("demo", vec![$theme.link_colored($url, $url).into()])
+            .into()
+    };
+}
+
 pub async fn portfolio(
     State(state): State<WebServerState>,
     Extension(ctx): Extension<RequestContext>,
@@ -40,12 +48,19 @@ pub async fn portfolio(
         theme
             .text(format!("{}\n", include_page!("projects/hexix").trim()))
             .into(),
+        theme.text("\n").into(),
         git_repo!(theme, "https://git.kybe.xyz/2kybe3/hexix"),
         theme.text("\n\n").into(),
         theme.sub_section_underlined("kymenu"),
         theme
             .text(format!("{}\n", include_page!("projects/kymenu").trim()))
             .into(),
+        theme.text("\n").into(),
+        demo!(
+            theme,
+            "https://git.kybe.xyz/2kybe3/kymenu/media/branch/main/assets/demo.mp4"
+        ),
+        theme.text("\n\n").into(),
         git_repo!(theme, "https://git.kybe.xyz/2kybe3/kymenu"),
         theme.text("\n\n").into(),
         theme.sub_section_underlined("kymenu-extras"),
@@ -55,6 +70,14 @@ pub async fn portfolio(
                 include_page!("projects/kymenu-extras").trim()
             ))
             .into(),
+        theme.text("\n").into(),
+        theme
+            .label(
+                "demo",
+                vec![theme.text("Demoed in the kymenu video above.").into()],
+            )
+            .into(),
+        theme.text("\n\n").into(),
         git_repo!(theme, "https://git.kybe.xyz/2kybe3/kymenu-extras"),
         theme.text("\n\n").into(),
         theme.sub_section_underlined("webhook-router"),
@@ -64,12 +87,14 @@ pub async fn portfolio(
                 include_page!("projects/webhook-router").trim()
             ))
             .into(),
+        theme.text("\n").into(),
         git_repo!(theme, "https://git.kybe.xyz/2kybe3/webhook-router"),
         theme.text("\n\n").into(),
         theme.sub_section_underlined("cheat-sh"),
         theme
             .text(format!("{}\n", include_page!("projects/cheat-sh").trim()))
             .into(),
+        theme.text("\n").into(),
         git_repo!(theme, "https://git.kybe.xyz/2kybe3/cheat-sh"),
         theme.text("\n\n").into(),
         theme.sub_section_underlined("kybe-backend"),
@@ -79,6 +104,7 @@ pub async fn portfolio(
                 include_page!("projects/kybe-backend").trim()
             ))
             .into(),
+        theme.text("\n").into(),
         git_repo!(theme, "https://git.kybe.xyz/2kybe3/kybe-backend"),
         theme.text("\n\n").into(),
         theme.raw("\n").into(),
