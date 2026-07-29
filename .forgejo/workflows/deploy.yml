@@ -39,7 +39,7 @@ jobs:
         run: docker tag ${{ env.LOCAL_TAG }} ${{ env.REMOTE_TAG }}
 
       - name: Log in to private registry
-        uses: https://github.com/docker/login-action@371161bbe7024a29a25c5e19bfcbc0804fe9ad2c # v4.5.2
+        uses: https://github.com/docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ${{ env.REGISTRY_URL }}
           username: ${{ vars.REGISTRY_USER }}
