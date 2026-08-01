@@ -6,7 +6,7 @@ pub struct Bit24Color(Option<Rgb>);
 // https://github.com/kovidgoyal/kitty/blob/a17b2df580d7df9004d116c66b4c9c365125784a/kitty/colors.c#L20
 impl Bit24Color {
     pub const BLACK: Self = Self::new(0, 0, 0);
-    pub const RED: Self = Self::new(205, 0, 0);
+    pub const RED: Self = Self::new(255, 0, 0);
     pub const GREEN: Self = Self::new(0, 205, 0);
     pub const YELLOW: Self = Self::new(205, 205, 0);
     pub const BLUE: Self = Self::new(0, 0, 238);
@@ -15,7 +15,7 @@ impl Bit24Color {
     pub const WHITE: Self = Self::new(229, 229, 229);
 
     pub const BRIGHT_BLACK: Self = Self::new(127, 127, 127);
-    pub const BRIGHT_RED: Self = Self::new(255, 0, 0);
+    pub const BRIGHT_RED: Self = Self::new(255, 50, 50);
     pub const BRIGHT_GREEN: Self = Self::new(0, 255, 0);
     pub const BRIGHT_YELLOW: Self = Self::new(255, 255, 0);
     pub const BRIGHT_BLUE: Self = Self::new(92, 92, 255);

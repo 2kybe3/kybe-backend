@@ -21,10 +21,10 @@ pub struct Theme {
 impl Default for Theme {
     fn default() -> Self {
         Self {
-            title: Style::new().fg(Bit4Color::BRIGHT_RED),
-            subtitle: Style::new().fg(Bit4Color::RED),
-            section: Style::new().fg(Bit4Color::BRIGHT_RED),
-            sub_section: Style::new().fg(Bit4Color::BRIGHT_RED),
+            title: Style::new().fg(Bit4Color::RED),
+            subtitle: Style::new().fg(Bit4Color::BRIGHT_RED),
+            section: Style::new().fg(Bit4Color::RED),
+            sub_section: Style::new().fg(Bit4Color::RED),
             label: Style::new().fg(Bit4Color::YELLOW),
             text: Style::new().fg(Bit4Color::WHITE),
             link: Style::new().fg(Bit4Color::GREEN),
