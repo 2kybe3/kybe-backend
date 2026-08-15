@@ -22,7 +22,7 @@ impl<'a> PageRenderer<'a> for HtmlRenderer {
             page.config.webserver.umami.script_path.clone(),
         ) {
             (Some(id), Some(path)) => format!(
-                "<script defer src=\"{path}/recorder.js\" data-website-id=\"{id}\"></script><script defer src=\"{path}/script.js\" data-website-id=\"{id}\"></script>",
+                "<script defer src=\"{path}recorder.js\" data-website-id=\"{id}\"></script><script defer src=\"{path}script.js\" data-website-id=\"{id}\"></script>",
             ),
             _ => "".into(),
         };

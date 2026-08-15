@@ -22,7 +22,7 @@ i2p_ip = ""
 i2p_header = "X-I2P-DestHash"
 
 [webserver.umami]
-script_path = "https://kybe.xyz/script.js"
+script_path = "https://kybe.xyz/"
 id = "umami-id"
 
 [maxmind]
