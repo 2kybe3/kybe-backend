@@ -154,7 +154,7 @@ impl Default for Config {
                 i2p_ip: Some("".into()),
                 i2p_header: Some("X-I2P-DestHash".into()),
                 umami: UmamiConfig {
-                    script_path: Some("https://kybe.xyz/script.js".into()),
+                    script_path: Some("https://uma.kybe.xyz/".into()),
                     id: Some("umami-id".into()),
                 },
             },
