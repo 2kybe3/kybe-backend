@@ -24,7 +24,7 @@ pub async fn detect(
                 .collect::<Vec<_>>()
                 .join(" -> ");
 
-            reply_or_attach(&ctx, summary, "detected_languages.txt").await;
+            reply_or_attach(&ctx, summary, "detected_languages", "txt").await;
         }
         Err(e) => {
             ctx.reply(format!("Error detecting language: {:?}", e))
@@ -53,7 +53,8 @@ pub async fn languages(ctx: Context<'_>) -> Result<(), Error> {
             reply_or_attach(
                 &ctx,
                 format!("```\n{}```", serde_json::to_string_pretty(&res)?),
-                "languages_supported.json",
+                "languages_supported",
+                "json",
             )
             .await;
         }
@@ -96,7 +97,8 @@ pub async fn translate(
             reply_or_attach(
                 &ctx,
                 format!("{} → {} \"{}\"", source, target, res.translated_text),
-                "translation.txt",
+                "translation",
+                "txt",
             )
             .await;
         }

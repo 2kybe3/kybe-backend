@@ -68,7 +68,6 @@ impl WolframAlpha {
         };
 
         let params = serde_qs::to_string(&WolframAlphaRequest::new(query, token.to_string()))?;
-        tracing::info!("{params}");
 
         let res = self
             .client
@@ -78,13 +77,20 @@ impl WolframAlpha {
             .text()
             .await?;
 
-        tracing::info!("{res}");
+        let parsed: serde_json::Value = serde_json::from_str(&res)?;
+        if parsed["queryresult"]["success"] == false {
+            tracing::warn!(res = ?res, "WolframAlpha failed to calculate");
+            anyhow::bail!("WolframAlpha failed to calculate");
+        }
 
-        let res: WolframAlphaResponse = serde_json::from_str(&res)?;
-        let pods = res.queryresult.pods;
+        let res: WolframAlphaResponse = match serde_json::from_value(parsed) {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::warn!(res = ?res, error = ?e, "WolframAlpha malformed response");
+                anyhow::bail!("WolframAlpha malformed response");
+            }
+        };
 
-        tracing::info!("{pods:?}");
-
-        Ok(pods)
+        Ok(res.queryresult.pods)
     }
 }

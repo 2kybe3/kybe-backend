@@ -1,4 +1,5 @@
 mod cataas;
+mod coords;
 mod maxmind;
 mod translator;
 mod version;
@@ -41,6 +42,7 @@ pub async fn init_bot(config: Arc<Config>, mm: Arc<MaxMind>) -> Result<(), Error
 				translator::translate(),
 				version::version(),
 				maxmind::maxmind(),
+                coords::coords(),
 				cataas::cat(),
 			],
 			on_error: |error: FrameworkError<'_, Data, Error>| {
@@ -111,11 +113,22 @@ pub async fn attach(ctx: &Context<'_>, text: String, filename: impl Into<String>
     }
 }
 
-pub async fn reply_or_attach(ctx: &Context<'_>, text: String, filename: impl Into<String>) {
-    let result = if text.chars().count() <= MAX_MSG_LENGTH {
-        ctx.reply(&text).await
+pub async fn reply_or_attach(
+    ctx: &Context<'_>,
+    text: String,
+    filename: impl Into<String>,
+    filetype: impl Into<String>,
+) {
+    let filetype = filetype.into();
+    let reply_text = format!("```{filetype}\n{text}\n```");
+
+    let result = if reply_text.chars().count() <= MAX_MSG_LENGTH {
+        ctx.reply(&reply_text).await
     } else {
-        let attachment = poise::serenity_prelude::CreateAttachment::bytes(text, filename);
+        let attachment = poise::serenity_prelude::CreateAttachment::bytes(
+            text,
+            format!("{}.{}", filename.into(), filetype),
+        );
         let reply = CreateReply::default().attachment(attachment);
         ctx.send(reply).await
     };

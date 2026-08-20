@@ -1,27 +1,27 @@
 use crate::discord_bot::{Context, Error, attach};
 use crate::external::cataas::{CATAASCatRequest, Filter, Fit, Position, Type};
-use futures::{Stream, StreamExt};
 use poise::CreateReply;
-use poise::serenity_prelude::CreateAttachment;
+use poise::serenity_prelude::{AutocompleteChoice, CreateAttachment, CreateAutocompleteResponse};
 use tracing::error;
 
-async fn autocomplete_tag<'a>(
-    ctx: Context<'_>,
-    partial: &'a str,
-) -> impl Stream<Item = String> + 'a {
+async fn autocomplete_tag(ctx: Context<'_>, partial: &str) -> CreateAutocompleteResponse {
     let tags = ctx.data().cataas.tags().await.to_owned();
 
-    futures::stream::iter(tags)
-        .filter(move |tag| {
-            futures::future::ready(tag.starts_with(partial.split(",").last().unwrap_or("")))
-        })
+    let choises: Vec<AutocompleteChoice> = tags
+        .iter()
+        .filter(|tag| tag.starts_with(partial) && tag.len() < 100)
         .map(|tag| {
             let partial = match partial.rfind(',') {
                 Some(pos) => &partial[..=pos],
                 None => "",
             };
-            format!("{}{}", partial, tag)
+            let name = format!("{}{}", partial, tag);
+            AutocompleteChoice::new(name.clone(), name)
         })
+        .take(25)
+        .collect();
+
+    CreateAutocompleteResponse::new().set_choices(choises)
 }
 
 #[allow(clippy::too_many_arguments)]

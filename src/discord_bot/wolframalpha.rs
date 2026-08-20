@@ -1,4 +1,4 @@
-use crate::discord_bot::{Context, Error};
+use crate::discord_bot::{Context, Error, reply_or_attach};
 
 #[poise::command(
     slash_command,
@@ -8,7 +8,13 @@ use crate::discord_bot::{Context, Error};
 pub async fn wolframalpha(ctx: Context<'_>, expression: String) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let res = ctx.data().wolframalpha.query(expression).await?;
+    let res = match ctx.data().wolframalpha.query(expression).await {
+        Ok(v) => v,
+        Err(e) => {
+            reply_or_attach(&ctx, e.to_string(), "error", "txt").await;
+            return Ok(());
+        }
+    };
 
     let mut response = String::new();
     for pod in res {
@@ -21,11 +27,13 @@ pub async fn wolframalpha(ctx: Context<'_>, expression: String) -> Result<(), Er
             continue;
         }
 
-        response.push_str(&format!("# {}\n", pod.title));
-        response.push_str(&format!("```\n{description}\n```\n"));
+        let description = description.lines().collect::<Vec<_>>().join("\n> ");
+
+        response.push_str(&format!("## {}\n", pod.title));
+        response.push_str(&format!("> {description}\n"));
     }
 
-    ctx.reply(response).await?;
+    reply_or_attach(&ctx, response, "response", "md").await;
 
     Ok(())
 }
