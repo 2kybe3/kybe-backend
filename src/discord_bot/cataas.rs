@@ -7,7 +7,7 @@ use tracing::error;
 async fn autocomplete_tag(ctx: Context<'_>, partial: &str) -> CreateAutocompleteResponse {
     let tags = ctx.data().cataas.tags().await.to_owned();
 
-    let choises: Vec<AutocompleteChoice> = tags
+    let choices: Vec<AutocompleteChoice> = tags
         .iter()
         .filter(|tag| tag.starts_with(partial) && tag.len() < 100)
         .map(|tag| {
@@ -21,7 +21,7 @@ async fn autocomplete_tag(ctx: Context<'_>, partial: &str) -> CreateAutocomplete
         .take(25)
         .collect();
 
-    CreateAutocompleteResponse::new().set_choices(choises)
+    CreateAutocompleteResponse::new().set_choices(choices)
 }
 
 #[allow(clippy::too_many_arguments)]
