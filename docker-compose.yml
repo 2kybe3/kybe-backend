@@ -6,5 +6,7 @@ services:
       - "3000:3000"
       - "2222:2222"
     restart: unless-stopped
+    cap_add:
+      - NET_RAW
     volumes:
       - ./backend/config:/opt/backend/config

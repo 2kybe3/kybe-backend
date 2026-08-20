@@ -42,3 +42,4 @@ anyhow = "1.0.102"
 
 poise = { git = "https://github.com/serenity-rs/poise", branch = "next" }
 staticmap = "0.4.2"
+trippy-core = "0.13.0"

@@ -1,6 +1,7 @@
 mod cataas;
 mod coords;
 mod maxmind;
+mod traceroute;
 mod translator;
 mod version;
 mod wolframalpha;
@@ -37,6 +38,7 @@ pub async fn init_bot(config: Arc<Config>, mm: Arc<MaxMind>) -> Result<(), Error
 		.options(poise::FrameworkOptions {
 			commands: vec![
                 wolframalpha::wolframalpha(),
+                traceroute::traceroute(),
 				translator::detect(),
 				translator::languages(),
 				translator::translate(),

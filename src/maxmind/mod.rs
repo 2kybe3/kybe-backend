@@ -41,6 +41,7 @@ impl MaxMind {
                 city.verify()?;
                 info!(metadata = ?city.metadata(), "maxmind City DB verified and loaded");
             }
+            info!("maxmind City loaded: {:?}", city.metadata());
             info!(metadata = ?city.metadata(), "maxmind City DB loaded");
         }
 
