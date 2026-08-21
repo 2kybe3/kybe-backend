@@ -1,6 +1,7 @@
 mod cataas;
 mod coords;
 mod maxmind;
+mod show_me;
 mod traceroute;
 mod translator;
 mod version;
@@ -42,6 +43,7 @@ pub async fn init_bot(config: Arc<Config>, mm: Arc<MaxMind>) -> Result<(), Error
 				translator::detect(),
 				translator::languages(),
 				translator::translate(),
+                show_me::show_me(),
 				version::version(),
 				maxmind::maxmind(),
                 coords::coords(),
