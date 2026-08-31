@@ -59,7 +59,7 @@ pub async fn root(
 							} else {
 								"False"
 							},
-							"https://metrics.kybe.xyz/public-dashboards/f64d242587e14e2689b22e0ff542a1e9",
+                            "http://grafana.kybe.xyz/public-dashboards/9668326e06434d6ebf8b999c019dee18",
 						)
 						.into(),
                     theme.comment(" (click me)\n").into(),
