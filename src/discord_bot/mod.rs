@@ -1,5 +1,7 @@
 mod cataas;
 mod coords;
+mod extract_time;
+mod guild_info;
 mod maxmind;
 mod show_me;
 mod traceroute;
@@ -39,10 +41,12 @@ pub async fn init_bot(config: Arc<Config>, mm: Arc<MaxMind>) -> Result<(), Error
 		.options(poise::FrameworkOptions {
 			commands: vec![
                 wolframalpha::wolframalpha(),
+                extract_time::extract_time(),
                 traceroute::traceroute(),
-				translator::detect(),
+                guild_info::guild_info(),
 				translator::languages(),
 				translator::translate(),
+				translator::detect(),
                 show_me::show_me(),
 				version::version(),
 				maxmind::maxmind(),
