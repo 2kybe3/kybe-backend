@@ -23,7 +23,7 @@ use tracing::warn;
 pub static GIT_SHA: Lazy<String> =
     Lazy::new(|| env::var("KYBE_BACKEND_GIT_SHA").unwrap_or("dev".to_string()));
 
-pub async fn notify_error(title: impl AsRef<str>, msg: impl Into<String>, exit: bool) {
+async fn notify_error(title: impl AsRef<str>, msg: impl Into<String>, exit: bool) {
     tracing::error!("{}: {}", title.as_ref(), msg.into());
 
     if exit {
@@ -48,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
     let lastfm = if config.lastfm.enable {
         let lastfm = LastFM::new(&config.lastfm).map(Arc::new);
         if let Some(ref lastfm) = lastfm {
-            Arc::clone(lastfm).run_cacher().await;
+            handles.push(Arc::clone(lastfm).run_cacher().await);
         }
         lastfm
     } else {

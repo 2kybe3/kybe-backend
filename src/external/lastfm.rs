@@ -6,7 +6,7 @@ use std::{
 use anyhow::Context;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
+use tokio::{sync::Mutex, task::JoinHandle};
 use tracing::{error, info, warn};
 
 use crate::config::types::LastFMConfig;
@@ -89,7 +89,7 @@ impl LastFM {
         unreachable!()
     }
 
-    pub async fn run_cacher(self: Arc<Self>) {
+    pub async fn run_cacher(self: Arc<Self>) -> JoinHandle<()> {
         tokio::spawn(async move {
             loop {
                 let now = Instant::now();
@@ -102,7 +102,7 @@ impl LastFM {
 
                 tokio::time::sleep(Duration::from_secs(self.interval_secs.into())).await;
             }
-        });
+        })
     }
 
     async fn refresh_cache(&self) -> anyhow::Result<()> {
