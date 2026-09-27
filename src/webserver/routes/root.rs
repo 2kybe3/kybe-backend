@@ -210,6 +210,16 @@ pub async fn root(
                 ],
             )
             .into(),
+        theme
+            .label(
+                "Simple message",
+                vec![
+                    theme
+                        .link_colored("msg.kybe.xyz\n", "https://msg.kybe.xyz")
+                        .into(),
+                ],
+            )
+            .into(),
         theme.raw("\n").into(),
         theme.title_underlined("Other Platforms"),
         theme
