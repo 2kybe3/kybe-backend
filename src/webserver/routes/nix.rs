@@ -20,18 +20,18 @@ pub async fn nix(
                 "Download",
                 vec![
                     theme
-                        .link_colored("git", "https://git.kybe.xyz/2kybe3/hexix")
+                        .link_colored("git", "https://git.kybe.xyz/2kybe3/drexy")
                         .into(),
                     theme.text(", ").into(),
                     theme
                         .link_colored(
                             "tar.gz",
-                            "https://git.kybe.xyz/2kybe3/hexix/archive/main.tar.gz",
+                            "https://git.kybe.xyz/2kybe3/drexy/archive/main.tar.gz",
                         )
                         .into(),
                     theme.text(", ").into(),
                     theme
-                        .link_colored("zip", "https://git.kybe.xyz/2kybe3/hexix/archive/main.zip")
+                        .link_colored("zip", "https://git.kybe.xyz/2kybe3/drexy/archive/main.zip")
                         .into(),
                 ],
             )

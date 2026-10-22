@@ -44,12 +44,12 @@ pub async fn portfolio(
             .text(format!("{}\n\n", include_page!("About Me").trim()))
             .into(),
         theme.section_underlined("Projects"),
-        theme.sub_section_underlined("hexix"),
+        theme.sub_section_underlined("drexy"),
         theme
-            .text(format!("{}\n", include_page!("projects/hexix").trim()))
+            .text(format!("{}\n", include_page!("projects/drexy").trim()))
             .into(),
         theme.text("\n").into(),
-        git_repo!(theme, "https://git.kybe.xyz/2kybe3/hexix"),
+        git_repo!(theme, "https://git.kybe.xyz/2kybe3/drexy"),
         theme.text("\n\n").into(),
         theme.sub_section_underlined("kymenu"),
         theme

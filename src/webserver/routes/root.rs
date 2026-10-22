@@ -95,7 +95,7 @@ pub async fn root(
         theme.title_underlined("Projects"),
         theme
             .label(
-                "hexix",
+                "drexy",
                 vec![
                     theme
                         .link_colored("My NixOS Config", &ctx.url("/nix"))
