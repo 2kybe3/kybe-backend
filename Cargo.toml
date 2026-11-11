@@ -11,7 +11,7 @@ path = "src/main.rs"
 reqwest = { version = "0.13.2", features = ["json", "rustls", "multipart"] }
 maxminddb = { version = "0.32.0", features = ["mmap"] }
 tokio = { version = "1.49", features = ["full"] }
-prometheus-client = "0.25.0"
+prometheus-client = "0.26.0"
 tower_governor = "0.8.0"
 enum_delegate = "0.2.0"
 async-trait = "0.1.89"
