@@ -20,7 +20,7 @@ pub async fn root(
 ) -> impl IntoResponse {
     let theme = Theme::default();
 
-    let playing = if let Some(lastfm) = state.lastfm {
+    let playing = if let Some(lastfm) = &state.lastfm {
         lastfm.get_playing().await.result
     } else {
         None
@@ -46,27 +46,29 @@ pub async fn root(
         ]);
     };
 
-    page.append(&mut vec![
-        theme.title_underlined("Currently Listening"),
-        theme
-            .label(
-                "Playing",
-                vec![
-					theme
-						.link_colored(
-							if playing.is_some() {
-								"True"
-							} else {
-								"False"
-							},
-                            "http://grafana.kybe.xyz/public-dashboards/9668326e06434d6ebf8b999c019dee18",
-						)
-						.into(),
-                    theme.comment(" (click me)\n").into(),
-				],
-            )
-            .into(),
-    ]);
+    if state.lastfm.is_some() {
+        page.append(&mut vec![
+            theme.title_underlined("Currently Listening"),
+            theme
+                .label(
+                    "Playing",
+                    vec![
+                        theme
+                            .link_colored(
+                                if playing.is_some() {
+                                    "True"
+                                } else {
+                                    "False"
+                                },
+                                "http://grafana.kybe.xyz/public-dashboards/9668326e06434d6ebf8b999c019dee18",
+                            )
+                            .into(),
+                        theme.comment(" (click me)\n").into(),
+                    ],
+                )
+                .into(),
+        ]);
+    }
 
     if let Some(playing) = playing {
         page.append(&mut vec![
